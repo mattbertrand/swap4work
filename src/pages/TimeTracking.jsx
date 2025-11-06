@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -164,11 +165,11 @@ export default function TimeTracking() {
                 <CardTitle className="text-2xl mb-1">{agreement.item_title}</CardTitle>
                 <p className="text-gray-600">Working with {agreement.offerer_name}</p>
               </div>
-              <Badge className={
+              <Badge className={`text-white ${
                 progress >= 100 ? 'bg-green-500' :
                 progress >= 50 ? 'bg-blue-500' :
                 'bg-orange-500'
-              } className="text-white">
+              }`}>
                 {progress.toFixed(0)}% Complete
               </Badge>
             </div>

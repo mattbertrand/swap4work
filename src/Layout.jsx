@@ -6,12 +6,11 @@ import { base44 } from "@/api/base44Client";
 import { 
   Home, 
   Package, 
-  MessageSquare, 
   User, 
   Shield,
   Briefcase,
   Plus
-} from "lucide";
+} from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
