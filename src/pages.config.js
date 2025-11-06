@@ -6,6 +6,7 @@ import MyAgreements from './pages/MyAgreements';
 import Chat from './pages/Chat';
 import TimeTracking from './pages/TimeTracking';
 import Profile from './pages/Profile';
+import Home from './pages/Home';
 import Layout from './Layout.jsx';
 
 
@@ -18,6 +19,7 @@ export const PAGES = {
     "Chat": Chat,
     "TimeTracking": TimeTracking,
     "Profile": Profile,
+    "Home": Home,
 }
 
 export const pagesConfig = {

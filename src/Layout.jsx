@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -10,7 +11,7 @@ import {
   Shield,
   Briefcase,
   Plus
-} from "lucide-react";
+} from "lucide";
 import {
   Sidebar,
   SidebarContent,
@@ -41,9 +42,14 @@ export default function Layout({ children, currentPageName }) {
 
   const navigationItems = [
     {
+      title: "Home",
+      url: createPageUrl("Home"),
+      icon: Home,
+    },
+    {
       title: "Browse Items",
       url: createPageUrl("Browse"),
-      icon: Home,
+      icon: Package,
     },
     {
       title: "My Listings",
@@ -81,7 +87,7 @@ export default function Layout({ children, currentPageName }) {
       <div className="min-h-screen flex w-full bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
         <Sidebar className="border-r border-orange-100">
           <SidebarHeader className="border-b border-orange-100 p-6">
-            <Link to={createPageUrl("Browse")} className="flex items-center gap-3">
+            <Link to={createPageUrl("Home")} className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center shadow-md">
                 <Briefcase className="w-6 h-6 text-white" />
               </div>
