@@ -160,6 +160,135 @@ export default function Layout({ children, currentPageName }) {
           <div className="flex-1 overflow-auto">
             {children}
           </div>
+
+          {/* Footer */}
+          <footer className="bg-white border-t border-orange-100 mt-auto">
+            <div className="max-w-7xl mx-auto px-4 py-12 md:px-8">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+                {/* About */}
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg flex items-center justify-center">
+                      <Briefcase className="w-5 h-5 text-white" />
+                    </div>
+                    <h3 className="font-bold text-lg text-gray-900">WorkSwap</h3>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-4">
+                    A local marketplace to trade work and time for physical items — no money required.
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Building stronger communities through skill exchange.
+                  </p>
+                </div>
+
+                {/* Quick Links */}
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-4">Quick Links</h4>
+                  <ul className="space-y-2">
+                    <li>
+                      <Link to={createPageUrl("Browse")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                        Browse Items
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to={createPageUrl("CreateItem")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                        List an Item
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to={createPageUrl("MyAgreements")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                        My Agreements
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to={createPageUrl("Profile")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                        My Profile
+                      </Link>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Resources */}
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-4">Resources</h4>
+                  <ul className="space-y-2">
+                    <li>
+                      <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                        How It Works
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                        Safety Guidelines
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                        Community Rules
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                        FAQ
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                        Help Center
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Legal */}
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-4">Legal</h4>
+                  <ul className="space-y-2">
+                    <li>
+                      <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                        Terms of Service
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                        Privacy Policy
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                        Cookie Policy
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                        Contact Us
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Bottom Bar */}
+              <div className="pt-8 border-t border-gray-200">
+                <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                  <p className="text-sm text-gray-500">
+                    © {new Date().getFullYear()} WorkSwap. All rights reserved.
+                  </p>
+                  <div className="flex items-center gap-6">
+                    <a href="#" className="text-sm text-gray-500 hover:text-orange-600 transition-colors">
+                      Follow us on Twitter
+                    </a>
+                    <a href="#" className="text-sm text-gray-500 hover:text-orange-600 transition-colors">
+                      Join our Community
+                    </a>
+                    <a href="#" className="text-sm text-gray-500 hover:text-orange-600 transition-colors">
+                      Report an Issue
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </footer>
         </main>
       </div>
     </SidebarProvider>
