@@ -4,6 +4,8 @@ import ItemDetail from './pages/ItemDetail';
 import MyListings from './pages/MyListings';
 import MyAgreements from './pages/MyAgreements';
 import Chat from './pages/Chat';
+import TimeTracking from './pages/TimeTracking';
+import Profile from './pages/Profile';
 import Layout from './Layout.jsx';
 
 
@@ -14,6 +16,8 @@ export const PAGES = {
     "MyListings": MyListings,
     "MyAgreements": MyAgreements,
     "Chat": Chat,
+    "TimeTracking": TimeTracking,
+    "Profile": Profile,
 }
 
 export const pagesConfig = {
