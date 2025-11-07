@@ -5,7 +5,7 @@ import { MapPin, Clock, Star, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
-export default function ItemCard({ item }) {
+export default function ItemCard({ item, showDistance }) {
   return (
     <Link to={createPageUrl(`ItemDetail?id=${item.id}`)}>
       <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border-orange-100 bg-white">
@@ -30,6 +30,14 @@ export default function ItemCard({ item }) {
             <div className="absolute top-3 right-3">
               <Badge className="bg-green-500 text-white border-0 shadow-md">
                 {item.condition}
+              </Badge>
+            </div>
+          )}
+          {showDistance && item.distance && (
+            <div className="absolute bottom-3 right-3">
+              <Badge className="bg-orange-500 text-white border-0 shadow-md">
+                <MapPin className="w-3 h-3 mr-1" />
+                {item.distance} mi
               </Badge>
             </div>
           )}
