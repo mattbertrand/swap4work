@@ -1,3 +1,4 @@
+
 import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -12,6 +13,14 @@ import {
 } from "lucide-react";
 
 export default function Home() {
+  const [user, setUser] = React.useState(null);
+
+  React.useEffect(() => {
+    base44.auth.me()
+      .then(setUser)
+      .catch(() => setUser(null));
+  }, []);
+
   const { data: featuredItems = [], isLoading: itemsLoading } = useQuery({
     queryKey: ['featuredItems'],
     queryFn: () => base44.entities.Item.filter({ status: "active" }, '-created_date', 6),
@@ -44,18 +53,37 @@ export default function Home() {
             No money required. Connect with your local community to exchange work hours for physical items.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to={createPageUrl("Browse")}>
-              <Button size="lg" className="bg-white text-orange-600 hover:bg-orange-50 text-lg px-8 py-6 h-auto">
-                <Package className="w-5 h-5 mr-2" />
-                Browse Items
-              </Button>
-            </Link>
-            <Link to={createPageUrl("CreateItem")}>
-              <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white/20 text-lg px-8 py-6 h-auto">
-                <Briefcase className="w-5 h-5 mr-2" />
-                List an Item
-              </Button>
-            </Link>
+            {user ? (
+              <>
+                <Link to={createPageUrl("Browse")}>
+                  <Button size="lg" className="bg-white text-orange-600 hover:bg-orange-50 text-lg px-8 py-6 h-auto">
+                    <Package className="w-5 h-5 mr-2" />
+                    Browse Items
+                  </Button>
+                </Link>
+                <Link to={createPageUrl("CreateItem")}>
+                  <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white/20 text-lg px-8 py-6 h-auto">
+                    <Briefcase className="w-5 h-5 mr-2" />
+                    List an Item
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Button 
+                  size="lg" 
+                  onClick={() => base44.auth.redirectToLogin()}
+                  className="bg-white text-orange-600 hover:bg-orange-50 text-lg px-8 py-6 h-auto"
+                >
+                  Sign In to Get Started
+                </Button>
+                <Link to={createPageUrl("Browse")}>
+                  <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white/20 text-lg px-8 py-6 h-auto">
+                    Browse Without Account
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

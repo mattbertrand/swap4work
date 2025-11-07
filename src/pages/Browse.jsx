@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -191,6 +192,24 @@ export default function Browse() {
                     Update Profile
                   </button>
                 </Link>
+              </div>
+            )}
+
+            {!user && (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 flex items-start gap-3">
+                <Crosshair className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1 text-sm text-orange-900">
+                  <p className="font-medium">Sign in for personalized results</p>
+                  <p className="text-orange-700 mt-1">
+                    Create an account to see items near you and start trading.
+                  </p>
+                </div>
+                <button 
+                  onClick={() => base44.auth.redirectToLogin()}
+                  className="text-sm font-medium text-orange-600 hover:text-orange-700 whitespace-nowrap"
+                >
+                  Sign In
+                </button>
               </div>
             )}
           </div>

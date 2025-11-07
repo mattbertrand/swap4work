@@ -3,13 +3,15 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
-import { 
-  Home, 
-  Package, 
-  User, 
+import {
+  Home,
+  Package,
+  User,
   Shield,
   Briefcase,
-  Plus
+  Plus,
+  LogOut, // Added for dropdown menu
+  Settings // Added for dropdown menu, though not used in the outline, keeping it as per instructions
 } from "lucide-react";
 import {
   Sidebar,
@@ -24,6 +26,15 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button"; // Added for the new sign-in button
+
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -35,20 +46,20 @@ export default function Layout({ children, currentPageName }) {
       try {
         const userData = await base44.auth.me();
         setUser(userData);
-        
+
         // If user is not on CompleteProfile page and profile is incomplete, redirect
         if (userData && !userData.profile_completed && !window.location.pathname.includes('CompleteProfile')) {
           // Only redirect if user is trying to access protected pages
-          // Note: createPageUrl function might generate paths like /browse, /my-listings. 
+          // Note: createPageUrl function might generate paths like /browse, /my-listings.
           // We should check against the actual path segments.
           const protectedPages = [
-            createPageUrl('CreateItem'), 
-            createPageUrl('MyListings'), 
+            createPageUrl('CreateItem'),
+            createPageUrl('MyListings'),
             createPageUrl('MyAgreements')
           ].map(url => new URL(url, window.location.origin).pathname); // Normalize URLs to just paths
 
           const currentPath = window.location.pathname;
-          
+
           if (protectedPages.some(pagePath => currentPath.startsWith(pagePath))) {
             window.location.href = createPageUrl(`CompleteProfile?returnUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`);
           }
@@ -122,15 +133,15 @@ export default function Layout({ children, currentPageName }) {
               </div>
             </Link>
           </SidebarHeader>
-          
+
           <SidebarContent className="p-3">
             <SidebarGroup>
               <SidebarGroupContent>
                 <SidebarMenu>
                   {navigationItems.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton 
-                        asChild 
+                      <SidebarMenuButton
+                        asChild
                         className={`hover:bg-orange-100 hover:text-orange-700 transition-colors duration-200 rounded-xl mb-1 ${
                           location.pathname === item.url ? 'bg-orange-100 text-orange-700' : ''
                         }`}
@@ -158,26 +169,55 @@ export default function Layout({ children, currentPageName }) {
 
           <SidebarFooter className="border-t border-orange-100 p-4">
             {user ? (
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-amber-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-semibold text-sm">
-                    {user.full_name?.[0]?.toUpperCase() || 'U'}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 text-sm truncate">{user.full_name}</p>
-                  <p className="text-xs text-gray-500 truncate">{user.email}</p>
-                </div>
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-3 w-full hover:bg-orange-50 p-2 rounded-lg transition-colors">
+                    {user.photo_url ? (
+                      <img
+                        src={user.photo_url}
+                        alt={user.full_name}
+                        className="w-10 h-10 rounded-full object-cover border-2 border-orange-200"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-amber-500 rounded-full flex items-center justify-center">
+                        <span className="text-white font-semibold text-sm">
+                          {user.full_name?.[0]?.toUpperCase() || 'U'}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className="font-medium text-gray-900 text-sm truncate">{user.full_name}</p>
+                      <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                    </div>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem asChild>
+                    <Link to={createPageUrl("Profile")} className="flex items-center cursor-pointer">
+                      <User className="w-4 h-4 mr-2" />
+                      Profile Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => base44.auth.logout()}
+                    className="text-red-600 focus:text-red-600 cursor-pointer"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
-              <button 
+              <Button
                 onClick={() => base44.auth.redirectToLogin()}
-                className="w-full text-center py-2 text-sm font-medium text-orange-600 hover:text-orange-700"
+                className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"
               >
                 Sign In
-              </button>
+              </Button>
             )}
           </SidebarFooter>
+
         </Sidebar>
 
         <main className="flex-1 flex flex-col">
