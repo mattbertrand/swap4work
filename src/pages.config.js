@@ -7,6 +7,7 @@ import Chat from './pages/Chat';
 import TimeTracking from './pages/TimeTracking';
 import Profile from './pages/Profile';
 import Home from './pages/Home';
+import CompleteProfile from './pages/CompleteProfile';
 import Layout from './Layout.jsx';
 
 
@@ -20,6 +21,7 @@ export const PAGES = {
     "TimeTracking": TimeTracking,
     "Profile": Profile,
     "Home": Home,
+    "CompleteProfile": CompleteProfile,
 }
 
 export const pagesConfig = {

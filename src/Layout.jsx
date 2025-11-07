@@ -31,11 +31,37 @@ export default function Layout({ children, currentPageName }) {
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    base44.auth.me()
-      .then(setUser)
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
-  }, []);
+    const checkAuth = async () => {
+      try {
+        const userData = await base44.auth.me();
+        setUser(userData);
+        
+        // If user is not on CompleteProfile page and profile is incomplete, redirect
+        if (userData && !userData.profile_completed && !window.location.pathname.includes('CompleteProfile')) {
+          // Only redirect if user is trying to access protected pages
+          // Note: createPageUrl function might generate paths like /browse, /my-listings. 
+          // We should check against the actual path segments.
+          const protectedPages = [
+            createPageUrl('CreateItem'), 
+            createPageUrl('MyListings'), 
+            createPageUrl('MyAgreements')
+          ].map(url => new URL(url, window.location.origin).pathname); // Normalize URLs to just paths
+
+          const currentPath = window.location.pathname;
+          
+          if (protectedPages.some(pagePath => currentPath.startsWith(pagePath))) {
+            window.location.href = createPageUrl(`CompleteProfile?returnUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+          }
+        }
+      } catch (error) {
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [location.pathname]); // Added location.pathname to dependency array to re-run on path change for safety, though typically initial load is enough.
 
   const isAdmin = user?.role === 'admin';
 

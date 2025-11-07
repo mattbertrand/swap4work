@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -8,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Camera, Star, CheckCircle2, Clock, Package, LogOut } from "lucide-react";
+import { format } from "date-fns"; // Added this import for date formatting
 
 export default function Profile() {
   const queryClient = useQueryClient();
@@ -59,11 +61,16 @@ export default function Profile() {
 
   const updateProfileMutation = useMutation({
     mutationFn: (data) => base44.auth.updateMe(data),
-    onSuccess: async () => {
-      const updatedUser = await base44.auth.me();
-      setUser(updatedUser);
+    onSuccess: async (updatedUserData) => {
+      // The updatedUserData is directly returned by updateMe if successful,
+      // so we can use it to update the state without an extra `me()` call.
+      setUser(updatedUserData); 
       setIsEditing(false);
-      queryClient.invalidateQueries(['user', user.id]);
+      queryClient.invalidateQueries(['user', updatedUserData.id]); // Invalidate with the new user data's ID
+    },
+    onError: (error) => {
+      console.error("Error updating profile:", error);
+      // Optionally handle error, e.g., show a toast notification
     }
   });
 
@@ -74,8 +81,7 @@ export default function Profile() {
     setUploading(true);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      await base44.auth.updateMe({ photo_url: file_url });
-      const updatedUser = await base44.auth.me();
+      const updatedUser = await base44.auth.updateMe({ photo_url: file_url });
       setUser(updatedUser);
     } catch (error) {
       console.error("Error uploading photo:", error);
@@ -83,8 +89,14 @@ export default function Profile() {
     setUploading(false);
   };
 
-  const handleSave = () => {
-    updateProfileMutation.mutate(formData);
+  const handleSave = async () => {
+    // Check if basic required fields are filled
+    const profileComplete = !!(formData.location && formData.phone);
+    
+    await updateProfileMutation.mutateAsync({
+      ...formData,
+      profile_completed: profileComplete
+    });
   };
 
   const handleLogout = () => {

@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -14,6 +15,7 @@ export default function CreateItem() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -26,6 +28,28 @@ export default function CreateItem() {
     estimated_value: "",
     photos: []
   });
+
+  useEffect(() => {
+    const checkProfile = async () => {
+      try {
+        const user = await base44.auth.me();
+        
+        // Check if profile is complete
+        if (!user.profile_completed || !user.location || !user.phone) {
+          const currentUrl = window.location.pathname + window.location.search;
+          navigate(createPageUrl(`CompleteProfile?returnUrl=${encodeURIComponent(currentUrl)}`));
+          return;
+        }
+        
+        setCheckingAuth(false);
+      } catch (error) {
+        // Not authenticated, redirect to login
+        base44.auth.redirectToLogin(window.location.pathname + window.location.search);
+      }
+    };
+
+    checkProfile();
+  }, [navigate]);
 
   const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files);
@@ -44,6 +68,7 @@ export default function CreateItem() {
       }));
     } catch (error) {
       console.error("Error uploading files:", error);
+      alert("Failed to upload photos. Please try again.");
     }
     setUploading(false);
   };
@@ -76,9 +101,18 @@ export default function CreateItem() {
       navigate(createPageUrl("MyListings"));
     } catch (error) {
       console.error("Error creating item:", error);
+      alert("Failed to create item. Please try again.");
     }
     setLoading(false);
   };
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-4 md:p-8">

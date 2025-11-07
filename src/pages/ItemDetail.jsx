@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -6,8 +7,8 @@ import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { 
-  ArrowLeft, Clock, MapPin, Star, CheckCircle2, 
+import {
+  ArrowLeft, Clock, MapPin, Star, CheckCircle2,
   AlertCircle, MessageSquare, Eye, User
 } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
@@ -46,6 +47,13 @@ export default function ItemDetail() {
       return;
     }
 
+    // Check if profile is complete
+    if (!user.profile_completed || !user.location || !user.phone) {
+      const currentUrl = window.location.pathname + window.location.search;
+      navigate(createPageUrl(`CompleteProfile?returnUrl=${encodeURIComponent(currentUrl)}`));
+      return;
+    }
+
     // Create initial agreement
     const agreement = await base44.entities.Agreement.create({
       item_id: item.id,
@@ -65,6 +73,13 @@ export default function ItemDetail() {
   const handleRequestInspection = async () => {
     if (!user) {
       base44.auth.redirectToLogin(window.location.pathname + window.location.search);
+      return;
+    }
+
+    // Check if profile is complete
+    if (!user.profile_completed || !user.location || !user.phone) {
+      const currentUrl = window.location.pathname + window.location.search;
+      navigate(createPageUrl(`CompleteProfile?returnUrl=${encodeURIComponent(currentUrl)}`));
       return;
     }
 
