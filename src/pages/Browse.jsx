@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -42,19 +41,19 @@ export default function Browse() {
         setUser(userData);
         if (userData.latitude && userData.longitude) {
           setUserLocation({ lat: userData.latitude, lng: userData.longitude });
-          setUseLocation(true);
+          // Don't auto-enable location filter - let user choose
         }
       })
       .catch(() => setUser(null));
   }, []);
 
   const { data: items = [], isLoading } = useQuery({
-    queryKey: ['items'],
+    queryKey: ['items', sortBy],
     queryFn: () => base44.entities.Item.filter({ status: "active" }, sortBy),
   });
 
   const handleSearch = () => {
-    setSearchTerm(searchInput);
+    setSearchTerm(searchInput.trim());
   };
 
   const handleClearSearch = () => {
@@ -63,25 +62,35 @@ export default function Browse() {
   };
 
   const filteredItems = items.filter(item => {
+    // Search filter
     const matchesSearch = searchTerm === "" || 
                          item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Category filter
     const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
     
+    // Distance filter - FIXED LOGIC
     let matchesDistance = true;
-    if (useLocation && userLocation && item.latitude && item.longitude) {
-      const distance = calculateDistance(
-        userLocation.lat,
-        userLocation.lng,
-        item.latitude,
-        item.longitude
-      );
-      matchesDistance = distance <= maxDistance[0];
+    if (useLocation && userLocation) {
+      // If location filter is enabled, ONLY show items that have coordinates AND are within range
+      if (!item.latitude || !item.longitude) {
+        matchesDistance = false; // Exclude items without coordinates
+      } else {
+        const distance = calculateDistance(
+          userLocation.lat,
+          userLocation.lng,
+          item.latitude,
+          item.longitude
+        );
+        matchesDistance = distance <= maxDistance[0];
+      }
     }
     
     return matchesSearch && matchesCategory && matchesDistance;
   }).map(item => {
-    if (useLocation && userLocation && item.latitude && item.longitude) {
+    // Add distance to items for display
+    if (userLocation && item.latitude && item.longitude) {
       const distance = calculateDistance(
         userLocation.lat,
         userLocation.lng,
@@ -117,7 +126,12 @@ export default function Browse() {
                   placeholder="Search items by title or description..."
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSearch();
+                    }
+                  }}
                   className="pl-10 h-12 border-gray-200 pr-10"
                 />
                 {searchInput && (
@@ -323,6 +337,8 @@ export default function Browse() {
             <p className="text-gray-500 mb-4">
               {useLocation && userLocation 
                 ? `No items found within ${maxDistance[0]} miles of your location. Try increasing the distance or adjusting your filters.`
+                : searchTerm 
+                ? `No items match "${searchTerm}". Try different search terms.`
                 : "Try adjusting your filters or search terms"
               }
             </p>
