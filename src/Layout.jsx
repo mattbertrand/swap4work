@@ -224,7 +224,6 @@ export default function Layout({ children, currentPageName }) {
             {children}
           </div>
 
-          {/* Footer */}
           <footer className="bg-white border-t border-orange-100 mt-auto">
             <div className="max-w-7xl mx-auto px-4 py-12 md:px-8">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
