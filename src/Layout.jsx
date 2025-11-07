@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -10,8 +9,7 @@ import {
   Shield,
   Briefcase,
   Plus,
-  LogOut, // Added for dropdown menu
-  Settings // Added for dropdown menu, though not used in the outline, keeping it as per instructions
+  LogOut
 } from "lucide-react";
 import {
   Sidebar,
@@ -33,8 +31,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button"; // Added for the new sign-in button
-
+import { Button } from "@/components/ui/button";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -47,16 +44,12 @@ export default function Layout({ children, currentPageName }) {
         const userData = await base44.auth.me();
         setUser(userData);
 
-        // If user is not on CompleteProfile page and profile is incomplete, redirect
         if (userData && !userData.profile_completed && !window.location.pathname.includes('CompleteProfile')) {
-          // Only redirect if user is trying to access protected pages
-          // Note: createPageUrl function might generate paths like /browse, /my-listings.
-          // We should check against the actual path segments.
           const protectedPages = [
             createPageUrl('CreateItem'),
             createPageUrl('MyListings'),
             createPageUrl('MyAgreements')
-          ].map(url => new URL(url, window.location.origin).pathname); // Normalize URLs to just paths
+          ].map(url => new URL(url, window.location.origin).pathname);
 
           const currentPath = window.location.pathname;
 
@@ -72,7 +65,7 @@ export default function Layout({ children, currentPageName }) {
     };
 
     checkAuth();
-  }, [location.pathname]); // Added location.pathname to dependency array to re-run on path change for safety, though typically initial load is enough.
+  }, [location.pathname]);
 
   const isAdmin = user?.role === 'admin';
 
@@ -217,7 +210,6 @@ export default function Layout({ children, currentPageName }) {
               </Button>
             )}
           </SidebarFooter>
-
         </Sidebar>
 
         <main className="flex-1 flex flex-col">
@@ -236,7 +228,6 @@ export default function Layout({ children, currentPageName }) {
           <footer className="bg-white border-t border-orange-100 mt-auto">
             <div className="max-w-7xl mx-auto px-4 py-12 md:px-8">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-                {/* About */}
                 <div>
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg flex items-center justify-center">
@@ -252,7 +243,6 @@ export default function Layout({ children, currentPageName }) {
                   </p>
                 </div>
 
-                {/* Quick Links */}
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-4">Quick Links</h4>
                   <ul className="space-y-2">
@@ -279,7 +269,6 @@ export default function Layout({ children, currentPageName }) {
                   </ul>
                 </div>
 
-                {/* Resources */}
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-4">Resources</h4>
                   <ul className="space-y-2">
@@ -311,7 +300,6 @@ export default function Layout({ children, currentPageName }) {
                   </ul>
                 </div>
 
-                {/* Legal */}
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-4">Legal</h4>
                   <ul className="space-y-2">
@@ -339,7 +327,6 @@ export default function Layout({ children, currentPageName }) {
                 </div>
               </div>
 
-              {/* Bottom Bar */}
               <div className="pt-8 border-t border-gray-200">
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                   <p className="text-sm text-gray-500">
