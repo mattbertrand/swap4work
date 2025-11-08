@@ -6,9 +6,11 @@ import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { ArrowLeft, Send, Paperclip, Clock, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, Clock, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import AgreementLockBanner from "../components/agreement/AgreementLockBanner";
+import CancellationModal from "../components/agreement/CancellationModal";
 
 export default function Chat() {
   const navigate = useNavigate();
@@ -18,6 +20,7 @@ export default function Chat() {
   const [message, setMessage] = useState("");
   const [proposedHours, setProposedHours] = useState("");
   const [showProposal, setShowProposal] = useState(false);
+  const [showCancellationModal, setShowCancellationModal] = useState(false);
 
   const urlParams = new URLSearchParams(window.location.search);
   const agreementId = urlParams.get('agreementId');
@@ -39,7 +42,7 @@ export default function Chat() {
     queryKey: ['messages', agreementId],
     queryFn: () => base44.entities.Message.filter({ agreement_id: agreementId }, 'created_date'),
     enabled: !!agreementId,
-    refetchInterval: 3000 // Poll every 3 seconds
+    refetchInterval: 3000
   });
 
   const sendMessageMutation = useMutation({
@@ -57,9 +60,31 @@ export default function Chat() {
     }
   });
 
+  const createKarmaTransactionMutation = useMutation({
+    mutationFn: (data) => base44.entities.KarmaTransaction.create(data)
+  });
+
+  const createDisputeMutation = useMutation({
+    mutationFn: (data) => base44.entities.Dispute.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['agreement', agreementId]);
+    }
+  });
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const addToHistory = (action, message) => {
+    const historyEntry = {
+      timestamp: new Date().toISOString(),
+      actor_id: user.id,
+      actor_name: user.full_name,
+      action,
+      message
+    };
+    return [...(agreement.history || []), historyEntry];
+  };
 
   const handleSendMessage = () => {
     if (!message.trim() || !user || !agreement) return;
@@ -106,12 +131,163 @@ export default function Chat() {
     await updateAgreementMutation.mutateAsync({ id: agreementId, data: updateData });
 
     const updated = await base44.entities.Agreement.filter({ id: agreementId });
-    if (updated[0].worker_agreed && updated[0].offerer_agreed) {
-      await updateAgreementMutation.mutateAsync({ 
-        id: agreementId, 
-        data: { status: 'locked' } 
+    const updatedAgreement = updated[0];
+    
+    if (updatedAgreement.worker_agreed && updatedAgreement.offerer_agreed) {
+      // Lock the agreement and reserve the item
+      const lockData = {
+        status: 'locked',
+        is_locked: true,
+        start_date: new Date().toISOString(),
+        history: addToHistory('agreement_locked', 'Agreement locked - work can now begin')
+      };
+      
+      await updateAgreementMutation.mutateAsync({ id: agreementId, data: lockData });
+      
+      // Reserve the item
+      await base44.entities.Item.update(updatedAgreement.item_id, {
+        is_reserved: true,
+        reserved_for_agreement_id: agreementId,
+        status: 'locked'
       });
+      
       navigate(createPageUrl(`TimeTracking?agreementId=${agreementId}`));
+    }
+  };
+
+  const handleRequestCancellation = async (cancellationData) => {
+    if (!user || !agreement) return;
+
+    const updateData = {
+      cancellation_request: {
+        status: "pending_mutual",
+        requested_by: user.id,
+        requested_by_name: user.full_name,
+        reason: cancellationData.reason,
+        requested_date: cancellationData.requested_date,
+        expires_at: cancellationData.expires_at
+      },
+      history: addToHistory('cancellation_requested', `${user.full_name} requested cancellation: ${cancellationData.reason}`)
+    };
+
+    await updateAgreementMutation.mutateAsync({ id: agreementId, data: updateData });
+  };
+
+  const handleOpenDispute = async (disputeData) => {
+    if (!user || !agreement) return;
+
+    await createDisputeMutation.mutateAsync({
+      agreement_id: agreementId,
+      opened_by: user.id,
+      opened_by_name: user.full_name,
+      reason: disputeData.reason,
+      description: disputeData.description,
+      status: "open"
+    });
+
+    await updateAgreementMutation.mutateAsync({
+      id: agreementId,
+      data: {
+        status: 'disputed',
+        history: addToHistory('dispute_opened', `Dispute opened: ${disputeData.reason}`)
+      }
+    });
+  };
+
+  const handleRespondToCancellation = async (approved) => {
+    if (!user || !agreement) return;
+
+    if (approved) {
+      // Calculate partial credit if work has started
+      const hoursLogged = agreement.hours_logged || 0;
+      const agreedHours = agreement.agreed_hours || 1;
+      const completionPercentage = Math.min((hoursLogged / agreedHours) * 100, 100);
+
+      if (hoursLogged > 0) {
+        // Award partial karma to worker
+        const partialKarma = Math.floor((completionPercentage / 100) * 10);
+        await createKarmaTransactionMutation.mutateAsync({
+          user_id: agreement.worker_id,
+          user_name: agreement.worker_name,
+          type: "gain",
+          reason: "partial_milestone_credit",
+          points: partialKarma,
+          agreement_id: agreementId,
+          description: `Partial credit for ${completionPercentage.toFixed(1)}% completion (${hoursLogged}/${agreedHours} hours)`
+        });
+
+        // Update worker karma
+        const workers = await base44.entities.User.filter({ id: agreement.worker_id });
+        if (workers[0]) {
+          await base44.entities.User.update(agreement.worker_id, {
+            karma_points: (workers[0].karma_points || 0) + partialKarma
+          });
+        }
+
+        // Penalize offerer if they initiated cancellation
+        if (agreement.cancellation_request.requested_by === agreement.offerer_id) {
+          await createKarmaTransactionMutation.mutateAsync({
+            user_id: agreement.offerer_id,
+            user_name: agreement.offerer_name,
+            type: "loss",
+            reason: "mid_agreement_cancellation",
+            points: -20,
+            agreement_id: agreementId,
+            description: "Mid-agreement cancellation after work started"
+          });
+
+          const offerers = await base44.entities.User.filter({ id: agreement.offerer_id });
+          if (offerers[0]) {
+            const newKarma = (offerers[0].karma_points || 0) - 20;
+            const updateData = {
+              karma_points: newKarma,
+              cancellation_count: (offerers[0].cancellation_count || 0) + 1
+            };
+            
+            // Suspend if karma is negative
+            if (newKarma < 0) {
+              updateData.is_suspended = true;
+              updateData.suspension_end_date = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+            }
+            
+            await base44.entities.User.update(agreement.offerer_id, updateData);
+          }
+        }
+      }
+
+      // Mark agreement as cancelled
+      await updateAgreementMutation.mutateAsync({
+        id: agreementId,
+        data: {
+          status: 'cancelled_mutual',
+          cancellation_request: {
+            ...agreement.cancellation_request,
+            status: 'approved'
+          },
+          history: addToHistory('cancellation_approved', 'Mutual cancellation approved')
+        }
+      });
+
+      // Unreserve item
+      await base44.entities.Item.update(agreement.item_id, {
+        is_reserved: false,
+        reserved_for_agreement_id: null,
+        status: 'active'
+      });
+
+      navigate(createPageUrl("MyAgreements"));
+    } else {
+      // Rejection - could trigger dispute
+      await updateAgreementMutation.mutateAsync({
+        id: agreementId,
+        data: {
+          cancellation_request: {
+            ...agreement.cancellation_request,
+            status: 'rejected'
+          },
+          history: addToHistory('cancellation_rejected', 'Cancellation request rejected')
+        }
+      });
     }
   };
 
@@ -128,6 +304,7 @@ export default function Chat() {
   const hasAgreed = isWorker ? agreement.worker_agreed : agreement.offerer_agreed;
   const otherAgreed = isWorker ? agreement.offerer_agreed : agreement.worker_agreed;
   const bothAgreed = agreement.worker_agreed && agreement.offerer_agreed;
+  const isLocked = agreement.is_locked || agreement.status === 'locked' || agreement.status === 'in_progress';
 
   return (
     <div className="min-h-screen p-4 md:p-8">
@@ -155,7 +332,8 @@ export default function Chat() {
                 </div>
                 <Badge className={
                   agreement.status === 'proposed' ? 'bg-yellow-100 text-yellow-700' :
-                  agreement.status === 'locked' ? 'bg-green-100 text-green-700' :
+                  agreement.status === 'locked' || agreement.status === 'in_progress' ? 'bg-green-100 text-green-700' :
+                  agreement.status === 'disputed' ? 'bg-red-100 text-red-700' :
                   'bg-blue-100 text-blue-700'
                 }>
                   {agreement.status}
@@ -165,6 +343,18 @@ export default function Chat() {
           </CardHeader>
 
           <CardContent className="p-0">
+            {/* Agreement Lock Banner */}
+            {isLocked && (
+              <div className="p-4 border-b border-gray-200">
+                <AgreementLockBanner
+                  agreement={agreement}
+                  user={user}
+                  onRequestCancellation={() => setShowCancellationModal(true)}
+                  onRespondToCancellation={handleRespondToCancellation}
+                />
+              </div>
+            )}
+
             {/* Agreement Status Banner */}
             {agreement.status === 'proposed' && (
               <div className="bg-blue-50 border-b border-blue-200 p-4">
@@ -229,7 +419,17 @@ export default function Chat() {
 
             {/* Message Input */}
             <div className="border-t border-orange-100 p-4">
-              {showProposal ? (
+              {agreement.status === 'disputed' ? (
+                <div className="text-center py-4">
+                  <AlertTriangle className="w-8 h-8 text-orange-600 mx-auto mb-2" />
+                  <p className="text-gray-600">This agreement is under dispute. Messaging is disabled.</p>
+                </div>
+              ) : agreement.status === 'cancelled' || agreement.status === 'cancelled_mutual' ? (
+                <div className="text-center py-4">
+                  <XCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-600">This agreement has been cancelled.</p>
+                </div>
+              ) : showProposal ? (
                 <div className="flex gap-2">
                   <Input
                     type="number"
@@ -246,34 +446,58 @@ export default function Chat() {
                   </Button>
                 </div>
               ) : (
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Type a message..."
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                    className="flex-1"
-                  />
-                  <Button 
-                    onClick={() => setShowProposal(true)} 
-                    variant="outline"
-                    className="px-3"
-                  >
-                    <Clock className="w-5 h-5" />
-                  </Button>
-                  <Button 
-                    onClick={handleSendMessage}
-                    disabled={!message.trim()}
-                    className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"
-                  >
-                    <Send className="w-5 h-5" />
-                  </Button>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Type a message..."
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                      className="flex-1"
+                    />
+                    <Button 
+                      onClick={() => setShowProposal(true)} 
+                      variant="outline"
+                      className="px-3"
+                    >
+                      <Clock className="w-5 h-5" />
+                    </Button>
+                    <Button 
+                      onClick={handleSendMessage}
+                      disabled={!message.trim()}
+                      className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"
+                    >
+                      <Send className="w-5 h-5" />
+                    </Button>
+                  </div>
+                  
+                  {isLocked && (
+                    <Button
+                      onClick={() => setShowCancellationModal(true)}
+                      variant="outline"
+                      size="sm"
+                      className="w-full text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                    >
+                      <AlertTriangle className="w-4 h-4 mr-2" />
+                      Request Cancellation
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
           </CardContent>
         </Card>
       </div>
+
+      <CancellationModal
+        open={showCancellationModal}
+        onClose={() => setShowCancellationModal(false)}
+        agreement={agreement}
+        onRequestCancellation={handleRequestCancellation}
+        onOpenDispute={handleOpenDispute}
+        isOfferer={!isWorker}
+        isWorker={isWorker}
+      />
     </div>
   );
 }
