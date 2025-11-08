@@ -41,6 +41,22 @@ export default function ItemDetail() {
     enabled: !!item?.offerer_id
   });
 
+  // Check existing negotiations for this item
+  const { data: activeNegotiations = [] } = useQuery({
+    queryKey: ['negotiations', itemId],
+    queryFn: async () => {
+      const negotiations = await base44.entities.Negotiation.filter({ 
+        item_id: itemId,
+        status: { $in: ['active', 'accepted'] }
+      });
+      return negotiations;
+    },
+    enabled: !!itemId
+  });
+
+  // Check if user already has a negotiation for this item
+  const userNegotiation = user ? activeNegotiations.find(n => n.bidder_id === user.id) : null;
+
   const handleStartNegotiation = async () => {
     if (!user) {
       base44.auth.redirectToLogin(window.location.pathname + window.location.search);
@@ -54,20 +70,51 @@ export default function ItemDetail() {
       return;
     }
 
-    // Create initial agreement
-    const agreement = await base44.entities.Agreement.create({
+    // Check negotiation limit (max 3 active per item)
+    if (activeNegotiations.length >= 3) {
+      alert("This item already has 3 active negotiations. Please try again later.");
+      return;
+    }
+
+    // Check if user already has a negotiation
+    if (userNegotiation) {
+      navigate(createPageUrl(`Negotiation?id=${userNegotiation.id}`));
+      return;
+    }
+
+    // Create new negotiation
+    const negotiation = await base44.entities.Negotiation.create({
       item_id: item.id,
       item_title: item.title,
       offerer_id: item.offerer_id,
       offerer_name: item.offerer_name,
-      worker_id: user.id,
-      worker_name: user.full_name,
-      agreed_hours: item.required_hours,
-      task_description: item.suggested_tasks || "",
-      status: "proposed"
+      bidder_id: user.id,
+      bidder_name: user.full_name,
+      initial_offer_hours: item.required_hours,
+      status: "active",
+      current_offer_by: user.id,
+      offer_history: [{
+        offered_by: user.id,
+        offered_by_name: user.full_name,
+        hours: item.required_hours,
+        work_type: "",
+        timestamp: new Date().toISOString()
+      }],
+      last_activity: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
     });
 
-    navigate(createPageUrl(`Chat?agreementId=${agreement.id}`));
+    // Send initial system message
+    await base44.entities.Message.create({
+      negotiation_id: negotiation.id,
+      from_user_id: user.id,
+      from_user_name: "System",
+      to_user_id: item.offerer_id,
+      text: `You started a negotiation for ${item.title}. The initial offer is ${item.required_hours} hours of work.`,
+      message_type: "system"
+    });
+
+    navigate(createPageUrl(`Negotiation?id=${negotiation.id}`));
   };
 
   const handleRequestInspection = async () => {
@@ -83,28 +130,36 @@ export default function ItemDetail() {
       return;
     }
 
-    const agreement = await base44.entities.Agreement.create({
+    // Create negotiation first if not exists
+    if (userNegotiation) {
+      navigate(createPageUrl(`Negotiation?id=${userNegotiation.id}`));
+      return;
+    }
+
+    const negotiation = await base44.entities.Negotiation.create({
       item_id: item.id,
       item_title: item.title,
       offerer_id: item.offerer_id,
       offerer_name: item.offerer_name,
-      worker_id: user.id,
-      worker_name: user.full_name,
-      agreed_hours: item.required_hours,
-      status: "proposed"
+      bidder_id: user.id,
+      bidder_name: user.full_name,
+      initial_offer_hours: item.required_hours, // Still need initial hours for negotiation creation
+      status: "active",
+      current_offer_by: user.id,
+      last_activity: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
     });
 
     await base44.entities.Message.create({
-      agreement_id: agreement.id,
-      item_id: item.id,
+      negotiation_id: negotiation.id,
       from_user_id: user.id,
       from_user_name: user.full_name,
       to_user_id: item.offerer_id,
-      text: "I would like to request an in-person inspection of this item before proceeding.",
-      message_type: "inspection_request"
+      text: "I would like to request an in-person inspection of this item before proceeding with the negotiation.",
+      message_type: "text"
     });
 
-    navigate(createPageUrl(`Chat?agreementId=${agreement.id}`));
+    navigate(createPageUrl(`Negotiation?id=${negotiation.id}`));
   };
 
   if (isLoading) {
@@ -239,6 +294,15 @@ export default function ItemDetail() {
                   </div>
                 </div>
 
+                {/* Active Negotiations Badge */}
+                {activeNegotiations.length > 0 && !isOwner && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+                    <p className="text-sm text-blue-900">
+                      <strong>{activeNegotiations.length}</strong> active negotiation{activeNegotiations.length > 1 ? 's' : ''}
+                    </p>
+                  </div>
+                )}
+
                 {/* Offerer Info */}
                 {offerer && (
                   <Card className="bg-gray-50 border-gray-200">
@@ -272,21 +336,35 @@ export default function ItemDetail() {
                 {/* Action Buttons */}
                 {!isOwner && (
                   <div className="space-y-3">
-                    <Button
-                      onClick={handleStartNegotiation}
-                      className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"
-                    >
-                      <MessageSquare className="w-5 h-5 mr-2" />
-                      Start Negotiation
-                    </Button>
-                    <Button
-                      onClick={handleRequestInspection}
-                      variant="outline"
-                      className="w-full h-12"
-                    >
-                      <Eye className="w-5 h-5 mr-2" />
-                      Request Inspection
-                    </Button>
+                    {userNegotiation ? (
+                      <Button
+                        onClick={() => navigate(createPageUrl(`Negotiation?id=${userNegotiation.id}`))}
+                        className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700"
+                      >
+                        <MessageSquare className="w-5 h-5 mr-2" />
+                        Continue Negotiation
+                      </Button>
+                    ) : (
+                      <>
+                        <Button
+                          onClick={handleStartNegotiation}
+                          disabled={activeNegotiations.length >= 3}
+                          className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"
+                        >
+                          <MessageSquare className="w-5 h-5 mr-2" />
+                          {activeNegotiations.length >= 3 ? 'Negotiation Limit Reached' : 'Start Negotiation'}
+                        </Button>
+                        <Button
+                          onClick={handleRequestInspection}
+                          disabled={activeNegotiations.length >= 3}
+                          variant="outline"
+                          className="w-full h-12"
+                        >
+                          <Eye className="w-5 h-5 mr-2" />
+                          Request Inspection
+                        </Button>
+                      </>
+                    )}
                   </div>
                 )}
 
