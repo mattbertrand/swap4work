@@ -1,0 +1,525 @@
+import React, { useState, useEffect, useRef } from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ArrowLeft, Send, Clock, AlertTriangle, CheckCircle2, Package } from "lucide-react";
+import { format } from "date-fns";
+import confetti from "canvas-confetti";
+import OfferCard from "../components/negotiation/OfferCard";
+import CounterOfferModal from "../components/negotiation/CounterOfferModal";
+import AgreementDraft from "../components/negotiation/AgreementDraft";
+
+export default function Negotiation() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const messagesEndRef = useRef(null);
+  const [user, setUser] = useState(null);
+  const [message, setMessage] = useState("");
+  const [showCounterModal, setShowCounterModal] = useState(false);
+  const [showAgreementDraft, setShowAgreementDraft] = useState(false);
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const negotiationId = urlParams.get('id');
+
+  useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => setUser(null));
+  }, []);
+
+  const { data: negotiation, isLoading: negLoading } = useQuery({
+    queryKey: ['negotiation', negotiationId],
+    queryFn: async () => {
+      const results = await base44.entities.Negotiation.filter({ id: negotiationId });
+      return results[0];
+    },
+    enabled: !!negotiationId,
+    refetchInterval: 3000
+  });
+
+  const { data: item } = useQuery({
+    queryKey: ['item', negotiation?.item_id],
+    queryFn: async () => {
+      const items = await base44.entities.Item.filter({ id: negotiation.item_id });
+      return items[0];
+    },
+    enabled: !!negotiation?.item_id
+  });
+
+  const { data: messages = [] } = useQuery({
+    queryKey: ['messages', negotiationId],
+    queryFn: () => base44.entities.Message.filter({ negotiation_id: negotiationId }, 'created_date'),
+    enabled: !!negotiationId,
+    refetchInterval: 3000
+  });
+
+  const sendMessageMutation = useMutation({
+    mutationFn: (data) => base44.entities.Message.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['messages', negotiationId]);
+      setMessage("");
+    }
+  });
+
+  const updateNegotiationMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Negotiation.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['negotiation', negotiationId]);
+    }
+  });
+
+  const createAgreementMutation = useMutation({
+    mutationFn: (data) => base44.entities.Agreement.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['negotiation', negotiationId]);
+    }
+  });
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Check if negotiation expired (48h inactive)
+  useEffect(() => {
+    if (negotiation && negotiation.status === 'active') {
+      const expiresAt = new Date(negotiation.expires_at);
+      if (expiresAt < new Date()) {
+        updateNegotiationMutation.mutate({
+          id: negotiationId,
+          data: { status: 'expired' }
+        });
+      }
+    }
+  }, [negotiation]);
+
+  const updateLastActivity = async () => {
+    const now = new Date().toISOString();
+    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+    
+    await updateNegotiationMutation.mutateAsync({
+      id: negotiationId,
+      data: {
+        last_activity: now,
+        expires_at: expiresAt
+      }
+    });
+  };
+
+  const handleSendMessage = async () => {
+    if (!message.trim() || !user || !negotiation) return;
+
+    const otherUserId = user.id === negotiation.bidder_id ? negotiation.offerer_id : negotiation.bidder_id;
+
+    await sendMessageMutation.mutateAsync({
+      negotiation_id: negotiationId,
+      from_user_id: user.id,
+      from_user_name: user.full_name,
+      to_user_id: otherUserId,
+      text: message,
+      message_type: "text"
+    });
+
+    await updateLastActivity();
+  };
+
+  const handleCounterOffer = async (offerData) => {
+    if (!user || !negotiation) return;
+
+    const otherUserId = user.id === negotiation.bidder_id ? negotiation.offerer_id : negotiation.bidder_id;
+
+    // Add to offer history
+    const newHistory = [
+      ...(negotiation.offer_history || []),
+      {
+        offered_by: user.id,
+        offered_by_name: user.full_name,
+        hours: offerData.hours,
+        work_type: offerData.work_type || "",
+        timestamp: new Date().toISOString()
+      }
+    ];
+
+    // Update negotiation
+    await updateNegotiationMutation.mutateAsync({
+      id: negotiationId,
+      data: {
+        counter_offer_hours: offerData.hours,
+        work_type: offerData.work_type || negotiation.work_type,
+        current_offer_by: user.id,
+        offer_history: newHistory,
+        last_activity: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
+      }
+    });
+
+    // Send system message
+    await sendMessageMutation.mutateAsync({
+      negotiation_id: negotiationId,
+      from_user_id: user.id,
+      from_user_name: user.full_name,
+      to_user_id: otherUserId,
+      text: `${user.full_name} offered ${offerData.hours} hours${offerData.work_type ? ` for ${offerData.work_type}` : ''}${offerData.message ? `\n\n${offerData.message}` : ''}`,
+      message_type: "offer"
+    });
+  };
+
+  const handleAcceptOffer = async () => {
+    if (!user || !negotiation) return;
+
+    const agreedHours = negotiation.counter_offer_hours || negotiation.initial_offer_hours;
+
+    // Update negotiation status
+    await updateNegotiationMutation.mutateAsync({
+      id: negotiationId,
+      data: {
+        status: 'accepted',
+        agreed_hours: agreedHours
+      }
+    });
+
+    setShowAgreementDraft(true);
+
+    // Send system message
+    const otherUserId = user.id === negotiation.bidder_id ? negotiation.offerer_id : negotiation.bidder_id;
+    await sendMessageMutation.mutateAsync({
+      negotiation_id: negotiationId,
+      from_user_id: user.id,
+      from_user_name: user.full_name,
+      to_user_id: otherUserId,
+      text: `✅ ${user.full_name} accepted the offer of ${agreedHours} hours!`,
+      message_type: "system"
+    });
+  };
+
+  const handleDeclineOffer = async () => {
+    if (!user || !negotiation) return;
+
+    await updateNegotiationMutation.mutateAsync({
+      id: negotiationId,
+      data: { status: 'declined' }
+    });
+
+    navigate(createPageUrl("Browse"));
+  };
+
+  const handleConfirmAgreement = async () => {
+    if (!user || !negotiation) return;
+
+    const isOfferer = user.id === negotiation.offerer_id;
+    const confirmField = isOfferer ? 'offerer_confirmed' : 'bidder_confirmed';
+
+    // Check if agreement already exists
+    const existingAgreements = await base44.entities.Agreement.filter({ 
+      item_id: negotiation.item_id,
+      status: { $in: ['proposed', 'locked', 'in_progress'] }
+    });
+
+    let agreement = existingAgreements[0];
+
+    if (!agreement) {
+      // Create new agreement
+      agreement = await createAgreementMutation.mutateAsync({
+        item_id: negotiation.item_id,
+        item_title: negotiation.item_title,
+        offerer_id: negotiation.offerer_id,
+        offerer_name: negotiation.offerer_name,
+        worker_id: negotiation.bidder_id,
+        worker_name: negotiation.bidder_name,
+        agreed_hours: negotiation.agreed_hours,
+        task_description: negotiation.work_type || "",
+        status: 'proposed',
+        offerer_agreed: isOfferer,
+        worker_agreed: !isOfferer
+      });
+    } else {
+      // Update existing agreement
+      const updateData = { [confirmField]: true };
+      await base44.entities.Agreement.update(agreement.id, updateData);
+      
+      // Refresh agreement data
+      const updated = await base44.entities.Agreement.filter({ id: agreement.id });
+      agreement = updated[0];
+    }
+
+    // Check if both confirmed
+    if (agreement.offerer_agreed && agreement.worker_agreed) {
+      // Fire confetti!
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+
+      // Lock agreement and reserve item
+      await base44.entities.Agreement.update(agreement.id, {
+        status: 'locked',
+        is_locked: true,
+        start_date: new Date().toISOString()
+      });
+
+      await base44.entities.Item.update(negotiation.item_id, {
+        is_reserved: true,
+        reserved_for_agreement_id: agreement.id,
+        status: 'locked'
+      });
+
+      await updateNegotiationMutation.mutateAsync({
+        id: negotiationId,
+        data: { status: 'converted' }
+      });
+
+      setTimeout(() => {
+        navigate(createPageUrl(`TimeTracking?agreementId=${agreement.id}`));
+      }, 2000);
+    }
+  };
+
+  const handleEditAgreementTerms = async (editData) => {
+    if (!negotiation) return;
+
+    await updateNegotiationMutation.mutateAsync({
+      id: negotiationId,
+      data: {
+        location: editData.location,
+        due_date: editData.due_date,
+        notes: editData.notes
+      }
+    });
+  };
+
+  if (negLoading || !user || !negotiation || !item) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+      </div>
+    );
+  }
+
+  const isOfferer = user.id === negotiation.offerer_id;
+  const isBidder = user.id === negotiation.bidder_id;
+  const otherParty = isOfferer ? negotiation.bidder_name : negotiation.offerer_name;
+  const currentOfferHours = negotiation.counter_offer_hours || negotiation.initial_offer_hours;
+  const currentOfferBy = negotiation.current_offer_by;
+  const isMyTurn = currentOfferBy && currentOfferBy !== user.id;
+  const latestOffer = negotiation.offer_history?.[negotiation.offer_history.length - 1];
+
+  // Check for existing agreement confirmations
+  const [hasConfirmed, setHasConfirmed] = useState(false);
+  const [otherConfirmed, setOtherConfirmed] = useState(false);
+
+  useEffect(() => {
+    const checkConfirmations = async () => {
+      if (negotiation.status === 'accepted') {
+        const agreements = await base44.entities.Agreement.filter({ 
+          item_id: negotiation.item_id,
+          status: 'proposed'
+        });
+        
+        if (agreements[0]) {
+          setHasConfirmed(isOfferer ? agreements[0].offerer_agreed : agreements[0].worker_agreed);
+          setOtherConfirmed(isOfferer ? agreements[0].worker_agreed : agreements[0].offerer_agreed);
+        }
+      }
+    };
+    
+    checkConfirmations();
+  }, [negotiation, isOfferer]);
+
+  return (
+    <div className="min-h-screen p-4 md:p-8">
+      <div className="max-w-4xl mx-auto">
+        <Button
+          variant="ghost"
+          onClick={() => navigate(createPageUrl("Browse"))}
+          className="mb-6 hover:bg-orange-100"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Browse
+        </Button>
+
+        <Card className="border-orange-100 shadow-xl mb-6">
+          <CardHeader className="border-b border-orange-100 bg-gradient-to-r from-orange-50 to-amber-50">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <Package className="w-6 h-6 text-orange-600" />
+                  <h2 className="text-2xl font-bold text-gray-900">{item.title}</h2>
+                </div>
+                <p className="text-gray-600">Negotiating with {otherParty}</p>
+              </div>
+              <div className="text-right">
+                <Badge className={
+                  negotiation.status === 'active' ? 'bg-blue-100 text-blue-700' :
+                  negotiation.status === 'accepted' ? 'bg-green-100 text-green-700' :
+                  negotiation.status === 'declined' ? 'bg-red-100 text-red-700' :
+                  negotiation.status === 'expired' ? 'bg-gray-100 text-gray-700' :
+                  'bg-purple-100 text-purple-700'
+                }>
+                  {negotiation.status}
+                </Badge>
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent className="p-6">
+            {/* Current Offer Display */}
+            {negotiation.status === 'active' && (
+              <Alert className="mb-4 bg-orange-50 border-orange-200">
+                <Clock className="w-4 h-4 text-orange-600" />
+                <AlertDescription className="text-orange-900">
+                  <strong>Current Offer:</strong> {currentOfferHours} hours
+                  {negotiation.work_type && ` • ${negotiation.work_type}`}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Expired Warning */}
+            {negotiation.status === 'expired' && (
+              <Alert className="mb-4 bg-gray-50 border-gray-200">
+                <AlertTriangle className="w-4 h-4 text-gray-600" />
+                <AlertDescription className="text-gray-900">
+                  This negotiation has expired due to inactivity (48 hours).
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Agreement Draft */}
+            {negotiation.status === 'accepted' && (
+              <div className="mb-4">
+                <AgreementDraft
+                  negotiation={negotiation}
+                  item={item}
+                  isOfferer={isOfferer}
+                  hasConfirmed={hasConfirmed}
+                  otherPartyConfirmed={otherConfirmed}
+                  onConfirm={handleConfirmAgreement}
+                  onEdit={handleEditAgreementTerms}
+                  onCancel={() => navigate(createPageUrl("Browse"))}
+                />
+              </div>
+            )}
+
+            {/* Messages & Offers */}
+            <div className="h-96 overflow-y-auto space-y-4 mb-4">
+              {messages.map((msg) => {
+                const isOwnMessage = msg.from_user_id === user.id;
+                const isSystemMessage = msg.message_type === 'system';
+                const isOfferMessage = msg.message_type === 'offer';
+
+                if (isSystemMessage) {
+                  return (
+                    <div key={msg.id} className="flex justify-center">
+                      <div className="bg-gray-100 rounded-lg px-4 py-2 text-sm text-gray-700 max-w-md text-center">
+                        {msg.text}
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (isOfferMessage) {
+                  // Find corresponding offer in history
+                  const offer = negotiation.offer_history?.find(
+                    o => o.offered_by === msg.from_user_id && 
+                    Math.abs(new Date(o.timestamp) - new Date(msg.created_date)) < 5000
+                  );
+
+                  if (offer) {
+                    return (
+                      <OfferCard
+                        key={msg.id}
+                        offer={offer}
+                        isOwnOffer={isOwnMessage}
+                        onAccept={handleAcceptOffer}
+                        onCounter={() => setShowCounterModal(true)}
+                        onDecline={handleDeclineOffer}
+                        canRespond={!isOwnMessage && negotiation.status === 'active'}
+                      />
+                    );
+                  }
+                }
+
+                return (
+                  <div
+                    key={msg.id}
+                    className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[70%] rounded-2xl px-4 py-3 ${
+                        isOwnMessage
+                          ? 'bg-gradient-to-r from-orange-500 to-amber-600 text-white'
+                          : 'bg-gray-100 text-gray-900'
+                      }`}
+                    >
+                      <p className="whitespace-pre-wrap">{msg.text}</p>
+                      <p className={`text-xs mt-1 ${isOwnMessage ? 'text-orange-100' : 'text-gray-500'}`}>
+                        {format(new Date(msg.created_date), 'MMM d, h:mm a')}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input Area */}
+            {negotiation.status === 'active' && (
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Type a message..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  className="flex-1"
+                />
+                <Button
+                  onClick={() => setShowCounterModal(true)}
+                  variant="outline"
+                  className="px-4"
+                >
+                  <Clock className="w-5 h-5 mr-2" />
+                  Counter Offer
+                </Button>
+                <Button 
+                  onClick={handleSendMessage}
+                  disabled={!message.trim()}
+                  className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"
+                >
+                  <Send className="w-5 h-5" />
+                </Button>
+              </div>
+            )}
+
+            {negotiation.status === 'declined' && (
+              <Alert className="bg-red-50 border-red-200">
+                <AlertDescription className="text-red-900 text-center">
+                  This negotiation was declined. Feel free to browse other items.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {negotiation.status === 'converted' && (
+              <Alert className="bg-green-100 border-green-300">
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                <AlertDescription className="text-green-900">
+                  Agreement confirmed! Redirecting to time tracking...
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <CounterOfferModal
+        open={showCounterModal}
+        onClose={() => setShowCounterModal(false)}
+        currentOffer={currentOfferHours}
+        suggestedHours={[item.required_hours - 2, item.required_hours + 2]}
+        onSubmit={handleCounterOffer}
+      />
+    </div>
+  );
+}
