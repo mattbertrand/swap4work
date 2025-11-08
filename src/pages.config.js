@@ -8,6 +8,7 @@ import TimeTracking from './pages/TimeTracking';
 import Profile from './pages/Profile';
 import Home from './pages/Home';
 import CompleteProfile from './pages/CompleteProfile';
+import EditItem from './pages/EditItem';
 import Layout from './Layout.jsx';
 
 
@@ -22,6 +23,7 @@ export const PAGES = {
     "Profile": Profile,
     "Home": Home,
     "CompleteProfile": CompleteProfile,
+    "EditItem": EditItem,
 }
 
 export const pagesConfig = {

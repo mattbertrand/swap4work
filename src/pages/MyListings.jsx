@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Plus, Package, Clock, Eye } from "lucide-react";
+import { Plus, Package, Clock, Eye, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function MyListings() {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -39,9 +40,11 @@ export default function MyListings() {
     );
   }
 
-  const ItemCard = ({ item }) => (
-    <Link to={createPageUrl(`ItemDetail?id=${item.id}`)}>
-      <Card className="hover:shadow-lg transition-shadow border-orange-100 cursor-pointer">
+  const ItemCard = ({ item }) => {
+    const canEdit = ['active', 'in_negotiation'].includes(item.status);
+    
+    return (
+      <Card className="hover:shadow-lg transition-shadow border-orange-100">
         <CardContent className="p-5">
           <div className="flex gap-4">
             <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
@@ -78,10 +81,26 @@ export default function MyListings() {
               </div>
             </div>
           </div>
+          <div className="flex gap-2 mt-4">
+            <Link to={createPageUrl(`ItemDetail?id=${item.id}`)} className="flex-1">
+              <Button variant="outline" className="w-full">
+                <Eye className="w-4 h-4 mr-2" />
+                View
+              </Button>
+            </Link>
+            {canEdit && (
+              <Link to={createPageUrl(`EditItem?id=${item.id}`)} className="flex-1">
+                <Button className="w-full bg-orange-600 hover:bg-orange-700">
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit
+                </Button>
+              </Link>
+            )}
+          </div>
         </CardContent>
       </Card>
-    </Link>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen p-4 md:p-8">
