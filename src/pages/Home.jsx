@@ -1,4 +1,3 @@
-
 import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -11,6 +10,19 @@ import {
   ArrowRight, Clock, MapPin, Star, CheckCircle2, 
   Briefcase, Package, Users, TrendingUp 
 } from "lucide-react";
+
+// Calculate distance between two coordinates using Haversine formula
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 3959; // Earth's radius in miles
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+};
 
 export default function Home() {
   const [user, setUser] = React.useState(null);
@@ -36,10 +48,36 @@ export default function Home() {
     queryFn: () => base44.entities.Rating.filter({ published: true }, '-created_date', 6),
   });
 
-  // Filter workers (people offering services)
-  const workers = allUsers.filter(u => 
-    ['worker', 'both'].includes(u.user_role) && u.skills
-  ).slice(0, 6);
+  // Filter workers (people offering services) with distance calculation
+  const workers = React.useMemo(() => {
+    const potentialWorkers = allUsers.filter(u => 
+      ['worker', 'both'].includes(u.user_role) && 
+      u.skills && 
+      u.profile_completed &&
+      u.latitude && 
+      u.longitude
+    );
+
+    // If user has location, filter by distance and add distance to each worker
+    if (user?.latitude && user?.longitude) {
+      return potentialWorkers
+        .map(worker => {
+          const distance = calculateDistance(
+            user.latitude,
+            user.longitude,
+            worker.latitude,
+            worker.longitude
+          );
+          return { ...worker, distance: distance.toFixed(1) };
+        })
+        .filter(worker => parseFloat(worker.distance) <= 100)
+        .sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance))
+        .slice(0, 6);
+    }
+
+    // If no user location, just return first 6 workers
+    return potentialWorkers.slice(0, 6);
+  }, [allUsers, user]);
 
   return (
     <div className="min-h-screen">
@@ -211,8 +249,14 @@ export default function Home() {
       <div className="py-16 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Skilled Workers in Your Area</h2>
-            <p className="text-gray-600">Connect with talented individuals offering their services</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              Skilled Workers {user?.location ? 'Near You' : 'in Your Area'}
+            </h2>
+            <p className="text-gray-600">
+              {user?.location 
+                ? `Talented individuals within 100 miles offering their services` 
+                : 'Connect with talented individuals offering their services'}
+            </p>
           </div>
 
           {usersLoading ? (
@@ -220,6 +264,12 @@ export default function Home() {
               {[1, 2, 3].map((i) => (
                 <div key={i} className="bg-gray-100 rounded-2xl h-64 animate-pulse" />
               ))}
+            </div>
+          ) : workers.length === 0 ? (
+            <div className="text-center py-16">
+              <Users className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No workers found nearby</h3>
+              <p className="text-gray-500">Check back soon as more people join the community</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -234,14 +284,19 @@ export default function Home() {
                           className="w-16 h-16 rounded-full object-cover border-2 border-orange-200"
                         />
                       ) : (
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center">
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center flex-shrink-0">
                           <span className="text-white text-xl font-bold">
                             {worker.full_name?.[0]?.toUpperCase()}
                           </span>
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-lg text-gray-900 mb-1">{worker.full_name}</h3>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-bold text-lg text-gray-900 truncate">{worker.full_name}</h3>
+                          {worker.id_verified && (
+                            <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                          )}
+                        </div>
                         <div className="flex items-center gap-2 mb-2">
                           {worker.rating > 0 && (
                             <div className="flex items-center gap-1">
@@ -250,14 +305,11 @@ export default function Home() {
                               <span className="text-sm text-gray-500">({worker.total_ratings})</span>
                             </div>
                           )}
-                          {worker.id_verified && (
-                            <CheckCircle2 className="w-4 h-4 text-blue-500" />
-                          )}
                         </div>
                       </div>
                     </div>
 
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-3">{worker.bio}</p>
+                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">{worker.bio}</p>
 
                     <div className="mb-4">
                       <div className="flex flex-wrap gap-1">
@@ -269,16 +321,31 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        <span>{worker.hours_completed}h completed</span>
+                    <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-200">
+                      <div className="text-center">
+                        <div className="flex items-center justify-center gap-1 text-orange-600 mb-1">
+                          <Clock className="w-4 h-4" />
+                          <span className="text-lg font-bold">{worker.hours_completed}</span>
+                        </div>
+                        <span className="text-xs text-gray-500">Hours Worked</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <MapPin className="w-4 h-4" />
-                        <span className="truncate">{worker.location?.split(',')[0]}</span>
+                      <div className="text-center">
+                        <div className="flex items-center justify-center gap-1 text-blue-600 mb-1">
+                          <Star className="w-4 h-4" />
+                          <span className="text-lg font-bold">{worker.total_ratings}</span>
+                        </div>
+                        <span className="text-xs text-gray-500">Reviews</span>
                       </div>
                     </div>
+
+                    {worker.distance && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <div className="flex items-center justify-center gap-1 text-sm text-gray-600">
+                          <MapPin className="w-4 h-4 text-orange-600" />
+                          <span className="font-medium">{worker.distance} miles away</span>
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
@@ -408,7 +475,7 @@ export default function Home() {
               </Button>
             </Link>
             <Link to={createPageUrl("Browse")}>
-              <Button size="lg" variant="outline" className="border-2 border-white text-white bg-transparent hover:bg-white hover:text-orange-600 text-lg px-8 py-6 h-auto w-full sm:w-auto">
+              <Button size="lg" className="border-2 border-white bg-transparent text-white hover:bg-white hover:text-orange-600 text-lg px-8 py-6 h-auto w-full sm:w-auto transition-all">
                 Find Work Opportunities
               </Button>
             </Link>
