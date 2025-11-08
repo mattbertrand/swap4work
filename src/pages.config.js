@@ -9,6 +9,7 @@ import Profile from './pages/Profile';
 import Home from './pages/Home';
 import CompleteProfile from './pages/CompleteProfile';
 import EditItem from './pages/EditItem';
+import AdminDisputes from './pages/AdminDisputes';
 import Layout from './Layout.jsx';
 
 
@@ -24,6 +25,7 @@ export const PAGES = {
     "Home": Home,
     "CompleteProfile": CompleteProfile,
     "EditItem": EditItem,
+    "AdminDisputes": AdminDisputes,
 }
 
 export const pagesConfig = {

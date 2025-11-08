@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Camera, Star, CheckCircle2, Clock, Package, LogOut } from "lucide-react";
 import { format } from "date-fns"; // Added this import for date formatting
+import KarmaDisplay from "../components/profile/KarmaDisplay"; // Added this import
 
 export default function Profile() {
   const queryClient = useQueryClient();
@@ -217,6 +218,9 @@ export default function Profile() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Karma Display */}
+            <KarmaDisplay user={user} showDetails={true} />
           </div>
 
           {/* Right Column - Details & Reviews */}
