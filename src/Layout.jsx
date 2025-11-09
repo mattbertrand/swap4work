@@ -155,7 +155,7 @@ export default function Layout({ children, currentPageName }) {
               <Link to={createPageUrl("CreateItem")} className="block">
                 <button className="w-full bg-gradient-to-r from-orange-500 to-amber-600 text-white font-semibold py-3 px-4 rounded-xl hover:from-orange-600 hover:to-amber-700 transition-all shadow-md flex items-center justify-center gap-2">
                   <Plus className="w-5 h-5 flex-shrink-0" />
-                  <span className="font-semibold">List an Item</span>
+                  <span className="font-semibold text-white">List an Item</span>
                 </button>
               </Link>
             </div>

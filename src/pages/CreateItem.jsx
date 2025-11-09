@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, X, ArrowLeft, Loader2, MapPin } from "lucide-react"; // Added MapPin
+import { Upload, X, ArrowLeft, Loader2, MapPin } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function CreateItem() {
@@ -16,6 +16,7 @@ export default function CreateItem() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [user, setUser] = useState(null); // Added user state
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -30,20 +31,29 @@ export default function CreateItem() {
     estimated_value: "",
     photos: []
   });
-  const [gettingLocation, setGettingLocation] = useState(false); // New state for location fetching
+  const [gettingLocation, setGettingLocation] = useState(false);
 
   useEffect(() => {
     const checkProfile = async () => {
       try {
-        const user = await base44.auth.me();
-        
+        const userData = await base44.auth.me();
+        setUser(userData); // Set user data
+
         // Check if profile is complete
-        if (!user.profile_completed || !user.location || !user.phone) {
+        if (!userData.profile_completed || !userData.location || !userData.phone) {
           const currentUrl = window.location.pathname + window.location.search;
           navigate(createPageUrl(`CompleteProfile?returnUrl=${encodeURIComponent(currentUrl)}`));
           return;
         }
-        
+
+        // Pre-fill location from user profile
+        setFormData(prev => ({
+          ...prev,
+          location: userData.location || "",
+          latitude: userData.latitude || null,
+          longitude: userData.longitude || null
+        }));
+
         setCheckingAuth(false);
       } catch (error) {
         // Not authenticated, redirect to login
@@ -64,7 +74,7 @@ export default function CreateItem() {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-        
+
         try {
           // Use Nominatim OpenStreetMap for reverse geocoding
           const response = await fetch(
@@ -72,7 +82,7 @@ export default function CreateItem() {
           );
           const data = await response.json();
           const location = `${data.address.city || data.address.town || data.address.village || ''}, ${data.address.state || ''} ${data.address.postcode || ''}`.trim();
-          
+
           setFormData(prev => ({
             ...prev,
             location: location,
@@ -102,14 +112,14 @@ export default function CreateItem() {
   let geocodeTimeout; // To debounce geocoding calls
   const geocodeLocation = async (locationString) => {
     if (!locationString) return;
-    
+
     try {
       // Use Nominatim OpenStreetMap for geocoding
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationString)}`
       );
       const data = await response.json();
-      
+
       if (data && data.length > 0) {
         setFormData(prev => ({
           ...prev,
@@ -135,14 +145,14 @@ export default function CreateItem() {
 
   const handleLocationChange = (e) => {
     const newLocation = e.target.value;
-    setFormData(prev => ({...prev, location: newLocation}));
-    
+    setFormData(prev => ({ ...prev, location: newLocation }));
+
     clearTimeout(geocodeTimeout); // Clear previous timeout
     if (newLocation.length > 5) { // Only geocode if the input is reasonably long
       geocodeTimeout = setTimeout(() => geocodeLocation(newLocation), 1000);
     } else {
       // Clear coordinates if location is too short or empty
-      setFormData(prev => ({...prev, latitude: null, longitude: null}));
+      setFormData(prev => ({ ...prev, latitude: null, longitude: null }));
     }
   };
 
@@ -152,7 +162,7 @@ export default function CreateItem() {
 
     setUploading(true);
     try {
-      const uploadPromises = files.map(file => 
+      const uploadPromises = files.map(file =>
         base44.integrations.Core.UploadFile({ file })
       );
       const results = await Promise.all(uploadPromises);
@@ -182,23 +192,20 @@ export default function CreateItem() {
       return;
     }
 
-    // If no coordinates are set, try to geocode the entered location before submission
     if (!formData.latitude || !formData.longitude) {
-      await geocodeLocation(formData.location); // This will update formData state
-      // We might need to wait for state update or use the immediately geocoded values
-      // For simplicity, let's assume geocodeLocation updates formData synchronously enough for the next line
-      // or that the item create call will read the latest state.
+      alert("Please ensure your location has valid coordinates");
+      return;
     }
 
     setLoading(true);
     try {
-      const user = await base44.auth.me();
+      // The user object is already available from the useEffect check
       await base44.entities.Item.create({
         ...formData,
         required_hours: parseFloat(formData.required_hours),
         estimated_value: parseFloat(formData.estimated_value) || 0,
-        offerer_id: user.id,
-        offerer_name: user.full_name,
+        offerer_id: user.id, // Use the user state
+        offerer_name: user.full_name, // Use the user state
         status: "active"
       });
       navigate(createPageUrl("MyListings"));
@@ -255,7 +262,7 @@ export default function CreateItem() {
                       </button>
                     </div>
                   ))}
-                  
+
                   {formData.photos.length < 5 && (
                     <label className="aspect-square border-2 border-dashed border-orange-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-orange-500 hover:bg-orange-50 transition-colors">
                       <input
@@ -286,7 +293,7 @@ export default function CreateItem() {
                   <Input
                     id="title"
                     value={formData.title}
-                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     placeholder="e.g., MacBook Pro 2020"
                     required
                     className="mt-2"
@@ -295,7 +302,7 @@ export default function CreateItem() {
 
                 <div>
                   <Label htmlFor="category">Category <span className="text-red-500">*</span></Label>
-                  <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
+                  <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
                     <SelectTrigger className="mt-2">
                       <SelectValue />
                     </SelectTrigger>
@@ -313,7 +320,7 @@ export default function CreateItem() {
 
                 <div>
                   <Label htmlFor="condition">Condition <span className="text-red-500">*</span></Label>
-                  <Select value={formData.condition} onValueChange={(value) => setFormData({...formData, condition: value})}>
+                  <Select value={formData.condition} onValueChange={(value) => setFormData({ ...formData, condition: value })}>
                     <SelectTrigger className="mt-2">
                       <SelectValue />
                     </SelectTrigger>
@@ -335,7 +342,7 @@ export default function CreateItem() {
                     min="1"
                     step="0.5"
                     value={formData.required_hours}
-                    onChange={(e) => setFormData({...formData, required_hours: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, required_hours: e.target.value })}
                     placeholder="e.g., 40"
                     required
                     className="mt-2"
@@ -381,7 +388,7 @@ export default function CreateItem() {
                     type="number"
                     min="0"
                     value={formData.estimated_value}
-                    onChange={(e) => setFormData({...formData, estimated_value: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, estimated_value: e.target.value })}
                     placeholder="e.g., 1200"
                     className="mt-2"
                   />
@@ -393,7 +400,7 @@ export default function CreateItem() {
                 <Textarea
                   id="description"
                   value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Detailed description of the item..."
                   rows={4}
                   required
@@ -406,7 +413,7 @@ export default function CreateItem() {
                 <Textarea
                   id="suggested_tasks"
                   value={formData.suggested_tasks}
-                  onChange={(e) => setFormData({...formData, suggested_tasks: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, suggested_tasks: e.target.value })}
                   placeholder="e.g., Clean garage, organize storage, help with moving..."
                   rows={3}
                   className="mt-2"
@@ -418,7 +425,7 @@ export default function CreateItem() {
                 <Textarea
                   id="offerer_terms"
                   value={formData.offerer_terms}
-                  onChange={(e) => setFormData({...formData, offerer_terms: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, offerer_terms: e.target.value })}
                   placeholder="e.g., Must pick up item in person, work must be completed within 2 weeks..."
                   rows={3}
                   className="mt-2"

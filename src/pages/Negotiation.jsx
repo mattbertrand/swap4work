@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -32,14 +33,16 @@ export default function Negotiation() {
     base44.auth.me().then(setUser).catch(() => setUser(null));
   }, []);
 
-  const { data: negotiation, isLoading: negLoading } = useQuery({
+  const { data: negotiation, isLoading: negLoading, error: negError } = useQuery({
     queryKey: ['negotiation', negotiationId],
     queryFn: async () => {
+      if (!negotiationId) return null;
       const results = await base44.entities.Negotiation.filter({ id: negotiationId });
-      return results[0];
+      return results[0] || null;
     },
     enabled: !!negotiationId,
-    refetchInterval: 3000
+    refetchInterval: 3000,
+    retry: 1
   });
 
   const { data: item } = useQuery({
@@ -316,13 +319,54 @@ export default function Negotiation() {
 
   // Memoize computed values to avoid recalculation
   const isOfferer = useMemo(() => user?.id === negotiation?.offerer_id, [user?.id, negotiation?.offerer_id]);
+  const isBidder = useMemo(() => user?.id === negotiation?.bidder_id, [user?.id, negotiation?.bidder_id]);
   const otherParty = useMemo(() => isOfferer ? negotiation?.bidder_name : negotiation?.offerer_name, [isOfferer, negotiation?.bidder_name, negotiation?.offerer_name]);
   const currentOfferHours = useMemo(() => negotiation?.counter_offer_hours || negotiation?.initial_offer_hours, [negotiation?.counter_offer_hours, negotiation?.initial_offer_hours]);
+
+  // Show error state for blank page issue
+  if (negError || (!negLoading && !negotiation && negotiationId)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="max-w-md w-full border-orange-100">
+          <CardContent className="p-8 text-center">
+            <AlertTriangle className="w-16 h-16 text-orange-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Negotiation Not Found</h2>
+            <p className="text-gray-600 mb-6">
+              This negotiation doesn't exist or you don't have permission to view it.
+            </p>
+            <Button onClick={() => navigate(createPageUrl("Browse"))} className="w-full">
+              Browse Items
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (negLoading || !user || !negotiation || !item) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+      </div>
+    );
+  }
+
+  // Check if user has access to this negotiation
+  if (!isOfferer && !isBidder) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="max-w-md w-full border-orange-100">
+          <CardContent className="p-8 text-center">
+            <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
+            <p className="text-gray-600 mb-6">
+              You don't have permission to view this negotiation.
+            </p>
+            <Button onClick={() => navigate(createPageUrl("Browse"))} className="w-full">
+              Browse Items
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
