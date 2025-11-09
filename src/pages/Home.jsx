@@ -1,3 +1,4 @@
+
 import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -50,12 +51,12 @@ export default function Home() {
 
   // Filter workers (people offering services) with distance calculation
   const workers = React.useMemo(() => {
+    // Filter workers who have completed profiles with required data
     const potentialWorkers = allUsers.filter(u => 
-      ['worker', 'both'].includes(u.user_role) && 
-      u.skills && 
       u.profile_completed &&
       u.latitude && 
-      u.longitude
+      u.longitude &&
+      u.skills
     );
 
     // If user has location, filter by distance and add distance to each worker
@@ -75,9 +76,9 @@ export default function Home() {
         .slice(0, 6);
     }
 
-    // If no user location, just return first 6 workers
+    // If no user location, just return first 6 workers without distance
     return potentialWorkers.slice(0, 6);
-  }, [allUsers, user]);
+  }, [allUsers, user?.latitude, user?.longitude]);
 
   return (
     <div className="min-h-screen">
@@ -250,13 +251,18 @@ export default function Home() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              Skilled Workers {user?.location ? 'Near You' : 'in Your Area'}
+              Skilled Workers {user?.latitude && user?.longitude ? 'Near You' : 'in Your Area'}
             </h2>
             <p className="text-gray-600">
-              {user?.location 
+              {user?.latitude && user?.longitude
                 ? `Talented individuals within 100 miles offering their services` 
                 : 'Connect with talented individuals offering their services'}
             </p>
+            {!user && (
+              <p className="text-sm text-orange-600 mt-2">
+                Sign in and complete your profile to see workers near you
+              </p>
+            )}
           </div>
 
           {usersLoading ? (
@@ -268,8 +274,25 @@ export default function Home() {
           ) : workers.length === 0 ? (
             <div className="text-center py-16">
               <Users className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No workers found nearby</h3>
-              <p className="text-gray-500">Check back soon as more people join the community</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {user?.latitude && user?.longitude 
+                  ? 'No workers found within 100 miles'
+                  : 'No worker profiles available yet'
+                }
+              </h3>
+              <p className="text-gray-500 mb-4">
+                {user?.latitude && user?.longitude
+                  ? 'Try browsing items or check back soon as more people join the community'
+                  : 'Complete your profile to see workers in your area'
+                }
+              </p>
+              {!user?.profile_completed && user && (
+                <Link to={createPageUrl("Profile")}>
+                  <Button className="bg-orange-600 hover:bg-orange-700">
+                    Complete Your Profile
+                  </Button>
+                </Link>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -309,7 +332,7 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">{worker.bio}</p>
+                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">{worker.bio || 'No bio available'}</p>
 
                     <div className="mb-4">
                       <div className="flex flex-wrap gap-1">
@@ -325,14 +348,14 @@ export default function Home() {
                       <div className="text-center">
                         <div className="flex items-center justify-center gap-1 text-orange-600 mb-1">
                           <Clock className="w-4 h-4" />
-                          <span className="text-lg font-bold">{worker.hours_completed}</span>
+                          <span className="text-lg font-bold">{worker.hours_completed || 0}</span>
                         </div>
                         <span className="text-xs text-gray-500">Hours Worked</span>
                       </div>
                       <div className="text-center">
                         <div className="flex items-center justify-center gap-1 text-blue-600 mb-1">
                           <Star className="w-4 h-4" />
-                          <span className="text-lg font-bold">{worker.total_ratings}</span>
+                          <span className="text-lg font-bold">{worker.total_ratings || 0}</span>
                         </div>
                         <span className="text-xs text-gray-500">Reviews</span>
                       </div>

@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -140,7 +141,7 @@ export default function Layout({ children, currentPageName }) {
                         }`}
                       >
                         <Link to={item.url} className="flex items-center gap-3 px-4 py-3">
-                          <item.icon className="w-5 h-5" />
+                          <item.icon className="w-5 h-5 flex-shrink-0" />
                           <span className="font-medium">{item.title}</span>
                         </Link>
                       </SidebarMenuButton>
@@ -151,10 +152,10 @@ export default function Layout({ children, currentPageName }) {
             </SidebarGroup>
 
             <div className="px-4 py-6">
-              <Link to={createPageUrl("CreateItem")}>
+              <Link to={createPageUrl("CreateItem")} className="block">
                 <button className="w-full bg-gradient-to-r from-orange-500 to-amber-600 text-white font-semibold py-3 px-4 rounded-xl hover:from-orange-600 hover:to-amber-700 transition-all shadow-md flex items-center justify-center gap-2">
-                  <Plus className="w-5 h-5" />
-                  List an Item
+                  <Plus className="w-5 h-5 flex-shrink-0" />
+                  <span className="font-semibold">List an Item</span>
                 </button>
               </Link>
             </div>
