@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -22,7 +22,8 @@ export default function Negotiation() {
   const [user, setUser] = useState(null);
   const [message, setMessage] = useState("");
   const [showCounterModal, setShowCounterModal] = useState(false);
-  const [showAgreementDraft, setShowAgreementDraft] = useState(false);
+  const [hasConfirmed, setHasConfirmed] = useState(false);
+  const [otherConfirmed, setOtherConfirmed] = useState(false);
 
   const urlParams = new URLSearchParams(window.location.search);
   const negotiationId = urlParams.get('id');
@@ -85,7 +86,7 @@ export default function Negotiation() {
 
   // Check if negotiation expired (48h inactive)
   useEffect(() => {
-    if (negotiation && negotiation.status === 'active') {
+    if (negotiation && negotiation.status === 'active' && negotiation.expires_at) {
       const expiresAt = new Date(negotiation.expires_at);
       if (expiresAt < new Date()) {
         updateNegotiationMutation.mutate({
@@ -94,7 +95,27 @@ export default function Negotiation() {
         });
       }
     }
-  }, [negotiation]);
+  }, [negotiation?.status, negotiation?.expires_at, negotiationId]);
+
+  // Check for existing agreement confirmations - move outside of render
+  useEffect(() => {
+    const checkConfirmations = async () => {
+      if (negotiation?.status === 'accepted' && negotiation?.item_id && user?.id) {
+        const agreements = await base44.entities.Agreement.filter({ 
+          item_id: negotiation.item_id,
+          status: 'proposed'
+        });
+        
+        if (agreements[0]) {
+          const isOfferer = user.id === negotiation.offerer_id;
+          setHasConfirmed(isOfferer ? agreements[0].offerer_agreed : agreements[0].worker_agreed);
+          setOtherConfirmed(isOfferer ? agreements[0].worker_agreed : agreements[0].offerer_agreed);
+        }
+      }
+    };
+    
+    checkConfirmations();
+  }, [negotiation?.status, negotiation?.item_id, negotiation?.offerer_id, user?.id]);
 
   const updateLastActivity = async () => {
     const now = new Date().toISOString();
@@ -181,8 +202,6 @@ export default function Negotiation() {
       }
     });
 
-    setShowAgreementDraft(true);
-
     // Send system message
     const otherUserId = user.id === negotiation.bidder_id ? negotiation.offerer_id : negotiation.bidder_id;
     await sendMessageMutation.mutateAsync({
@@ -210,7 +229,6 @@ export default function Negotiation() {
     if (!user || !negotiation) return;
 
     const isOfferer = user.id === negotiation.offerer_id;
-    const confirmField = isOfferer ? 'offerer_confirmed' : 'bidder_confirmed';
 
     // Check if agreement already exists
     const existingAgreements = await base44.entities.Agreement.filter({ 
@@ -237,7 +255,9 @@ export default function Negotiation() {
       });
     } else {
       // Update existing agreement
-      const updateData = { [confirmField]: true };
+      const updateData = isOfferer 
+        ? { offerer_agreed: true }
+        : { worker_agreed: true };
       await base44.entities.Agreement.update(agreement.id, updateData);
       
       // Refresh agreement data
@@ -275,6 +295,9 @@ export default function Negotiation() {
       setTimeout(() => {
         navigate(createPageUrl(`TimeTracking?agreementId=${agreement.id}`));
       }, 2000);
+    } else {
+      // Update local state to show confirmation
+      setHasConfirmed(true);
     }
   };
 
@@ -291,6 +314,11 @@ export default function Negotiation() {
     });
   };
 
+  // Memoize computed values to avoid recalculation
+  const isOfferer = useMemo(() => user?.id === negotiation?.offerer_id, [user?.id, negotiation?.offerer_id]);
+  const otherParty = useMemo(() => isOfferer ? negotiation?.bidder_name : negotiation?.offerer_name, [isOfferer, negotiation?.bidder_name, negotiation?.offerer_name]);
+  const currentOfferHours = useMemo(() => negotiation?.counter_offer_hours || negotiation?.initial_offer_hours, [negotiation?.counter_offer_hours, negotiation?.initial_offer_hours]);
+
   if (negLoading || !user || !negotiation || !item) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -299,46 +327,16 @@ export default function Negotiation() {
     );
   }
 
-  const isOfferer = user.id === negotiation.offerer_id;
-  const isBidder = user.id === negotiation.bidder_id;
-  const otherParty = isOfferer ? negotiation.bidder_name : negotiation.offerer_name;
-  const currentOfferHours = negotiation.counter_offer_hours || negotiation.initial_offer_hours;
-  const currentOfferBy = negotiation.current_offer_by;
-  const isMyTurn = currentOfferBy && currentOfferBy !== user.id;
-  const latestOffer = negotiation.offer_history?.[negotiation.offer_history.length - 1];
-
-  // Check for existing agreement confirmations
-  const [hasConfirmed, setHasConfirmed] = useState(false);
-  const [otherConfirmed, setOtherConfirmed] = useState(false);
-
-  useEffect(() => {
-    const checkConfirmations = async () => {
-      if (negotiation.status === 'accepted') {
-        const agreements = await base44.entities.Agreement.filter({ 
-          item_id: negotiation.item_id,
-          status: 'proposed'
-        });
-        
-        if (agreements[0]) {
-          setHasConfirmed(isOfferer ? agreements[0].offerer_agreed : agreements[0].worker_agreed);
-          setOtherConfirmed(isOfferer ? agreements[0].worker_agreed : agreements[0].offerer_agreed);
-        }
-      }
-    };
-    
-    checkConfirmations();
-  }, [negotiation, isOfferer]);
-
   return (
     <div className="min-h-screen p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
         <Button
           variant="ghost"
-          onClick={() => navigate(createPageUrl("Browse"))}
+          onClick={() => navigate(-1)}
           className="mb-6 hover:bg-orange-100"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Browse
+          Back
         </Button>
 
         <Card className="border-orange-100 shadow-xl mb-6">
@@ -517,7 +515,7 @@ export default function Negotiation() {
         open={showCounterModal}
         onClose={() => setShowCounterModal(false)}
         currentOffer={currentOfferHours}
-        suggestedHours={[item.required_hours - 2, item.required_hours + 2]}
+        suggestedHours={item ? [item.required_hours - 2, item.required_hours + 2] : null}
         onSubmit={handleCounterOffer}
       />
     </div>
