@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -20,8 +21,20 @@ export default function MyAgreements() {
   const { data: agreements = [], isLoading } = useQuery({
     queryKey: ['myAgreements', user?.id],
     queryFn: async () => {
-      const results = await base44.entities.Agreement.filter({ worker_id: user.id }, '-updated_date');
-      return results;
+      if (!user) return [];
+      // Get both agreements where user is worker AND offerer
+      const [asWorker, asOfferer] = await Promise.all([
+        base44.entities.Agreement.filter({ worker_id: user.id }, '-updated_date'),
+        base44.entities.Agreement.filter({ offerer_id: user.id }, '-updated_date')
+      ]);
+      
+      // Combine and deduplicate by ID
+      const allAgreements = [...asWorker, ...asOfferer];
+      const uniqueAgreements = Array.from(
+        new Map(allAgreements.map(a => [a.id, a])).values()
+      );
+      
+      return uniqueAgreements;
     },
     enabled: !!user
   });
@@ -180,7 +193,7 @@ export default function MyAgreements() {
           </Card>
         </div>
 
-        <Tabs defaultValue="active" className="w-full">
+        <Tabs defaultValue="proposed" className="w-full">
           <TabsList className="mb-6">
             <TabsTrigger value="proposed">Proposed ({proposedAgreements.length})</TabsTrigger>
             <TabsTrigger value="active">Active ({activeAgreements.length})</TabsTrigger>

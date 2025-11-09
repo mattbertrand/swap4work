@@ -194,7 +194,10 @@ export default function Layout({ children, currentPageName }) {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={() => base44.auth.logout()}
+                    onClick={() => {
+                      // Clear session and redirect to home
+                      base44.auth.logout(createPageUrl("Home"));
+                    }}
                     className="text-red-600 focus:text-red-600 cursor-pointer"
                   >
                     <LogOut className="w-4 h-4 mr-2" />

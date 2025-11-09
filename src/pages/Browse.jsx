@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -50,6 +51,20 @@ export default function Browse() {
   const { data: items = [], isLoading } = useQuery({
     queryKey: ['items', sortBy],
     queryFn: () => base44.entities.Item.filter({ status: "active" }, sortBy),
+  });
+
+  // Fetch user's agreements for status indicators
+  const { data: userAgreements = [] } = useQuery({
+    queryKey: ['userAgreements', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const [asWorker, asOfferer] = await Promise.all([
+        base44.entities.Agreement.filter({ worker_id: user.id }),
+        base44.entities.Agreement.filter({ offerer_id: user.id })
+      ]);
+      return [...asWorker, ...asOfferer];
+    },
+    enabled: !!user
   });
 
   const handleSearch = () => {
@@ -359,7 +374,12 @@ export default function Browse() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredItems.map((item) => (
-              <ItemCard key={item.id} item={item} showDistance={useLocation && userLocation} />
+              <ItemCard 
+                key={item.id} 
+                item={item} 
+                showDistance={useLocation && userLocation} 
+                userAgreements={userAgreements}
+              />
             ))}
           </div>
         )}

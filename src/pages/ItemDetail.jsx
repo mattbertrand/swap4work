@@ -50,14 +50,8 @@ export default function ItemDetail() {
     enabled: !!itemId
   });
 
-  const { data: offerer } = useQuery({
-    queryKey: ['user', item?.offerer_id],
-    queryFn: async () => {
-      const users = await base44.entities.User.filter({ id: item.offerer_id });
-      return users[0];
-    },
-    enabled: !!item?.offerer_id
-  });
+  // REMOVED: offerer query to fix 403 error
+  // We'll use denormalized data from item.offerer_name instead
 
   // Check existing negotiations for this item
   const { data: activeNegotiations = [] } = useQuery({
@@ -461,43 +455,31 @@ export default function ItemDetail() {
                   </div>
                 )}
 
-                {/* Offerer Info */}
-                {offerer && (
-                  <Card className="bg-gray-50 border-gray-200">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        {offerer.photo_url ? (
-                          <img
-                            src={offerer.photo_url}
-                            alt={offerer.full_name}
-                            className="w-12 h-12 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-amber-500 rounded-full flex items-center justify-center">
-                            <span className="text-white font-bold text-lg">
-                              {offerer.full_name?.[0]?.toUpperCase()}
-                            </span>
-                          </div>
-                        )}
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="font-semibold text-gray-900">{offerer.full_name}</p>
-                            {offerer.id_verified && (
-                              <CheckCircle2 className="w-4 h-4 text-blue-500" />
-                            )}
-                          </div>
-                          {offerer.rating > 0 && (
-                            <div className="flex items-center gap-1">
-                              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                              <span className="text-sm font-medium">{offerer.rating.toFixed(1)}</span>
-                              <span className="text-sm text-gray-500">({offerer.total_ratings})</span>
-                            </div>
-                          )}
+                {/* Offerer Info - USING DENORMALIZED DATA */}
+                <Card className="bg-gray-50 border-gray-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      {/* Assuming item.offerer_photo_url might exist, if not, default to initial */}
+                      {item.offerer_photo_url ? (
+                        <img
+                          src={item.offerer_photo_url}
+                          alt={item.offerer_name}
+                          className="w-12 h-12 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-amber-500 rounded-full flex items-center justify-center">
+                          <span className="text-white font-bold text-lg">
+                            {item.offerer_name?.[0]?.toUpperCase()}
+                          </span>
                         </div>
+                      )}
+                      <div className="flex-1">
+                        <p className="font-semibold text-gray-900">{item.offerer_name}</p>
+                        <p className="text-xs text-gray-500">Item Owner</p>
                       </div>
-                    </CardContent>
-                  </Card>
-                )}
+                    </div>
+                  </CardContent>
+                </Card>
 
                 {/* Action Buttons */}
                 {!isOwner && (

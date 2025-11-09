@@ -1,11 +1,40 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { MapPin, Clock, Star, CheckCircle2 } from "lucide-react";
+import { MapPin, Clock, CheckCircle2, AlertCircle, Package } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
-export default function ItemCard({ item, showDistance }) {
+export default function ItemCard({ item, showDistance, userAgreements = [] }) {
+  // Find agreement related to this item
+  const relatedAgreement = userAgreements.find(a => a.item_id === item.id);
+  
+  // Determine negotiation status badge
+  const getNegotiationBadge = () => {
+    if (!relatedAgreement) return null;
+    
+    const statusConfig = {
+      proposed: { color: 'bg-yellow-500', icon: AlertCircle, label: 'Pending' },
+      locked: { color: 'bg-blue-500', icon: Clock, label: 'In Progress' },
+      in_progress: { color: 'bg-purple-500', icon: Clock, label: 'In Progress' },
+      completed: { color: 'bg-green-500', icon: CheckCircle2, label: 'Completed' },
+      cancelled: { color: 'bg-red-500', icon: AlertCircle, label: 'Failed' },
+      disputed: { color: 'bg-red-500', icon: AlertCircle, label: 'Disputed' }
+    };
+    
+    const config = statusConfig[relatedAgreement.status];
+    if (!config) return null;
+    
+    const Icon = config.icon;
+    
+    return (
+      <div className={`absolute top-3 left-3 ${config.color} text-white px-2 py-1 rounded-lg shadow-lg flex items-center gap-1 text-xs font-semibold`}>
+        <Icon className="w-3 h-3" />
+        {config.label}
+      </div>
+    );
+  };
+
   return (
     <Link to={createPageUrl(`ItemDetail?id=${item.id}`)}>
       <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border-orange-100 bg-white">
@@ -18,14 +47,23 @@ export default function ItemCard({ item, showDistance }) {
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-100 to-amber-100">
-              <Clock className="w-16 h-16 text-orange-300" />
+              <Package className="w-16 h-16 text-orange-300" />
             </div>
           )}
-          <div className="absolute top-3 left-3">
-            <Badge className="bg-white/90 text-gray-900 border-0 shadow-md">
-              {item.category}
-            </Badge>
-          </div>
+          
+          {/* Negotiation Status Badge */}
+          {getNegotiationBadge()}
+          
+          {/* Category Badge */}
+          {!relatedAgreement && (
+            <div className="absolute top-3 left-3">
+              <Badge className="bg-white/90 text-gray-900 border-0 shadow-md">
+                {item.category}
+              </Badge>
+            </div>
+          )}
+          
+          {/* Condition Badge */}
           {item.condition && (
             <div className="absolute top-3 right-3">
               <Badge className="bg-green-500 text-white border-0 shadow-md">
@@ -33,6 +71,8 @@ export default function ItemCard({ item, showDistance }) {
               </Badge>
             </div>
           )}
+          
+          {/* Distance Badge */}
           {showDistance && item.distance && (
             <div className="absolute bottom-3 right-3">
               <Badge className="bg-orange-500 text-white border-0 shadow-md">
