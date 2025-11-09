@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -8,19 +7,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Star, CheckCircle2, Clock, Package, LogOut } from "lucide-react";
-import { format } from "date-fns"; // Added this import for date formatting
-import KarmaDisplay from "../components/profile/KarmaDisplay"; // Added this import
+import { Camera, Star, CheckCircle2, Clock, Package, LogOut, MapPin, Loader2 } from "lucide-react";
+import { format } from "date-fns";
+import KarmaDisplay from "../components/profile/KarmaDisplay";
 
 export default function Profile() {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [gettingLocation, setGettingLocation] = useState(false);
   const [formData, setFormData] = useState({
     full_name: "",
     phone: "",
     location: "",
+    latitude: null,
+    longitude: null,
     bio: "",
     skills: ""
   });
@@ -32,6 +34,8 @@ export default function Profile() {
         full_name: userData.full_name || "",
         phone: userData.phone || "",
         location: userData.location || "",
+        latitude: userData.latitude || null,
+        longitude: userData.longitude || null,
         bio: userData.bio || "",
         skills: userData.skills || ""
       });
@@ -63,17 +67,109 @@ export default function Profile() {
   const updateProfileMutation = useMutation({
     mutationFn: (data) => base44.auth.updateMe(data),
     onSuccess: async (updatedUserData) => {
-      // The updatedUserData is directly returned by updateMe if successful,
-      // so we can use it to update the state without an extra `me()` call.
       setUser(updatedUserData); 
       setIsEditing(false);
-      queryClient.invalidateQueries(['user', updatedUserData.id]); // Invalidate with the new user data's ID
+      queryClient.invalidateQueries(['user', updatedUserData.id]);
     },
     onError: (error) => {
       console.error("Error updating profile:", error);
-      // Optionally handle error, e.g., show a toast notification
     }
   });
+
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setGettingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        try {
+          // Use Nominatim OpenStreetMap for reverse geocoding
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+          const data = await response.json();
+          const location = `${data.address.city || data.address.town || data.address.village || ''}, ${data.address.state || ''} ${data.address.postcode || ''}`.trim();
+          
+          setFormData(prev => ({
+            ...prev,
+            location: location,
+            latitude,
+            longitude
+          }));
+        } catch (error) {
+          console.error("Error getting address:", error);
+          // If reverse geocoding fails, at least save the coordinates
+          setFormData(prev => ({
+            ...prev,
+            latitude,
+            longitude
+          }));
+          alert("Could not determine address from coordinates, but location data is saved.");
+        }
+        setGettingLocation(false);
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        alert("Unable to get your current location. Please enter it manually.");
+        setGettingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
+  };
+
+  let geocodeTimeout;
+  const geocodeLocation = async (locationString) => {
+    if (!locationString || locationString.length < 5) return;
+    
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationString)}&limit=1`
+      );
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        setFormData(prev => ({
+          ...prev,
+          latitude: parseFloat(data[0].lat),
+          longitude: parseFloat(data[0].lon)
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          latitude: null,
+          longitude: null
+        }));
+      }
+    } catch (error) {
+      console.error("Error geocoding location:", error);
+      setFormData(prev => ({
+        ...prev,
+        latitude: null,
+        longitude: null
+      }));
+    }
+  };
+
+  const handleLocationChange = (e) => {
+    const newLocation = e.target.value;
+    setFormData(prev => ({...prev, location: newLocation}));
+    
+    clearTimeout(geocodeTimeout);
+    if (newLocation.length > 5) {
+      geocodeTimeout = setTimeout(() => geocodeLocation(newLocation), 1000);
+    } else {
+      setFormData(prev => ({...prev, latitude: null, longitude: null}));
+    }
+  };
 
   const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
@@ -91,8 +187,7 @@ export default function Profile() {
   };
 
   const handleSave = async () => {
-    // Check if basic required fields are filled
-    const profileComplete = !!(formData.location && formData.phone);
+    const profileComplete = !!(formData.location && formData.phone && formData.latitude && formData.longitude);
     
     await updateProfileMutation.mutateAsync({
       ...formData,
@@ -272,14 +367,41 @@ export default function Profile() {
 
                   <div>
                     <Label htmlFor="location">Location</Label>
-                    <Input
-                      id="location"
-                      value={formData.location}
-                      onChange={(e) => setFormData({...formData, location: e.target.value})}
-                      placeholder="City, State or ZIP"
-                      disabled={!isEditing}
-                      className="mt-2"
-                    />
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        id="location"
+                        value={formData.location}
+                        onChange={handleLocationChange}
+                        placeholder="City, State or ZIP"
+                        disabled={!isEditing}
+                        className="flex-1"
+                      />
+                      {isEditing && (
+                        <Button
+                          type="button"
+                          onClick={getCurrentLocation}
+                          disabled={gettingLocation}
+                          variant="outline"
+                          className="whitespace-nowrap"
+                        >
+                          {gettingLocation ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <MapPin className="w-4 h-4" />
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                    {formData.latitude && formData.longitude ? (
+                      <p className="text-xs text-green-600 mt-1 flex items-center">
+                        <MapPin className="w-3 h-3 mr-1" /> 
+                        Coordinates verified ({formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)})
+                      </p>
+                    ) : (
+                      formData.location && isEditing && (
+                        <p className="text-xs text-amber-600 mt-1">Geocoding location...</p>
+                      )
+                    )}
                   </div>
 
                   <div>

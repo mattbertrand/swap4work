@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -18,7 +19,7 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 3959; // Earth's radius in miles
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
+  const a =
     Math.sin(dLat/2) * Math.sin(dLat/2) +
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
     Math.sin(dLon/2) * Math.sin(dLon/2);
@@ -32,7 +33,7 @@ export default function ItemDetail() {
   const [userLocation, setUserLocation] = useState(null);
   const [locationError, setLocationError] = useState(null);
   const [gettingLocation, setGettingLocation] = useState(false);
-  
+
   const urlParams = new URLSearchParams(window.location.search);
   const itemId = urlParams.get('id');
 
@@ -62,7 +63,7 @@ export default function ItemDetail() {
   const { data: activeNegotiations = [] } = useQuery({
     queryKey: ['negotiations', itemId],
     queryFn: async () => {
-      const negotiations = await base44.entities.Negotiation.filter({ 
+      const negotiations = await base44.entities.Negotiation.filter({
         item_id: itemId,
         status: { $in: ['active', 'accepted'] }
       });
@@ -75,7 +76,7 @@ export default function ItemDetail() {
   const userNegotiation = user ? activeNegotiations.find(n => n.bidder_id === user.id) : null;
 
   // Calculate distance if both user and item have coordinates
-  const distance = userLocation && item?.latitude && item?.longitude 
+  const distance = userLocation && item?.latitude && item?.longitude
     ? calculateDistance(userLocation.lat, userLocation.lng, item.latitude, item.longitude)
     : null;
 
@@ -152,9 +153,23 @@ export default function ItemDetail() {
       }
     }
 
+    // Check if item has coordinates
+    if (!item.latitude || !item.longitude) {
+      setLocationError("This item doesn't have location coordinates. Cannot verify distance.");
+      return;
+    }
+
+    // Calculate distance
+    const calculatedDistance = calculateDistance(
+      currentLocation.lat,
+      currentLocation.lng,
+      item.latitude,
+      item.longitude
+    );
+
     // Check distance
-    if (!isWithinRange) {
-      setLocationError(`This item is ${distance?.toFixed(1)} miles away. You must be within 50 miles to start a negotiation.`);
+    if (calculatedDistance > 50) {
+      setLocationError(`This item is ${calculatedDistance.toFixed(1)} miles away. You must be within 50 miles to start a negotiation.`);
       return;
     }
 
@@ -228,8 +243,20 @@ export default function ItemDetail() {
       }
     }
 
-    if (!isWithinRange) {
-      setLocationError(`This item is ${distance?.toFixed(1)} miles away. You must be within 50 miles to request an inspection.`);
+    if (!item.latitude || !item.longitude) {
+      setLocationError("This item doesn't have location coordinates. Cannot verify distance.");
+      return;
+    }
+
+    const calculatedDistance = calculateDistance(
+      currentLocation.lat,
+      currentLocation.lng,
+      item.latitude,
+      item.longitude
+    );
+
+    if (calculatedDistance > 50) {
+      setLocationError(`This item is ${calculatedDistance.toFixed(1)} miles away. You must be within 50 miles to request an inspection.`);
       return;
     }
 
