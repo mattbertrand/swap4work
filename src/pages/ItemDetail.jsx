@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -7,15 +6,33 @@ import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   ArrowLeft, Clock, MapPin, Star, CheckCircle2,
-  AlertCircle, MessageSquare, Eye, User
+  AlertCircle, MessageSquare, Eye, User, Crosshair
 } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+
+// Calculate distance between two coordinates
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 3959; // Earth's radius in miles
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+};
 
 export default function ItemDetail() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
+  const [locationError, setLocationError] = useState(null);
+  const [gettingLocation, setGettingLocation] = useState(false);
+  
   const urlParams = new URLSearchParams(window.location.search);
   const itemId = urlParams.get('id');
 
@@ -57,6 +74,61 @@ export default function ItemDetail() {
   // Check if user already has a negotiation for this item
   const userNegotiation = user ? activeNegotiations.find(n => n.bidder_id === user.id) : null;
 
+  // Calculate distance if both user and item have coordinates
+  const distance = userLocation && item?.latitude && item?.longitude 
+    ? calculateDistance(userLocation.lat, userLocation.lng, item.latitude, item.longitude)
+    : null;
+
+  const isWithinRange = distance !== null && distance <= 50;
+
+  const getUserLocation = () => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error("Geolocation is not supported by your browser"));
+        return;
+      }
+
+      setGettingLocation(true);
+      setLocationError(null);
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const location = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          setUserLocation(location);
+          setGettingLocation(false);
+          resolve(location);
+        },
+        (error) => {
+          setGettingLocation(false);
+          let errorMessage = "Unable to get your location. ";
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage += "Please enable location permissions in your browser.";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage += "Location information is unavailable.";
+              break;
+            case error.TIMEOUT:
+              errorMessage += "Location request timed out.";
+              break;
+            default:
+              errorMessage += "An unknown error occurred.";
+          }
+          setLocationError(errorMessage);
+          reject(new Error(errorMessage));
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    });
+  };
+
   const handleStartNegotiation = async () => {
     if (!user) {
       base44.auth.redirectToLogin(window.location.pathname + window.location.search);
@@ -67,6 +139,22 @@ export default function ItemDetail() {
     if (!user.profile_completed || !user.location || !user.phone) {
       const currentUrl = window.location.pathname + window.location.search;
       navigate(createPageUrl(`CompleteProfile?returnUrl=${encodeURIComponent(currentUrl)}`));
+      return;
+    }
+
+    // Get user location if not already obtained
+    let currentLocation = userLocation;
+    if (!currentLocation) {
+      try {
+        currentLocation = await getUserLocation();
+      } catch (error) {
+        return; // Error already set in state
+      }
+    }
+
+    // Check distance
+    if (!isWithinRange) {
+      setLocationError(`This item is ${distance?.toFixed(1)} miles away. You must be within 50 miles to start a negotiation.`);
       return;
     }
 
@@ -130,7 +218,22 @@ export default function ItemDetail() {
       return;
     }
 
-    // Create negotiation first if not exists
+    // Get location for inspection request too
+    let currentLocation = userLocation;
+    if (!currentLocation) {
+      try {
+        currentLocation = await getUserLocation();
+      } catch (error) {
+        return;
+      }
+    }
+
+    if (!isWithinRange) {
+      setLocationError(`This item is ${distance?.toFixed(1)} miles away. You must be within 50 miles to request an inspection.`);
+      return;
+    }
+
+    // Create negotiation first
     if (userNegotiation) {
       navigate(createPageUrl(`Negotiation?id=${userNegotiation.id}`));
       return;
@@ -143,7 +246,7 @@ export default function ItemDetail() {
       offerer_name: item.offerer_name,
       bidder_id: user.id,
       bidder_name: user.full_name,
-      initial_offer_hours: item.required_hours, // Still need initial hours for negotiation creation
+      initial_offer_hours: item.required_hours,
       status: "active",
       current_offer_by: user.id,
       last_activity: new Date().toISOString(),
@@ -292,7 +395,35 @@ export default function ItemDetail() {
                     <MapPin className="w-5 h-5 text-gray-400" />
                     <span>{item.location}</span>
                   </div>
+                  {distance !== null && (
+                    <div className="flex items-center gap-3 text-gray-700">
+                      <Crosshair className="w-5 h-5 text-gray-400" />
+                      <span className={isWithinRange ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
+                        {distance.toFixed(1)} miles away {isWithinRange ? "✓" : "(Too far)"}
+                      </span>
+                    </div>
+                  )}
                 </div>
+
+                {/* Location verification banner */}
+                {!isOwner && !userNegotiation && !userLocation && (
+                  <Alert className="bg-blue-50 border-blue-200">
+                    <Crosshair className="w-4 h-4 text-blue-600" />
+                    <AlertDescription className="text-blue-900 text-sm">
+                      📍 You'll need to verify your location (within 50 miles) to start negotiating for this item.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {/* Location error */}
+                {locationError && (
+                  <Alert className="bg-red-50 border-red-200">
+                    <AlertCircle className="w-4 h-4 text-red-600" />
+                    <AlertDescription className="text-red-900 text-sm">
+                      {locationError}
+                    </AlertDescription>
+                  </Alert>
+                )}
 
                 {/* Active Negotiations Badge */}
                 {activeNegotiations.length > 0 && !isOwner && (
@@ -308,11 +439,19 @@ export default function ItemDetail() {
                   <Card className="bg-gray-50 border-gray-200">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-amber-500 rounded-full flex items-center justify-center">
-                          <span className="text-white font-bold text-lg">
-                            {offerer.full_name?.[0]?.toUpperCase()}
-                          </span>
-                        </div>
+                        {offerer.photo_url ? (
+                          <img
+                            src={offerer.photo_url}
+                            alt={offerer.full_name}
+                            className="w-12 h-12 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-amber-500 rounded-full flex items-center justify-center">
+                            <span className="text-white font-bold text-lg">
+                              {offerer.full_name?.[0]?.toUpperCase()}
+                            </span>
+                          </div>
+                        )}
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <p className="font-semibold text-gray-900">{offerer.full_name}</p>
@@ -348,15 +487,24 @@ export default function ItemDetail() {
                       <>
                         <Button
                           onClick={handleStartNegotiation}
-                          disabled={activeNegotiations.length >= 3}
+                          disabled={activeNegotiations.length >= 3 || gettingLocation}
                           className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"
                         >
-                          <MessageSquare className="w-5 h-5 mr-2" />
-                          {activeNegotiations.length >= 3 ? 'Negotiation Limit Reached' : 'Start Negotiation'}
+                          {gettingLocation ? (
+                            <>
+                              <Crosshair className="w-5 h-5 mr-2 animate-spin" />
+                              Verifying Location...
+                            </>
+                          ) : (
+                            <>
+                              <MessageSquare className="w-5 h-5 mr-2" />
+                              {activeNegotiations.length >= 3 ? 'Negotiation Limit Reached' : 'Start Negotiation'}
+                            </>
+                          )}
                         </Button>
                         <Button
                           onClick={handleRequestInspection}
-                          disabled={activeNegotiations.length >= 3}
+                          disabled={activeNegotiations.length >= 3 || gettingLocation}
                           variant="outline"
                           className="w-full h-12"
                         >
