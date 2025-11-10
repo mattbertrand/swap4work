@@ -207,8 +207,21 @@ export default function ItemDetail() {
       from_user_id: user.id,
       from_user_name: "System",
       to_user_id: item.offerer_id,
-      text: `You started a negotiation for ${item.title}. The initial offer is ${item.required_hours} hours of work.`,
+      text: `${user.full_name} started a negotiation for ${item.title}. The initial offer is ${item.required_hours} hours of work.`,
       message_type: "system"
+    });
+
+    // Create notification for item owner
+    await base44.entities.Notification.create({
+      user_id: item.offerer_id,
+      type: 'new_negotiation',
+      title: 'New negotiation started',
+      message: `${user.full_name} wants to trade work for your ${item.title}`,
+      related_id: negotiation.id,
+      related_type: 'negotiation',
+      link_url: createPageUrl(`Negotiation?id=${negotiation.id}`),
+      from_user_id: user.id,
+      from_user_name: user.full_name
     });
 
     navigate(createPageUrl(`Negotiation?id=${negotiation.id}`));

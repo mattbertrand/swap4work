@@ -56,7 +56,9 @@ export default function Negotiation() {
 
   const { data: messages = [] } = useQuery({
     queryKey: ['messages', negotiationId],
-    queryFn: () => base44.entities.Message.filter({ negotiation_id: negotiationId }, 'created_date'),
+    queryFn: () => base44.entities.Message.filter({
+      negotiation_id: negotiationId
+    }, 'created_date'),
     enabled: !!negotiationId,
     refetchInterval: 3000
   });
@@ -83,6 +85,10 @@ export default function Negotiation() {
     }
   });
 
+  const createNotificationMutation = useMutation({
+    mutationFn: (data) => base44.entities.Notification.create(data),
+  });
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -104,11 +110,11 @@ export default function Negotiation() {
   useEffect(() => {
     const checkConfirmations = async () => {
       if (negotiation?.status === 'accepted' && negotiation?.item_id && user?.id) {
-        const agreements = await base44.entities.Agreement.filter({ 
+        const agreements = await base44.entities.Agreement.filter({
           item_id: negotiation.item_id,
           status: 'proposed'
         });
-        
+
         if (agreements[0]) {
           const isOfferer = user.id === negotiation.offerer_id;
           setHasConfirmed(isOfferer ? agreements[0].offerer_agreed : agreements[0].worker_agreed);
@@ -116,14 +122,14 @@ export default function Negotiation() {
         }
       }
     };
-    
+
     checkConfirmations();
   }, [negotiation?.status, negotiation?.item_id, negotiation?.offerer_id, user?.id]);
 
   const updateLastActivity = async () => {
     const now = new Date().toISOString();
     const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
-    
+
     await updateNegotiationMutation.mutateAsync({
       id: negotiationId,
       data: {
@@ -145,6 +151,19 @@ export default function Negotiation() {
       to_user_id: otherUserId,
       text: message,
       message_type: "text"
+    });
+
+    // Create notification for other user
+    await createNotificationMutation.mutateAsync({
+      user_id: otherUserId,
+      type: 'new_message',
+      title: 'New message',
+      message: `${user.full_name} sent you a message about ${negotiation.item_title}`,
+      related_id: negotiationId,
+      related_type: 'negotiation',
+      link_url: createPageUrl(`Negotiation?id=${negotiationId}`),
+      from_user_id: user.id,
+      from_user_name: user.full_name
     });
 
     await updateLastActivity();
@@ -189,6 +208,19 @@ export default function Negotiation() {
       text: `${user.full_name} offered ${offerData.hours} hours${offerData.work_type ? ` for ${offerData.work_type}` : ''}${offerData.message ? `\n\n${offerData.message}` : ''}`,
       message_type: "offer"
     });
+
+    // Create notification for other user
+    await createNotificationMutation.mutateAsync({
+      user_id: otherUserId,
+      type: 'counter_offer',
+      title: 'New counter offer',
+      message: `${user.full_name} offered ${offerData.hours} hours for ${negotiation.item_title}`,
+      related_id: negotiationId,
+      related_type: 'negotiation',
+      link_url: createPageUrl(`Negotiation?id=${negotiationId}`),
+      from_user_id: user.id,
+      from_user_name: user.full_name
+    });
   };
 
   const handleAcceptOffer = async () => {
@@ -215,6 +247,19 @@ export default function Negotiation() {
       text: `✅ ${user.full_name} accepted the offer of ${agreedHours} hours!`,
       message_type: "system"
     });
+
+    // Create notification for other user
+    await createNotificationMutation.mutateAsync({
+      user_id: otherUserId,
+      type: 'offer_accepted',
+      title: 'Offer accepted!',
+      message: `${user.full_name} accepted your offer of ${agreedHours} hours for ${negotiation.item_title}`,
+      related_id: negotiationId,
+      related_type: 'negotiation',
+      link_url: createPageUrl(`Negotiation?id=${negotiationId}`),
+      from_user_id: user.id,
+      from_user_name: user.full_name
+    });
   };
 
   const handleDeclineOffer = async () => {
@@ -223,6 +268,20 @@ export default function Negotiation() {
     await updateNegotiationMutation.mutateAsync({
       id: negotiationId,
       data: { status: 'declined' }
+    });
+
+    // Create notification for other user
+    const otherUserId = user.id === negotiation.bidder_id ? negotiation.offerer_id : negotiation.bidder_id;
+    await createNotificationMutation.mutateAsync({
+      user_id: otherUserId,
+      type: 'offer_declined',
+      title: 'Offer declined',
+      message: `${user.full_name} declined the negotiation for ${negotiation.item_title}`,
+      related_id: negotiationId,
+      related_type: 'negotiation',
+      link_url: createPageUrl("Browse"),
+      from_user_id: user.id,
+      from_user_name: user.full_name
     });
 
     navigate(createPageUrl("Browse"));
@@ -234,7 +293,7 @@ export default function Negotiation() {
     const isOfferer = user.id === negotiation.offerer_id;
 
     // Check if agreement already exists
-    const existingAgreements = await base44.entities.Agreement.filter({ 
+    const existingAgreements = await base44.entities.Agreement.filter({
       item_id: negotiation.item_id,
       status: { $in: ['proposed', 'locked', 'in_progress'] }
     });
@@ -258,11 +317,11 @@ export default function Negotiation() {
       });
     } else {
       // Update existing agreement
-      const updateData = isOfferer 
+      const updateData = isOfferer
         ? { offerer_agreed: true }
         : { worker_agreed: true };
       await base44.entities.Agreement.update(agreement.id, updateData);
-      
+
       // Refresh agreement data
       const updated = await base44.entities.Agreement.filter({ id: agreement.id });
       agreement = updated[0];
@@ -396,10 +455,10 @@ export default function Negotiation() {
               <div className="text-right">
                 <Badge className={
                   negotiation.status === 'active' ? 'bg-blue-100 text-blue-700' :
-                  negotiation.status === 'accepted' ? 'bg-green-100 text-green-700' :
-                  negotiation.status === 'declined' ? 'bg-red-100 text-red-700' :
-                  negotiation.status === 'expired' ? 'bg-gray-100 text-gray-700' :
-                  'bg-purple-100 text-purple-700'
+                    negotiation.status === 'accepted' ? 'bg-green-100 text-green-700' :
+                      negotiation.status === 'declined' ? 'bg-red-100 text-red-700' :
+                        negotiation.status === 'expired' ? 'bg-gray-100 text-gray-700' :
+                          'bg-purple-100 text-purple-700'
                 }>
                   {negotiation.status}
                 </Badge>
@@ -465,7 +524,7 @@ export default function Negotiation() {
                 if (isOfferMessage) {
                   // Find corresponding offer in history
                   const offer = negotiation.offer_history?.find(
-                    o => o.offered_by === msg.from_user_id && 
+                    o => o.offered_by === msg.from_user_id &&
                     Math.abs(new Date(o.timestamp) - new Date(msg.created_date)) < 5000
                   );
 
@@ -525,7 +584,7 @@ export default function Negotiation() {
                   <Clock className="w-5 h-5 mr-2" />
                   Counter Offer
                 </Button>
-                <Button 
+                <Button
                   onClick={handleSendMessage}
                   disabled={!message.trim()}
                   className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"

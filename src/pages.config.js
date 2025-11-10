@@ -12,6 +12,7 @@ import EditItem from './pages/EditItem';
 import AdminDisputes from './pages/AdminDisputes';
 import Negotiation from './pages/Negotiation';
 import AdminDashboard from './pages/AdminDashboard';
+import Notifications from './pages/Notifications';
 import Layout from './Layout.jsx';
 
 
@@ -30,6 +31,7 @@ export const PAGES = {
     "AdminDisputes": AdminDisputes,
     "Negotiation": Negotiation,
     "AdminDashboard": AdminDashboard,
+    "Notifications": Notifications,
 }
 
 export const pagesConfig = {
