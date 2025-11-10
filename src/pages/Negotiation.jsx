@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, Send, Clock, AlertTriangle, CheckCircle2, Package, XCircle } from "lucide-react";
+import { ArrowLeft, Send, Clock, AlertTriangle, CheckCircle2, Package } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import OfferCard from "../components/negotiation/OfferCard";
 import CounterOfferModal from "../components/negotiation/CounterOfferModal";
@@ -36,7 +37,9 @@ export default function Negotiation() {
     queryKey: ['negotiation', negotiationId],
     queryFn: async () => {
       if (!negotiationId) return null;
+      console.log('📥 Fetching negotiation:', negotiationId);
       const results = await base44.entities.Negotiation.filter({ id: negotiationId });
+      console.log('✅ Negotiation loaded:', results[0]);
       return results[0] || null;
     },
     enabled: !!negotiationId,
@@ -53,20 +56,38 @@ export default function Negotiation() {
     enabled: !!negotiation?.item_id
   });
 
-  const { data: messages = [] } = useQuery({
+  const { data: messages = [], refetch: refetchMessages } = useQuery({
     queryKey: ['messages', negotiationId],
-    queryFn: () => base44.entities.Message.filter({ 
-      negotiation_id: negotiationId 
-    }, 'created_date'),
+    queryFn: async () => {
+      if (!negotiationId) return [];
+      console.log('📥 Fetching messages for negotiation:', negotiationId);
+      const msgs = await base44.entities.Message.filter({ 
+        negotiation_id: negotiationId 
+      }, 'created_date');
+      console.log(`✅ Loaded ${msgs.length} messages:`, msgs);
+      return msgs;
+    },
     enabled: !!negotiationId,
     refetchInterval: 3000
   });
 
   const sendMessageMutation = useMutation({
-    mutationFn: (data) => base44.entities.Message.create(data),
+    mutationFn: async (data) => {
+      console.log('📤 Sending message:', data);
+      const result = await base44.entities.Message.create(data);
+      console.log('✅ Message created:', result);
+      return result;
+    },
     onSuccess: () => {
+      console.log('✅ Message sent successfully');
+      toast.success('Message sent!');
       queryClient.invalidateQueries(['messages', negotiationId]);
+      refetchMessages();
       setMessage("");
+    },
+    onError: (error) => {
+      console.error('❌ Error sending message:', error);
+      toast.error('Failed to send message');
     }
   });
 
@@ -85,7 +106,15 @@ export default function Negotiation() {
   });
 
   const createNotificationMutation = useMutation({
-    mutationFn: (data) => base44.entities.Notification.create(data),
+    mutationFn: async (data) => {
+      console.log('🔔 Creating notification:', data);
+      const result = await base44.entities.Notification.create(data);
+      console.log('✅ Notification created:', result);
+      return result;
+    },
+    onError: (error) => {
+      console.error('❌ Error creating notification:', error);
+    }
   });
 
   useEffect(() => {
@@ -137,38 +166,49 @@ export default function Negotiation() {
   };
 
   const handleSendMessage = async () => {
-    if (!message.trim() || !user || !negotiation) return;
+    if (!message.trim() || !user || !negotiation) {
+      console.log('❌ Cannot send message - missing data');
+      return;
+    }
 
     const otherUserId = user.id === negotiation.bidder_id ? negotiation.offerer_id : negotiation.bidder_id;
 
-    await sendMessageMutation.mutateAsync({
-      negotiation_id: negotiationId,
-      from_user_id: user.id,
-      from_user_name: user.full_name,
-      to_user_id: otherUserId,
-      text: message,
-      message_type: "text"
-    });
+    console.log('📤 Preparing to send message...');
+    
+    try {
+      await sendMessageMutation.mutateAsync({
+        negotiation_id: negotiationId,
+        from_user_id: user.id,
+        from_user_name: user.full_name,
+        to_user_id: otherUserId,
+        text: message,
+        message_type: "text"
+      });
 
-    await createNotificationMutation.mutateAsync({
-      user_id: otherUserId,
-      type: 'new_message',
-      title: 'New message',
-      message: `${user.full_name} sent you a message about ${negotiation.item_title}`,
-      related_id: negotiationId,
-      related_type: 'negotiation',
-      link_url: createPageUrl(`Negotiation?id=${negotiationId}`),
-      from_user_id: user.id,
-      from_user_name: user.full_name
-    });
+      await createNotificationMutation.mutateAsync({
+        user_id: otherUserId,
+        type: 'new_message',
+        title: 'New message',
+        message: `${user.full_name} sent you a message about ${negotiation.item_title}`,
+        related_id: negotiationId,
+        related_type: 'negotiation',
+        link_url: createPageUrl(`Negotiation?id=${negotiationId}`),
+        from_user_id: user.id,
+        from_user_name: user.full_name
+      });
 
-    await updateLastActivity();
+      await updateLastActivity();
+    } catch (error) {
+      console.error('❌ Error in handleSendMessage:', error);
+    }
   };
 
   const handleCounterOffer = async (offerData) => {
     if (!user || !negotiation) return;
 
     const otherUserId = user.id === negotiation.bidder_id ? negotiation.offerer_id : negotiation.bidder_id;
+
+    console.log('📤 Sending counter offer:', offerData);
 
     const newHistory = [
       ...(negotiation.offer_history || []),
@@ -213,12 +253,16 @@ export default function Negotiation() {
       from_user_id: user.id,
       from_user_name: user.full_name
     });
+
+    toast.success('Counter offer sent!');
   };
 
   const handleAcceptOffer = async () => {
     if (!user || !negotiation) return;
 
     const agreedHours = negotiation.counter_offer_hours || negotiation.initial_offer_hours;
+
+    console.log('✅ Accepting offer:', agreedHours, 'hours');
 
     await updateNegotiationMutation.mutateAsync({
       id: negotiationId,
@@ -249,10 +293,14 @@ export default function Negotiation() {
       from_user_id: user.id,
       from_user_name: user.full_name
     });
+
+    toast.success('Offer accepted! Setting up agreement...');
   };
 
   const handleDeclineOffer = async () => {
     if (!user || !negotiation) return;
+
+    console.log('❌ Declining offer');
 
     await updateNegotiationMutation.mutateAsync({
       id: negotiationId,
@@ -272,6 +320,7 @@ export default function Negotiation() {
       from_user_name: user.full_name
     });
 
+    toast.info('Offer declined');
     navigate(createPageUrl("Browse"));
   };
 
@@ -340,6 +389,7 @@ export default function Negotiation() {
       }, 2000);
     } else {
       setHasConfirmed(true);
+      toast.success('Agreement confirmed! Waiting for other party...');
     }
   };
 
@@ -406,6 +456,9 @@ export default function Negotiation() {
       </div>
     );
   }
+
+  console.log('🔍 Current messages count:', messages.length);
+  console.log('🔍 Current negotiation status:', negotiation.status);
 
   return (
     <div className="min-h-screen p-4 md:p-8">
@@ -478,63 +531,69 @@ export default function Negotiation() {
               </div>
             )}
 
-            <div className="h-96 overflow-y-auto space-y-4 mb-4">
-              {messages.map((msg) => {
-                const isOwnMessage = msg.from_user_id === user.id;
-                const isSystemMessage = msg.message_type === 'system';
-                const isOfferMessage = msg.message_type === 'offer';
+            <div className="h-96 overflow-y-auto space-y-4 mb-4 bg-gray-50 rounded-lg p-4">
+              {messages.length === 0 ? (
+                <div className="text-center text-gray-500 py-8">
+                  No messages yet. Start the conversation!
+                </div>
+              ) : (
+                messages.map((msg) => {
+                  const isOwnMessage = msg.from_user_id === user.id;
+                  const isSystemMessage = msg.message_type === 'system';
+                  const isOfferMessage = msg.message_type === 'offer';
 
-                if (isSystemMessage) {
+                  if (isSystemMessage) {
+                    return (
+                      <div key={msg.id} className="flex justify-center">
+                        <div className="bg-gray-100 rounded-lg px-4 py-2 text-sm text-gray-700 max-w-md text-center">
+                          {msg.text}
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  if (isOfferMessage) {
+                    const offer = negotiation.offer_history?.find(
+                      o => o.offered_by === msg.from_user_id && 
+                      Math.abs(new Date(o.timestamp) - new Date(msg.created_date)) < 5000
+                    );
+
+                    if (offer) {
+                      return (
+                        <OfferCard
+                          key={msg.id}
+                          offer={offer}
+                          isOwnOffer={isOwnMessage}
+                          onAccept={handleAcceptOffer}
+                          onCounter={() => setShowCounterModal(true)}
+                          onDecline={handleDeclineOffer}
+                          canRespond={!isOwnMessage && negotiation.status === 'active'}
+                        />
+                      );
+                    }
+                  }
+
                   return (
-                    <div key={msg.id} className="flex justify-center">
-                      <div className="bg-gray-100 rounded-lg px-4 py-2 text-sm text-gray-700 max-w-md text-center">
-                        {msg.text}
+                    <div
+                      key={msg.id}
+                      className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[70%] rounded-2xl px-4 py-3 ${
+                          isOwnMessage
+                            ? 'bg-gradient-to-r from-orange-500 to-amber-600 text-white'
+                            : 'bg-white text-gray-900 border border-gray-200'
+                        }`}
+                      >
+                        <p className="whitespace-pre-wrap">{msg.text}</p>
+                        <p className={`text-xs mt-1 ${isOwnMessage ? 'text-orange-100' : 'text-gray-500'}`}>
+                          {format(new Date(msg.created_date), 'MMM d, h:mm a')}
+                        </p>
                       </div>
                     </div>
                   );
-                }
-
-                if (isOfferMessage) {
-                  const offer = negotiation.offer_history?.find(
-                    o => o.offered_by === msg.from_user_id && 
-                    Math.abs(new Date(o.timestamp) - new Date(msg.created_date)) < 5000
-                  );
-
-                  if (offer) {
-                    return (
-                      <OfferCard
-                        key={msg.id}
-                        offer={offer}
-                        isOwnOffer={isOwnMessage}
-                        onAccept={handleAcceptOffer}
-                        onCounter={() => setShowCounterModal(true)}
-                        onDecline={handleDeclineOffer}
-                        canRespond={!isOwnMessage && negotiation.status === 'active'}
-                      />
-                    );
-                  }
-                }
-
-                return (
-                  <div
-                    key={msg.id}
-                    className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`max-w-[70%] rounded-2xl px-4 py-3 ${
-                        isOwnMessage
-                          ? 'bg-gradient-to-r from-orange-500 to-amber-600 text-white'
-                          : 'bg-gray-100 text-gray-900'
-                      }`}
-                    >
-                      <p className="whitespace-pre-wrap">{msg.text}</p>
-                      <p className={`text-xs mt-1 ${isOwnMessage ? 'text-orange-100' : 'text-gray-500'}`}>
-                        {format(new Date(msg.created_date), 'MMM d, h:mm a')}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
+                })
+              )}
               <div ref={messagesEndRef} />
             </div>
 
@@ -544,7 +603,12 @@ export default function Negotiation() {
                   placeholder="Type a message..."
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
                   className="flex-1"
                 />
                 <Button
@@ -557,7 +621,7 @@ export default function Negotiation() {
                 </Button>
                 <Button 
                   onClick={handleSendMessage}
-                  disabled={!message.trim()}
+                  disabled={!message.trim() || sendMessageMutation.isLoading}
                   className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"
                 >
                   <Send className="w-5 h-5" />

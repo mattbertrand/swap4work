@@ -20,16 +20,26 @@ export default function Notifications() {
 
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ['notifications', user?.id],
-    queryFn: () => base44.entities.Notification.filter({ 
-      user_id: user.id 
-    }, '-created_date'),
-    enabled: !!user
+    queryFn: async () => {
+      if (!user) return [];
+      console.log('📥 Fetching all notifications for user:', user.id);
+      const allNotifications = await base44.entities.Notification.filter({ 
+        user_id: user.id 
+      }, '-created_date');
+      console.log(`✅ Loaded ${allNotifications.length} notifications`);
+      return allNotifications;
+    },
+    enabled: !!user,
+    refetchInterval: 5000
   });
 
   const markAsReadMutation = useMutation({
-    mutationFn: (notificationId) => 
-      base44.entities.Notification.update(notificationId, { is_read: true }),
+    mutationFn: (notificationId) => {
+      console.log('✓ Marking notification as read:', notificationId);
+      return base44.entities.Notification.update(notificationId, { is_read: true });
+    },
     onSuccess: () => {
+      console.log('✅ Notification marked as read');
       queryClient.invalidateQueries(['notifications']);
     }
   });
@@ -37,16 +47,20 @@ export default function Notifications() {
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
       const unread = notifications.filter(n => !n.is_read);
+      console.log(`✓ Marking ${unread.length} notifications as read`);
       await Promise.all(unread.map(n => 
         base44.entities.Notification.update(n.id, { is_read: true })
       ));
     },
     onSuccess: () => {
+      console.log('✅ All notifications marked as read');
       queryClient.invalidateQueries(['notifications']);
     }
   });
 
   const handleNotificationClick = async (notification) => {
+    console.log('👆 Notification clicked:', notification);
+    
     // Mark as read
     if (!notification.is_read) {
       await markAsReadMutation.mutateAsync(notification.id);
@@ -54,6 +68,7 @@ export default function Notifications() {
     
     // Navigate to the link
     if (notification.link_url) {
+      console.log('🔗 Navigating to:', notification.link_url);
       navigate(notification.link_url);
     }
   };
@@ -93,6 +108,8 @@ export default function Notifications() {
 
   const unreadNotifications = notifications.filter(n => !n.is_read);
   const readNotifications = notifications.filter(n => n.is_read);
+
+  console.log(`🔍 Displaying ${unreadNotifications.length} unread, ${readNotifications.length} read notifications`);
 
   return (
     <div className="min-h-screen p-4 md:p-8">
@@ -179,12 +196,12 @@ export default function Notifications() {
                   {readNotifications.map((notification) => (
                     <Card
                       key={notification.id}
-                      className="border-gray-200 hover:shadow-md transition-shadow cursor-pointer opacity-75"
+                      className="border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
                       onClick={() => handleNotificationClick(notification)}
                     >
                       <CardContent className="p-4">
                         <div className="flex items-start gap-4">
-                          <div className="flex-shrink-0 mt-1 opacity-50">
+                          <div className="flex-shrink-0 mt-1 opacity-60">
                             {getNotificationIcon(notification.type)}
                           </div>
                           <div className="flex-1 min-w-0">
