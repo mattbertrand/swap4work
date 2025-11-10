@@ -101,7 +101,11 @@ export default function Home() {
                   </Button>
                 </Link>
                 <Link to={createPageUrl("CreateItem")}>
-                  <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white/20 text-lg px-8 py-6 h-auto">
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="border-2 border-white text-white hover:bg-white/20 text-lg px-8 py-6 h-auto bg-transparent focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white"
+                  >
                     <Briefcase className="w-5 h-5 mr-2" />
                     List an Item
                   </Button>
@@ -117,7 +121,11 @@ export default function Home() {
                   Sign In to Get Started
                 </Button>
                 <Link to={createPageUrl("Browse")}>
-                  <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white/20 text-lg px-8 py-6 h-auto">
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="border-2 border-white text-white hover:bg-white/20 text-lg px-8 py-6 h-auto bg-transparent focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white"
+                  >
                     Browse Without Account
                   </Button>
                 </Link>
