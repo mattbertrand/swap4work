@@ -1,18 +1,29 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Clock, CheckCircle2, AlertCircle, MessageSquare, TrendingUp } from "lucide-react";
+import { Clock, CheckCircle2, AlertCircle, MessageSquare, TrendingUp, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function MyAgreements() {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
+  const [deleteAgreementId, setDeleteAgreementId] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => setUser(null));
@@ -22,7 +33,6 @@ export default function MyAgreements() {
     queryKey: ['myAgreements', user?.id],
     queryFn: async () => {
       if (!user) return [];
-      // Get both agreements where user is worker AND offerer
       const [asWorker, asOfferer] = await Promise.all([
         base44.entities.Agreement.filter({ worker_id: user.id }, '-updated_date'),
         base44.entities.Agreement.filter({ offerer_id: user.id }, '-updated_date')
@@ -38,6 +48,42 @@ export default function MyAgreements() {
     },
     enabled: !!user
   });
+
+  const deleteAgreementMutation = useMutation({
+    mutationFn: async (agreementId) => {
+      const agreement = agreements.find(a => a.id === agreementId);
+      if (!agreement) return;
+
+      // Delete the agreement
+      await base44.entities.Agreement.delete(agreementId);
+
+      // Notify the other party
+      const otherUserId = user.id === agreement.worker_id ? agreement.offerer_id : agreement.worker_id;
+      const otherUserName = user.id === agreement.worker_id ? agreement.offerer_name : agreement.worker_name;
+      
+      await base44.entities.Notification.create({
+        user_id: otherUserId,
+        type: 'agreement_created',
+        title: 'Agreement cancelled',
+        message: `${user.full_name} cancelled the agreement for ${agreement.item_title}`,
+        related_id: agreement.item_id,
+        related_type: 'item',
+        link_url: createPageUrl(`Browse`),
+        from_user_id: user.id,
+        from_user_name: user.full_name
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['myAgreements']);
+      setDeleteAgreementId(null);
+    }
+  });
+
+  const handleDeleteAgreement = () => {
+    if (deleteAgreementId) {
+      deleteAgreementMutation.mutate(deleteAgreementId);
+    }
+  };
 
   const proposedAgreements = agreements.filter(a => a.status === 'proposed');
   const activeAgreements = agreements.filter(a => ['locked', 'in_progress'].includes(a.status));
@@ -78,7 +124,9 @@ export default function MyAgreements() {
           <div className="flex justify-between items-start mb-4">
             <div className="flex-1">
               <h3 className="font-bold text-xl text-gray-900 mb-1">{agreement.item_title}</h3>
-              <p className="text-sm text-gray-500">With {agreement.offerer_name}</p>
+              <p className="text-sm text-gray-500">
+                {user.id === agreement.worker_id ? `With ${agreement.offerer_name}` : `With ${agreement.worker_name}`}
+              </p>
             </div>
             <Badge className={config.color}>
               {config.label}
@@ -132,6 +180,14 @@ export default function MyAgreements() {
                 </Button>
               </Link>
             )}
+
+            <Button
+              onClick={() => setDeleteAgreementId(agreement.id)}
+              variant="outline"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -251,6 +307,27 @@ export default function MyAgreements() {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!deleteAgreementId} onOpenChange={() => setDeleteAgreementId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Cancel Agreement</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to cancel this agreement? The other user will be notified.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>No, Keep It</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteAgreement}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Yes, Cancel Agreement
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

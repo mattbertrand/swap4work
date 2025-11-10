@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, Send, Clock, AlertTriangle, CheckCircle2, Package } from "lucide-react";
+import { ArrowLeft, Send, Clock, AlertTriangle, CheckCircle2, Package, XCircle } from "lucide-react";
 import { format } from "date-fns";
 import confetti from "canvas-confetti";
 import OfferCard from "../components/negotiation/OfferCard";
@@ -56,8 +55,8 @@ export default function Negotiation() {
 
   const { data: messages = [] } = useQuery({
     queryKey: ['messages', negotiationId],
-    queryFn: () => base44.entities.Message.filter({
-      negotiation_id: negotiationId
+    queryFn: () => base44.entities.Message.filter({ 
+      negotiation_id: negotiationId 
     }, 'created_date'),
     enabled: !!negotiationId,
     refetchInterval: 3000
@@ -93,7 +92,6 @@ export default function Negotiation() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Check if negotiation expired (48h inactive)
   useEffect(() => {
     if (negotiation && negotiation.status === 'active' && negotiation.expires_at) {
       const expiresAt = new Date(negotiation.expires_at);
@@ -106,15 +104,14 @@ export default function Negotiation() {
     }
   }, [negotiation?.status, negotiation?.expires_at, negotiationId]);
 
-  // Check for existing agreement confirmations - move outside of render
   useEffect(() => {
     const checkConfirmations = async () => {
       if (negotiation?.status === 'accepted' && negotiation?.item_id && user?.id) {
-        const agreements = await base44.entities.Agreement.filter({
+        const agreements = await base44.entities.Agreement.filter({ 
           item_id: negotiation.item_id,
           status: 'proposed'
         });
-
+        
         if (agreements[0]) {
           const isOfferer = user.id === negotiation.offerer_id;
           setHasConfirmed(isOfferer ? agreements[0].offerer_agreed : agreements[0].worker_agreed);
@@ -122,14 +119,14 @@ export default function Negotiation() {
         }
       }
     };
-
+    
     checkConfirmations();
   }, [negotiation?.status, negotiation?.item_id, negotiation?.offerer_id, user?.id]);
 
   const updateLastActivity = async () => {
     const now = new Date().toISOString();
     const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
-
+    
     await updateNegotiationMutation.mutateAsync({
       id: negotiationId,
       data: {
@@ -153,7 +150,6 @@ export default function Negotiation() {
       message_type: "text"
     });
 
-    // Create notification for other user
     await createNotificationMutation.mutateAsync({
       user_id: otherUserId,
       type: 'new_message',
@@ -174,7 +170,6 @@ export default function Negotiation() {
 
     const otherUserId = user.id === negotiation.bidder_id ? negotiation.offerer_id : negotiation.bidder_id;
 
-    // Add to offer history
     const newHistory = [
       ...(negotiation.offer_history || []),
       {
@@ -186,7 +181,6 @@ export default function Negotiation() {
       }
     ];
 
-    // Update negotiation
     await updateNegotiationMutation.mutateAsync({
       id: negotiationId,
       data: {
@@ -199,7 +193,6 @@ export default function Negotiation() {
       }
     });
 
-    // Send system message
     await sendMessageMutation.mutateAsync({
       negotiation_id: negotiationId,
       from_user_id: user.id,
@@ -209,7 +202,6 @@ export default function Negotiation() {
       message_type: "offer"
     });
 
-    // Create notification for other user
     await createNotificationMutation.mutateAsync({
       user_id: otherUserId,
       type: 'counter_offer',
@@ -228,7 +220,6 @@ export default function Negotiation() {
 
     const agreedHours = negotiation.counter_offer_hours || negotiation.initial_offer_hours;
 
-    // Update negotiation status
     await updateNegotiationMutation.mutateAsync({
       id: negotiationId,
       data: {
@@ -237,7 +228,6 @@ export default function Negotiation() {
       }
     });
 
-    // Send system message
     const otherUserId = user.id === negotiation.bidder_id ? negotiation.offerer_id : negotiation.bidder_id;
     await sendMessageMutation.mutateAsync({
       negotiation_id: negotiationId,
@@ -248,7 +238,6 @@ export default function Negotiation() {
       message_type: "system"
     });
 
-    // Create notification for other user
     await createNotificationMutation.mutateAsync({
       user_id: otherUserId,
       type: 'offer_accepted',
@@ -270,7 +259,6 @@ export default function Negotiation() {
       data: { status: 'declined' }
     });
 
-    // Create notification for other user
     const otherUserId = user.id === negotiation.bidder_id ? negotiation.offerer_id : negotiation.bidder_id;
     await createNotificationMutation.mutateAsync({
       user_id: otherUserId,
@@ -292,8 +280,7 @@ export default function Negotiation() {
 
     const isOfferer = user.id === negotiation.offerer_id;
 
-    // Check if agreement already exists
-    const existingAgreements = await base44.entities.Agreement.filter({
+    const existingAgreements = await base44.entities.Agreement.filter({ 
       item_id: negotiation.item_id,
       status: { $in: ['proposed', 'locked', 'in_progress'] }
     });
@@ -301,7 +288,6 @@ export default function Negotiation() {
     let agreement = existingAgreements[0];
 
     if (!agreement) {
-      // Create new agreement
       agreement = await createAgreementMutation.mutateAsync({
         item_id: negotiation.item_id,
         item_title: negotiation.item_title,
@@ -316,27 +302,22 @@ export default function Negotiation() {
         worker_agreed: !isOfferer
       });
     } else {
-      // Update existing agreement
-      const updateData = isOfferer
+      const updateData = isOfferer 
         ? { offerer_agreed: true }
         : { worker_agreed: true };
       await base44.entities.Agreement.update(agreement.id, updateData);
-
-      // Refresh agreement data
+      
       const updated = await base44.entities.Agreement.filter({ id: agreement.id });
       agreement = updated[0];
     }
 
-    // Check if both confirmed
     if (agreement.offerer_agreed && agreement.worker_agreed) {
-      // Fire confetti!
       confetti({
         particleCount: 100,
         spread: 70,
         origin: { y: 0.6 }
       });
 
-      // Lock agreement and reserve item
       await base44.entities.Agreement.update(agreement.id, {
         status: 'locked',
         is_locked: true,
@@ -358,7 +339,6 @@ export default function Negotiation() {
         navigate(createPageUrl(`TimeTracking?agreementId=${agreement.id}`));
       }, 2000);
     } else {
-      // Update local state to show confirmation
       setHasConfirmed(true);
     }
   };
@@ -376,13 +356,11 @@ export default function Negotiation() {
     });
   };
 
-  // Memoize computed values to avoid recalculation
   const isOfferer = useMemo(() => user?.id === negotiation?.offerer_id, [user?.id, negotiation?.offerer_id]);
   const isBidder = useMemo(() => user?.id === negotiation?.bidder_id, [user?.id, negotiation?.bidder_id]);
   const otherParty = useMemo(() => isOfferer ? negotiation?.bidder_name : negotiation?.offerer_name, [isOfferer, negotiation?.bidder_name, negotiation?.offerer_name]);
   const currentOfferHours = useMemo(() => negotiation?.counter_offer_hours || negotiation?.initial_offer_hours, [negotiation?.counter_offer_hours, negotiation?.initial_offer_hours]);
 
-  // Show error state for blank page issue
   if (negError || (!negLoading && !negotiation && negotiationId)) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
@@ -410,7 +388,6 @@ export default function Negotiation() {
     );
   }
 
-  // Check if user has access to this negotiation
   if (!isOfferer && !isBidder) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
@@ -455,10 +432,10 @@ export default function Negotiation() {
               <div className="text-right">
                 <Badge className={
                   negotiation.status === 'active' ? 'bg-blue-100 text-blue-700' :
-                    negotiation.status === 'accepted' ? 'bg-green-100 text-green-700' :
-                      negotiation.status === 'declined' ? 'bg-red-100 text-red-700' :
-                        negotiation.status === 'expired' ? 'bg-gray-100 text-gray-700' :
-                          'bg-purple-100 text-purple-700'
+                  negotiation.status === 'accepted' ? 'bg-green-100 text-green-700' :
+                  negotiation.status === 'declined' ? 'bg-red-100 text-red-700' :
+                  negotiation.status === 'expired' ? 'bg-gray-100 text-gray-700' :
+                  'bg-purple-100 text-purple-700'
                 }>
                   {negotiation.status}
                 </Badge>
@@ -467,7 +444,6 @@ export default function Negotiation() {
           </CardHeader>
 
           <CardContent className="p-6">
-            {/* Current Offer Display */}
             {negotiation.status === 'active' && (
               <Alert className="mb-4 bg-orange-50 border-orange-200">
                 <Clock className="w-4 h-4 text-orange-600" />
@@ -478,7 +454,6 @@ export default function Negotiation() {
               </Alert>
             )}
 
-            {/* Expired Warning */}
             {negotiation.status === 'expired' && (
               <Alert className="mb-4 bg-gray-50 border-gray-200">
                 <AlertTriangle className="w-4 h-4 text-gray-600" />
@@ -488,7 +463,6 @@ export default function Negotiation() {
               </Alert>
             )}
 
-            {/* Agreement Draft */}
             {negotiation.status === 'accepted' && (
               <div className="mb-4">
                 <AgreementDraft
@@ -504,7 +478,6 @@ export default function Negotiation() {
               </div>
             )}
 
-            {/* Messages & Offers */}
             <div className="h-96 overflow-y-auto space-y-4 mb-4">
               {messages.map((msg) => {
                 const isOwnMessage = msg.from_user_id === user.id;
@@ -522,9 +495,8 @@ export default function Negotiation() {
                 }
 
                 if (isOfferMessage) {
-                  // Find corresponding offer in history
                   const offer = negotiation.offer_history?.find(
-                    o => o.offered_by === msg.from_user_id &&
+                    o => o.offered_by === msg.from_user_id && 
                     Math.abs(new Date(o.timestamp) - new Date(msg.created_date)) < 5000
                   );
 
@@ -566,7 +538,6 @@ export default function Negotiation() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Area */}
             {negotiation.status === 'active' && (
               <div className="flex gap-2">
                 <Input
@@ -584,7 +555,7 @@ export default function Negotiation() {
                   <Clock className="w-5 h-5 mr-2" />
                   Counter Offer
                 </Button>
-                <Button
+                <Button 
                   onClick={handleSendMessage}
                   disabled={!message.trim()}
                   className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"

@@ -1,17 +1,29 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Plus, Package, Clock, Eye, Edit } from "lucide-react";
+import { Plus, Package, Clock, Eye, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function MyListings() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
+  const [deleteItemId, setDeleteItemId] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => setUser(null));
@@ -22,6 +34,20 @@ export default function MyListings() {
     queryFn: () => base44.entities.Item.filter({ offerer_id: user.id }, '-created_date'),
     enabled: !!user
   });
+
+  const deleteItemMutation = useMutation({
+    mutationFn: (itemId) => base44.entities.Item.delete(itemId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['myItems']);
+      setDeleteItemId(null);
+    }
+  });
+
+  const handleDeleteItem = () => {
+    if (deleteItemId) {
+      deleteItemMutation.mutate(deleteItemId);
+    }
+  };
 
   const activeItems = items.filter(item => item.status === 'active');
   const inProgressItems = items.filter(item => ['in_negotiation', 'locked'].includes(item.status));
@@ -96,6 +122,13 @@ export default function MyListings() {
                 </Button>
               </Link>
             )}
+            <Button
+              onClick={() => setDeleteItemId(item.id)}
+              variant="outline"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -182,6 +215,27 @@ export default function MyListings() {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!deleteItemId} onOpenChange={() => setDeleteItemId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Item</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this item? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteItem}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
