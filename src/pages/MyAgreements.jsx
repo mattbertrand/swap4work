@@ -19,17 +19,41 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { format } from "date-fns";
 
 export default function MyAgreements() {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
-  const [deleteAgreementId, setDeleteAgreementId] = useState(null);
+  const [deleteItemId, setDeleteItemId] = useState(null);
+  const [deleteType, setDeleteType] = useState(null); // 'negotiation' or 'agreement'
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => setUser(null));
   }, []);
 
-  const { data: agreements = [], isLoading } = useQuery({
+  // Fetch both negotiations AND agreements
+  const { data: negotiations = [], isLoading: negsLoading } = useQuery({
+    queryKey: ['myNegotiations', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const [asBidder, asOfferer] = await Promise.all([
+        base44.entities.Negotiation.filter({ bidder_id: user.id }, '-updated_date'),
+        base44.entities.Negotiation.filter({ offerer_id: user.id }, '-updated_date')
+      ]);
+      
+      const allNegotiations = [...asBidder, ...asOfferer];
+      const uniqueNegotiations = Array.from(
+        new Map(allNegotiations.map(n => [n.id, n])).values()
+      );
+      
+      console.log(`✅ Loaded ${uniqueNegotiations.length} negotiations for user`);
+      return uniqueNegotiations;
+    },
+    enabled: !!user,
+    refetchInterval: 5000
+  });
+
+  const { data: agreements = [], isLoading: agreementsLoading } = useQuery({
     queryKey: ['myAgreements', user?.id],
     queryFn: async () => {
       if (!user) return [];
@@ -38,15 +62,44 @@ export default function MyAgreements() {
         base44.entities.Agreement.filter({ offerer_id: user.id }, '-updated_date')
       ]);
       
-      // Combine and deduplicate by ID
       const allAgreements = [...asWorker, ...asOfferer];
       const uniqueAgreements = Array.from(
         new Map(allAgreements.map(a => [a.id, a])).values()
       );
       
+      console.log(`✅ Loaded ${uniqueAgreements.length} agreements for user`);
       return uniqueAgreements;
     },
-    enabled: !!user
+    enabled: !!user,
+    refetchInterval: 5000
+  });
+
+  const deleteNegotiationMutation = useMutation({
+    mutationFn: async (negotiationId) => {
+      const negotiation = negotiations.find(n => n.id === negotiationId);
+      if (!negotiation) return;
+
+      await base44.entities.Negotiation.delete(negotiationId);
+
+      const otherUserId = user.id === negotiation.bidder_id ? negotiation.offerer_id : negotiation.bidder_id;
+      
+      await base44.entities.Notification.create({
+        user_id: otherUserId,
+        type: 'agreement_created',
+        title: 'Negotiation cancelled',
+        message: `${user.full_name} cancelled the negotiation for ${negotiation.item_title}`,
+        related_id: negotiation.item_id,
+        related_type: 'item',
+        link_url: createPageUrl(`Browse`),
+        from_user_id: user.id,
+        from_user_name: user.full_name
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['myNegotiations']);
+      setDeleteItemId(null);
+      setDeleteType(null);
+    }
   });
 
   const deleteAgreementMutation = useMutation({
@@ -54,12 +107,9 @@ export default function MyAgreements() {
       const agreement = agreements.find(a => a.id === agreementId);
       if (!agreement) return;
 
-      // Delete the agreement
       await base44.entities.Agreement.delete(agreementId);
 
-      // Notify the other party
       const otherUserId = user.id === agreement.worker_id ? agreement.offerer_id : agreement.worker_id;
-      const otherUserName = user.id === agreement.worker_id ? agreement.offerer_name : agreement.worker_name;
       
       await base44.entities.Notification.create({
         user_id: otherUserId,
@@ -75,19 +125,26 @@ export default function MyAgreements() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['myAgreements']);
-      setDeleteAgreementId(null);
+      setDeleteItemId(null);
+      setDeleteType(null);
     }
   });
 
-  const handleDeleteAgreement = () => {
-    if (deleteAgreementId) {
-      deleteAgreementMutation.mutate(deleteAgreementId);
+  const handleDelete = () => {
+    if (deleteType === 'negotiation') {
+      deleteNegotiationMutation.mutate(deleteItemId);
+    } else {
+      deleteAgreementMutation.mutate(deleteItemId);
     }
   };
 
-  const proposedAgreements = agreements.filter(a => a.status === 'proposed');
+  const activeNegotiations = negotiations.filter(n => n.status === 'active');
+  const acceptedNegotiations = negotiations.filter(n => n.status === 'accepted');
   const activeAgreements = agreements.filter(a => ['locked', 'in_progress'].includes(a.status));
   const completedAgreements = agreements.filter(a => ['completed', 'ready_for_handover'].includes(a.status));
+  const proposedAgreements = agreements.filter(a => a.status === 'proposed');
+
+  const isLoading = negsLoading || agreementsLoading;
 
   if (!user) {
     return (
@@ -101,6 +158,68 @@ export default function MyAgreements() {
       </div>
     );
   }
+
+  const NegotiationCard = ({ negotiation }) => {
+    const statusConfig = {
+      active: { color: 'bg-blue-100 text-blue-700', label: 'Negotiating' },
+      accepted: { color: 'bg-green-100 text-green-700', label: 'Accepted - Pending Confirmation' },
+      declined: { color: 'bg-red-100 text-red-700', label: 'Declined' },
+      expired: { color: 'bg-gray-100 text-gray-700', label: 'Expired' },
+      converted: { color: 'bg-purple-100 text-purple-700', label: 'Agreement Created' }
+    };
+
+    const config = statusConfig[negotiation.status] || statusConfig.active;
+    const currentOffer = negotiation.counter_offer_hours || negotiation.initial_offer_hours;
+
+    return (
+      <Card className="hover:shadow-lg transition-shadow border-orange-100">
+        <CardContent className="p-6">
+          <div className="flex justify-between items-start mb-4">
+            <div className="flex-1">
+              <h3 className="font-bold text-xl text-gray-900 mb-1">{negotiation.item_title}</h3>
+              <p className="text-sm text-gray-500">
+                {user.id === negotiation.bidder_id ? `With ${negotiation.offerer_name}` : `With ${negotiation.bidder_name}`}
+              </p>
+            </div>
+            <Badge className={config.color}>
+              {config.label}
+            </Badge>
+          </div>
+
+          <div className="mb-4 p-3 bg-orange-50 rounded-lg">
+            <div className="flex items-center gap-2 text-orange-700">
+              <Clock className="w-4 h-4" />
+              <span className="font-semibold">Current offer: {currentOffer} hours</span>
+            </div>
+            {negotiation.last_activity && (
+              <p className="text-xs text-gray-600 mt-1">
+                Last activity: {format(new Date(negotiation.last_activity), 'MMM d, h:mm a')}
+              </p>
+            )}
+          </div>
+
+          <div className="flex gap-3">
+            <Link to={createPageUrl(`Negotiation?id=${negotiation.id}`)} className="flex-1">
+              <Button variant="outline" className="w-full">
+                <MessageSquare className="w-4 h-4 mr-2" />
+                View Negotiation
+              </Button>
+            </Link>
+            <Button
+              onClick={() => {
+                setDeleteItemId(negotiation.id);
+                setDeleteType('negotiation');
+              }}
+              variant="outline"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   const AgreementCard = ({ agreement }) => {
     const progress = agreement.agreed_hours > 0 
@@ -138,7 +257,7 @@ export default function MyAgreements() {
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-gray-600">Progress</span>
                 <span className="font-semibold text-orange-600">
-                  {agreement.hours_logged} / {agreement.agreed_hours} hours
+                  {agreement.hours_logged || 0} / {agreement.agreed_hours} hours
                 </span>
               </div>
               <Progress value={progress} className="h-2" />
@@ -147,10 +266,10 @@ export default function MyAgreements() {
 
           <div className="flex gap-3">
             {agreement.status === 'proposed' && (
-              <Link to={createPageUrl(`Chat?agreementId=${agreement.id}`)} className="flex-1">
+              <Link to={createPageUrl(`Negotiation?id=${agreement.id}`)} className="flex-1">
                 <Button variant="outline" className="w-full">
                   <MessageSquare className="w-4 h-4 mr-2" />
-                  Continue Negotiation
+                  Continue Setup
                 </Button>
               </Link>
             )}
@@ -182,7 +301,10 @@ export default function MyAgreements() {
             )}
 
             <Button
-              onClick={() => setDeleteAgreementId(agreement.id)}
+              onClick={() => {
+                setDeleteItemId(agreement.id);
+                setDeleteType('agreement');
+              }}
               variant="outline"
               className="text-red-600 hover:text-red-700 hover:bg-red-50"
             >
@@ -198,18 +320,32 @@ export default function MyAgreements() {
     <div className="min-h-screen p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">My Agreements</h1>
-          <p className="text-gray-500 mt-1">Track your work exchanges</p>
+          <h1 className="text-3xl font-bold text-gray-900">My Agreements & Negotiations</h1>
+          <p className="text-gray-500 mt-1">Track your work exchanges and ongoing negotiations</p>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="border-blue-100 bg-gradient-to-br from-blue-50 to-cyan-50">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Active Negotiations</p>
+                  <p className="text-3xl font-bold text-gray-900">{activeNegotiations.length + acceptedNegotiations.length}</p>
+                </div>
+                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                  <MessageSquare className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="border-orange-100 bg-gradient-to-br from-orange-50 to-amber-50">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Active Agreements</p>
-                  <p className="text-3xl font-bold text-gray-900">{activeAgreements.length}</p>
+                  <p className="text-sm text-gray-600 mb-1">Active Work</p>
+                  <p className="text-3xl font-bold text-gray-900">{activeAgreements.length + proposedAgreements.length}</p>
                 </div>
                 <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center">
                   <TrendingUp className="w-6 h-6 text-white" />
@@ -222,26 +358,10 @@ export default function MyAgreements() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Hours Logged</p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {agreements.reduce((sum, a) => sum + (a.hours_logged || 0), 0)}
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-blue-100 bg-gradient-to-br from-blue-50 to-cyan-50">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
                   <p className="text-sm text-gray-600 mb-1">Completed</p>
                   <p className="text-3xl font-bold text-gray-900">{completedAgreements.length}</p>
                 </div>
-                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
                   <CheckCircle2 className="w-6 h-6 text-white" />
                 </div>
               </div>
@@ -249,22 +369,51 @@ export default function MyAgreements() {
           </Card>
         </div>
 
-        <Tabs defaultValue="proposed" className="w-full">
+        <Tabs defaultValue="negotiations" className="w-full">
           <TabsList className="mb-6">
-            <TabsTrigger value="proposed">Proposed ({proposedAgreements.length})</TabsTrigger>
-            <TabsTrigger value="active">Active ({activeAgreements.length})</TabsTrigger>
-            <TabsTrigger value="completed">Completed ({completedAgreements.length})</TabsTrigger>
+            <TabsTrigger value="negotiations">
+              Negotiations ({activeNegotiations.length + acceptedNegotiations.length})
+            </TabsTrigger>
+            <TabsTrigger value="proposed">
+              Proposed Agreements ({proposedAgreements.length})
+            </TabsTrigger>
+            <TabsTrigger value="active">
+              Active Work ({activeAgreements.length})
+            </TabsTrigger>
+            <TabsTrigger value="completed">
+              Completed ({completedAgreements.length})
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="proposed">
-            {proposedAgreements.length === 0 ? (
+          <TabsContent value="negotiations">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+              </div>
+            ) : [...activeNegotiations, ...acceptedNegotiations].length === 0 ? (
               <div className="text-center py-16">
                 <MessageSquare className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No pending proposals</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No active negotiations</h3>
                 <p className="text-gray-500">Browse items and start negotiating</p>
                 <Link to={createPageUrl("Browse")}>
                   <Button className="mt-4">Browse Items</Button>
                 </Link>
+              </div>
+            ) : (
+              <div className="grid gap-6">
+                {[...activeNegotiations, ...acceptedNegotiations].map(negotiation => (
+                  <NegotiationCard key={negotiation.id} negotiation={negotiation} />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="proposed">
+            {proposedAgreements.length === 0 ? (
+              <div className="text-center py-16">
+                <Clock className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No proposed agreements</h3>
+                <p className="text-gray-500">Accept negotiations to create agreements</p>
               </div>
             ) : (
               <div className="grid gap-6">
@@ -309,21 +458,26 @@ export default function MyAgreements() {
         </Tabs>
 
         {/* Delete Confirmation Dialog */}
-        <AlertDialog open={!!deleteAgreementId} onOpenChange={() => setDeleteAgreementId(null)}>
+        <AlertDialog open={!!deleteItemId} onOpenChange={() => {
+          setDeleteItemId(null);
+          setDeleteType(null);
+        }}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Cancel Agreement</AlertDialogTitle>
+              <AlertDialogTitle>
+                Cancel {deleteType === 'negotiation' ? 'Negotiation' : 'Agreement'}
+              </AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to cancel this agreement? The other user will be notified.
+                Are you sure you want to cancel this {deleteType === 'negotiation' ? 'negotiation' : 'agreement'}? The other user will be notified.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>No, Keep It</AlertDialogCancel>
               <AlertDialogAction
-                onClick={handleDeleteAgreement}
+                onClick={handleDelete}
                 className="bg-red-600 hover:bg-red-700"
               >
-                Yes, Cancel Agreement
+                Yes, Cancel {deleteType === 'negotiation' ? 'Negotiation' : 'Agreement'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
