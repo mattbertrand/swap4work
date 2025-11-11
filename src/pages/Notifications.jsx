@@ -18,27 +18,39 @@ export default function Notifications() {
     base44.auth.me().then(setUser).catch(() => setUser(null));
   }, []);
 
-  const { data: notifications = [], isLoading } = useQuery({
-    queryKey: ['notifications', user?.id],
+  // Separate queries for unread and read to prevent interference
+  const { data: unreadNotifications = [], isLoading: unreadLoading } = useQuery({
+    queryKey: ['unreadNotifications', user?.id],
     queryFn: async () => {
       if (!user) return [];
-      console.log('📥 Fetching all notifications for user:', user.id);
-      const allNotifications = await base44.entities.Notification.filter({ 
-        user_id: user.id 
+      console.log('📥 Notifications Page: Fetching UNREAD notifications');
+      const unread = await base44.entities.Notification.filter({ 
+        user_id: user.id,
+        is_read: false
       }, '-created_date');
-      console.log(`✅ Loaded ${allNotifications.length} total notifications`);
-      console.log('📋 Notifications:', allNotifications.map(n => ({
-        id: n.id,
-        title: n.title,
-        is_read: n.is_read,
-        created: n.created_date
-      })));
-      return allNotifications;
+      console.log(`✅ Notifications Page: Loaded ${unread.length} UNREAD notifications`);
+      return unread;
     },
     enabled: !!user,
     refetchInterval: 5000,
-    staleTime: 0, // Always fetch fresh data
-    cacheTime: 0  // Don't cache notifications
+    staleTime: 0
+  });
+
+  const { data: readNotifications = [], isLoading: readLoading } = useQuery({
+    queryKey: ['readNotifications', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      console.log('📥 Notifications Page: Fetching READ notifications');
+      const read = await base44.entities.Notification.filter({ 
+        user_id: user.id,
+        is_read: true
+      }, '-created_date', 20); // Limit to 20 most recent
+      console.log(`✅ Notifications Page: Loaded ${read.length} READ notifications (STABLE)`);
+      return read;
+    },
+    enabled: !!user,
+    refetchInterval: 10000, // Less frequent refresh for read
+    staleTime: 5000
   });
 
   const markAsReadMutation = useMutation({
@@ -47,27 +59,28 @@ export default function Notifications() {
       return base44.entities.Notification.update(notificationId, { is_read: true });
     },
     onSuccess: () => {
-      console.log('✅ Notification marked as read');
-      queryClient.invalidateQueries(['notifications']);
+      console.log('✅ Notification marked as read, invalidating queries');
+      queryClient.invalidateQueries(['unreadNotifications']);
+      queryClient.invalidateQueries(['readNotifications']);
     }
   });
 
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
-      const unread = notifications.filter(n => !n.is_read);
-      console.log(`✓ Marking ${unread.length} notifications as read`);
-      await Promise.all(unread.map(n => 
+      console.log(`✓ Marking ${unreadNotifications.length} notifications as read`);
+      await Promise.all(unreadNotifications.map(n => 
         base44.entities.Notification.update(n.id, { is_read: true })
       ));
     },
     onSuccess: () => {
       console.log('✅ All notifications marked as read');
-      queryClient.invalidateQueries(['notifications']);
+      queryClient.invalidateQueries(['unreadNotifications']);
+      queryClient.invalidateQueries(['readNotifications']);
     }
   });
 
   const handleNotificationClick = async (notification) => {
-    console.log('👆 Notification clicked:', notification);
+    console.log('👆 Notification clicked:', notification.id);
     
     // Mark as read
     if (!notification.is_read) {
@@ -114,10 +127,8 @@ export default function Notifications() {
     );
   }
 
-  const unreadNotifications = notifications.filter(n => !n.is_read);
-  const readNotifications = notifications.filter(n => n.is_read);
-
-  console.log(`🔍 Displaying ${unreadNotifications.length} unread, ${readNotifications.length} read (stable)`);
+  const isLoading = unreadLoading || readLoading;
+  console.log(`🔍 Rendering: ${unreadNotifications.length} unread, ${readNotifications.length} read (STABLE)`);
 
   return (
     <div className="min-h-screen p-4 md:p-8">
@@ -144,7 +155,7 @@ export default function Notifications() {
           <div className="flex items-center justify-center py-16">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
           </div>
-        ) : notifications.length === 0 ? (
+        ) : unreadNotifications.length === 0 && readNotifications.length === 0 ? (
           <Card className="border-orange-100">
             <CardContent className="p-16 text-center">
               <Bell className="w-16 h-16 mx-auto mb-4 text-gray-300" />
@@ -199,9 +210,9 @@ export default function Notifications() {
               </div>
             )}
 
-            {/* Read Notifications - STABLE SECTION */}
+            {/* Read Notifications - PERMANENTLY STABLE */}
             {readNotifications.length > 0 && (
-              <div className="opacity-100">
+              <div>
                 <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-gray-500" />
                   Earlier ({readNotifications.length})
@@ -210,7 +221,7 @@ export default function Notifications() {
                   {readNotifications.map((notification) => (
                     <Card
                       key={notification.id}
-                      className="border-gray-200 hover:shadow-md transition-shadow cursor-pointer opacity-100"
+                      className="border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
                       onClick={() => handleNotificationClick(notification)}
                     >
                       <CardContent className="p-4">

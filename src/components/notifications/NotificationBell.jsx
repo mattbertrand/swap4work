@@ -8,16 +8,24 @@ import { createPageUrl } from "@/utils";
 
 export default function NotificationBell({ user }) {
   const { data: notifications = [] } = useQuery({
-    queryKey: ['notifications', user?.id],
-    queryFn: () => base44.entities.Notification.filter({ 
-      user_id: user.id,
-      is_read: false 
-    }, '-created_date'),
+    queryKey: ['unreadNotifications', user?.id],
+    queryFn: async () => {
+      console.log('🔔 NotificationBell: Fetching unread notifications for user:', user.id);
+      const unread = await base44.entities.Notification.filter({ 
+        user_id: user.id,
+        is_read: false 
+      }, '-created_date');
+      console.log(`🔔 NotificationBell: Found ${unread.length} unread notifications`);
+      return unread;
+    },
     enabled: !!user,
-    refetchInterval: 5000 // Check every 5 seconds
+    refetchInterval: 5000, // Check every 5 seconds
+    staleTime: 0, // Always fetch fresh
+    cacheTime: 1000 // Keep in cache for 1 second
   });
 
   const unreadCount = notifications.length;
+  console.log('🔔 NotificationBell: Displaying badge count:', unreadCount);
 
   return (
     <Link to={createPageUrl("Notifications")} className="relative">

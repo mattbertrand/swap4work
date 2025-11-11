@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,16 +7,53 @@ import { Label } from "@/components/ui/label";
 import { Clock, TrendingDown, TrendingUp } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-export default function CounterOfferModal({ open, onClose, currentOffer, suggestedHours, onSubmit }) {
+export default function CounterOfferModal({ 
+  open, 
+  onClose, 
+  currentOffer, 
+  suggestedHours, 
+  onSubmit,
+  defaultHours = null,
+  defaultWorkType = ""
+}) {
   const [hours, setHours] = useState("");
   const [workType, setWorkType] = useState("");
   const [message, setMessage] = useState("");
+
+  // Auto-populate when modal opens
+  useEffect(() => {
+    if (open) {
+      console.log('🔢 Counter Offer Modal opened with defaults:', {
+        defaultHours,
+        defaultWorkType,
+        currentOffer
+      });
+      
+      // Set default hours (either passed default or current offer)
+      const initialHours = defaultHours || currentOffer || "";
+      setHours(initialHours.toString());
+      
+      // Set default work type
+      setWorkType(defaultWorkType || "");
+      
+      console.log('✅ Pre-filled fields:', {
+        hours: initialHours,
+        workType: defaultWorkType || ""
+      });
+    }
+  }, [open, defaultHours, defaultWorkType, currentOffer]);
 
   const handleSubmit = () => {
     if (!hours || parseFloat(hours) <= 0) {
       alert("Please enter valid hours");
       return;
     }
+
+    console.log('📤 Submitting counter offer:', {
+      hours: parseFloat(hours),
+      work_type: workType,
+      message
+    });
 
     onSubmit({
       hours: parseFloat(hours),
@@ -31,10 +68,18 @@ export default function CounterOfferModal({ open, onClose, currentOffer, suggest
     onClose();
   };
 
+  const handleClose = () => {
+    // Reset on close
+    setHours("");
+    setWorkType("");
+    setMessage("");
+    onClose();
+  };
+
   const difference = hours && currentOffer ? parseFloat(hours) - currentOffer : 0;
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -104,7 +149,7 @@ export default function CounterOfferModal({ open, onClose, currentOffer, suggest
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={handleClose}>
             Cancel
           </Button>
           <Button 

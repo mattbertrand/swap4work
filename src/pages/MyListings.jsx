@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Plus, Package, Clock, Eye, Edit, Trash2 } from "lucide-react";
+import { Plus, Package, Clock, Eye, Edit, Trash2, MessageSquare, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { formatDistanceToNow } from "date-fns";
 
 export default function MyListings() {
   const navigate = useNavigate();
@@ -33,6 +34,21 @@ export default function MyListings() {
     queryKey: ['myItems', user?.id],
     queryFn: () => base44.entities.Item.filter({ offerer_id: user.id }, '-created_date'),
     enabled: !!user
+  });
+
+  // Fetch negotiations for each item
+  const { data: allNegotiations = [] } = useQuery({
+    queryKey: ['itemNegotiations', user?.id],
+    queryFn: async () => {
+      if (!user || items.length === 0) return [];
+      const itemIds = items.map(item => item.id);
+      const negs = await base44.entities.Negotiation.filter({ 
+        item_id: { $in: itemIds }
+      });
+      console.log('📥 Loaded negotiations for items:', negs.length);
+      return negs;
+    },
+    enabled: !!user && items.length > 0
   });
 
   const deleteItemMutation = useMutation({
@@ -68,11 +84,13 @@ export default function MyListings() {
 
   const ItemCard = ({ item }) => {
     const canEdit = ['active', 'in_negotiation'].includes(item.status);
+    const itemNegotiations = allNegotiations.filter(n => n.item_id === item.id);
+    const activeNegotiations = itemNegotiations.filter(n => n.status === 'active');
     
     return (
       <Card className="hover:shadow-lg transition-shadow border-orange-100">
         <CardContent className="p-5">
-          <div className="flex gap-4">
+          <div className="flex gap-4 mb-4">
             <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
               {item.photos?.[0] ? (
                 <img src={item.photos[0]} alt={item.title} className="w-full h-full object-cover" />
@@ -94,20 +112,63 @@ export default function MyListings() {
                   {item.status.replace('_', ' ')}
                 </Badge>
               </div>
-              <p className="text-sm text-gray-600 mb-3 line-clamp-2">{item.description}</p>
+              <p className="text-sm text-gray-600 mb-2 line-clamp-2">{item.description}</p>
               <div className="flex items-center gap-4 text-sm">
                 <div className="flex items-center gap-1 text-orange-600 font-medium">
                   <Clock className="w-4 h-4" />
                   <span>{item.required_hours}h</span>
                 </div>
                 <div className="flex items-center gap-1 text-gray-500">
-                  <Eye className="w-4 h-4" />
-                  <span>{item.category}</span>
+                  <Calendar className="w-4 h-4" />
+                  <span className="text-xs">
+                    Listed {formatDistanceToNow(new Date(item.created_date), { addSuffix: true })}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
-          <div className="flex gap-2 mt-4">
+
+          {/* Negotiations Section */}
+          {activeNegotiations.length > 0 && (
+            <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-semibold text-blue-900">
+                    {activeNegotiations.length} Active Negotiation{activeNegotiations.length > 1 ? 's' : ''}
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {activeNegotiations.slice(0, 3).map(negotiation => (
+                  <Link 
+                    key={negotiation.id}
+                    to={createPageUrl(`Negotiation?id=${negotiation.id}`)}
+                    className="block"
+                  >
+                    <div className="flex items-center justify-between p-2 bg-white rounded hover:bg-blue-50 transition-colors">
+                      <span className="text-xs text-gray-700 font-medium">
+                        {negotiation.bidder_name}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          {negotiation.counter_offer_hours || negotiation.initial_offer_hours}h
+                        </Badge>
+                        <span className="text-xs text-blue-600">View →</span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+                {activeNegotiations.length > 3 && (
+                  <p className="text-xs text-blue-600 text-center">
+                    +{activeNegotiations.length - 3} more
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-2">
             <Link to={createPageUrl(`ItemDetail?id=${item.id}`)} className="flex-1">
               <Button variant="outline" className="w-full">
                 <Eye className="w-4 h-4 mr-2" />

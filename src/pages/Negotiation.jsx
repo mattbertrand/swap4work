@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -173,7 +174,7 @@ export default function Negotiation() {
 
     const otherUserId = user.id === negotiation.bidder_id ? negotiation.offerer_id : negotiation.bidder_id;
 
-    console.log('📤 Preparing to send message...');
+    console.log('📤 [SEND] Preparing to send message:', message);
     
     try {
       await sendMessageMutation.mutateAsync({
@@ -198,8 +199,9 @@ export default function Negotiation() {
       });
 
       await updateLastActivity();
+      console.log('✅ [SEND] Message sent and notification created');
     } catch (error) {
-      console.error('❌ Error in handleSendMessage:', error);
+      console.error('❌ [SEND] Error in handleSendMessage:', error);
     }
   };
 
@@ -534,7 +536,8 @@ export default function Negotiation() {
             <div className="h-96 overflow-y-auto space-y-4 mb-4 bg-gray-50 rounded-lg p-4">
               {messages.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">
-                  No messages yet. Start the conversation!
+                  <p>No messages yet. Start the conversation!</p>
+                  <p className="text-xs mt-2 text-gray-400">Type a message below or click "Counter Offer"</p>
                 </div>
               ) : (
                 messages.map((msg) => {
@@ -559,13 +562,23 @@ export default function Negotiation() {
                     );
 
                     if (offer) {
+                      console.log('🎯 [RENDER] Rendering OfferCard:', {
+                        offeredBy: offer.offered_by_name,
+                        hours: offer.hours,
+                        isOwnOffer: isOwnMessage,
+                        canRespond: !isOwnMessage && negotiation.status === 'active'
+                      });
+
                       return (
                         <OfferCard
                           key={msg.id}
                           offer={offer}
                           isOwnOffer={isOwnMessage}
                           onAccept={handleAcceptOffer}
-                          onCounter={() => setShowCounterModal(true)}
+                          onCounter={() => {
+                            console.log('💬 [COUNTER] Opening counter offer modal');
+                            setShowCounterModal(true);
+                          }}
                           onDecline={handleDeclineOffer}
                           canRespond={!isOwnMessage && negotiation.status === 'active'}
                         />
@@ -602,17 +615,24 @@ export default function Negotiation() {
                 <Input
                   placeholder="Type a message..."
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
+                  onChange={(e) => {
+                    console.log('⌨️ [INPUT] Message changed:', e.target.value.length, 'chars');
+                    setMessage(e.target.value);
+                  }}
                   onKeyPress={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
+                      console.log('⏎ [ENTER] Enter key pressed, sending message');
                       handleSendMessage();
                     }
                   }}
                   className="flex-1"
                 />
                 <Button
-                  onClick={() => setShowCounterModal(true)}
+                  onClick={() => {
+                    console.log('🎯 [BUTTON] Counter Offer button clicked');
+                    setShowCounterModal(true);
+                  }}
                   variant="outline"
                   className="px-4"
                 >
@@ -620,7 +640,10 @@ export default function Negotiation() {
                   Counter Offer
                 </Button>
                 <Button 
-                  onClick={handleSendMessage}
+                  onClick={() => {
+                    console.log('📤 [BUTTON] Send button clicked');
+                    handleSendMessage();
+                  }}
                   disabled={!message.trim() || sendMessageMutation.isLoading}
                   className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"
                 >
@@ -651,9 +674,14 @@ export default function Negotiation() {
 
       <CounterOfferModal
         open={showCounterModal}
-        onClose={() => setShowCounterModal(false)}
+        onClose={() => {
+          console.log('❌ [MODAL] Counter offer modal closed');
+          setShowCounterModal(false);
+        }}
         currentOffer={currentOfferHours}
         suggestedHours={item ? [item.required_hours - 2, item.required_hours + 2] : null}
+        defaultHours={item?.required_hours}
+        defaultWorkType={negotiation?.work_type || ""}
         onSubmit={handleCounterOffer}
       />
     </div>
