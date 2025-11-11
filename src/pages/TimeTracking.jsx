@@ -126,13 +126,32 @@ export default function TimeTracking() {
     }
   };
 
-  if (!user || !agreement) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
-      </div>
-    );
-  }
+// First, check for an error after the query has attempted to load
+if (agreementError) {
+  return (
+    <div className="min-h-screen flex items-center justify-center text-red-600">
+      Error loading agreement: {agreementError.message || "Unknown error"}
+    </div>
+  );
+}
+
+// Then, check for initial loading state or if user data isn't ready
+if (!user || agreementLoading) {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+    </div>
+  );
+}
+
+// If neither loading nor error, but no agreement data was found
+if (!agreement) { // This implies agreementLoading is false, and no error
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center text-gray-500">Agreement not found or invalid ID.</div>
+    </div>
+  );
+}
 
   const isWorker = user.id === agreement.worker_id;
   const totalHours = timeLogs.reduce((sum, log) => sum + log.hours, 0);
