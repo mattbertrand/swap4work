@@ -386,6 +386,7 @@ export default function Negotiation() {
         data: { status: 'converted' }
       });
 
+      console.log("Attempting to redirect with agreement ID:", agreement.id);
       setTimeout(() => {
         navigate(createPageUrl(`TimeTracking?agreementId=${agreement.id}`));
       }, 2000);
