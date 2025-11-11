@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -241,7 +240,8 @@ export default function Negotiation() {
       from_user_name: user.full_name,
       to_user_id: otherUserId,
       text: `${user.full_name} offered ${offerData.hours} hours${offerData.work_type ? ` for ${offerData.work_type}` : ''}${offerData.message ? `\n\n${offerData.message}` : ''}`,
-      message_type: "offer"
+      message_type: "offer",
+      proposal_hours: offerData.hours
     });
 
     await createNotificationMutation.mutateAsync({
@@ -547,6 +547,7 @@ export default function Negotiation() {
                     from: msg.from_user_name,
                     type: msg.message_type,
                     text: msg.text?.substring(0, 50),
+                    proposal_hours: msg.proposal_hours,
                     created: msg.created_date
                   });
 
@@ -572,26 +573,26 @@ export default function Negotiation() {
                   }
 
                   if (isOfferMessage) {
-                    console.log(`🎁 [MSG ${idx}] Detected OFFER message, searching in offer_history...`);
-                    console.log(`🔍 [MSG ${idx}] Offer history:`, negotiation.offer_history);
+                    console.log(`🎁 [MSG ${idx}] Detected OFFER message`);
+                    console.log(`   proposal_hours from message:`, msg.proposal_hours);
+                    console.log(`   offer_history:`, negotiation.offer_history);
                     
+                    // Match by proposal_hours instead of timestamp
                     const offer = negotiation.offer_history?.find(
                       o => {
                         const matchesUser = o.offered_by === msg.from_user_id;
-                        const timeDiff = Math.abs(new Date(o.timestamp).getTime() - new Date(msg.created_date).getTime());
-                        const matchesTime = timeDiff < 5000; // Within 5 seconds
+                        const matchesHours = o.hours === msg.proposal_hours;
                         
                         console.log(`  🔎 Checking offer:`, {
                           offered_by: o.offered_by,
                           msg_from: msg.from_user_id,
                           matchesUser,
-                          offer_time: o.timestamp,
-                          msg_time: msg.created_date,
-                          timeDiff,
-                          matchesTime
+                          offer_hours: o.hours,
+                          msg_hours: msg.proposal_hours,
+                          matchesHours
                         });
                         
-                        return matchesUser && matchesTime;
+                        return matchesUser && matchesHours;
                       }
                     );
 
@@ -619,7 +620,7 @@ export default function Negotiation() {
                       );
                     } else {
                       console.warn(`⚠️ [MSG ${idx}] OFFER message detected but NO matching offer found in history!`);
-                      console.warn(`   This message will fall through to regular text rendering.`);
+                      console.warn(`   Message has proposal_hours: ${msg.proposal_hours}, but no match in offer_history`);
                     }
                   }
 
