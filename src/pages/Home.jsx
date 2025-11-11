@@ -25,6 +25,18 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
   return R * c;
 };
 
+// Get approximate location (city/state) from exact coordinates
+const getApproximateLocation = (fullLocation) => {
+  if (!fullLocation) return null;
+  // Extract city and state, hide exact address
+  const parts = fullLocation.split(',').map(p => p.trim());
+  if (parts.length >= 2) {
+    // Return last two parts (typically City, State or City, State ZIP)
+    return parts.slice(-2).join(', ');
+  }
+  return fullLocation;
+};
+
 export default function Home() {
   const [user, setUser] = React.useState(null);
 
@@ -41,7 +53,14 @@ export default function Home() {
 
   const { data: allUsers = [], isLoading: usersLoading } = useQuery({
     queryKey: ['workers'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: async () => {
+      try {
+        return await base44.auth.listUsers();
+      } catch (error) {
+        console.log('Could not fetch users list', error);
+        return [];
+      }
+    },
   });
 
   const { data: recentRatings = [], isLoading: ratingsLoading } = useQuery({
@@ -49,18 +68,27 @@ export default function Home() {
     queryFn: () => base44.entities.Rating.filter({ published: true }, '-created_date', 6),
   });
 
-  // Filter workers (people offering services) with distance calculation
+  // Filter workers with proper validation
   const workers = React.useMemo(() => {
+    console.log('📊 Total users fetched:', allUsers.length);
+    
     // Filter workers who have completed profiles with required data
-    const potentialWorkers = allUsers.filter(u => 
-      u.profile_completed &&
-      u.latitude && 
-      u.longitude &&
-      u.skills
-    );
+    const potentialWorkers = allUsers.filter(u => {
+      const hasProfile = u.profile_completed;
+      const hasCoordinates = u.latitude && u.longitude;
+      const hasSkills = u.skills;
+      
+      console.log(`User ${u.full_name}: profile=${hasProfile}, coords=${hasCoordinates}, skills=${hasSkills}`);
+      
+      return hasProfile && hasCoordinates && hasSkills;
+    });
+
+    console.log('✅ Qualified workers:', potentialWorkers.length);
 
     // If user has location, filter by distance and add distance to each worker
     if (user?.latitude && user?.longitude) {
+      console.log(`📍 User location: ${user.latitude}, ${user.longitude}`);
+      
       return potentialWorkers
         .map(worker => {
           const distance = calculateDistance(
@@ -71,14 +99,21 @@ export default function Home() {
           );
           return { ...worker, distance: distance.toFixed(1) };
         })
-        .filter(worker => parseFloat(worker.distance) <= 100)
+        .filter(worker => {
+          const withinRange = parseFloat(worker.distance) <= 100;
+          console.log(`Worker ${worker.full_name}: ${worker.distance} miles ${withinRange ? '✓' : '✗'}`);
+          return withinRange;
+        })
         .sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance))
         .slice(0, 6);
     }
 
     // If no user location, just return first 6 workers without distance
+    console.log('ℹ️ No user location, showing first 6 workers');
     return potentialWorkers.slice(0, 6);
   }, [allUsers, user?.latitude, user?.longitude]);
+
+  console.log('🎯 Final workers to display:', workers.length);
 
   return (
     <div className="min-h-screen">
@@ -233,7 +268,7 @@ export default function Home() {
                         </div>
                         <div className="flex items-center gap-1 text-sm text-gray-500">
                           <MapPin className="w-4 h-4" />
-                          <span className="truncate">{item.location?.split(',')[0]}</span>
+                          <span className="truncate">{getApproximateLocation(item.location)}</span>
                         </div>
                       </div>
                     </CardContent>
@@ -291,10 +326,12 @@ export default function Home() {
               <p className="text-gray-500 mb-4">
                 {user?.latitude && user?.longitude
                   ? 'Try browsing items or check back soon as more people join the community'
-                  : 'Complete your profile to see workers in your area'
+                  : user 
+                  ? 'Complete your profile to see workers in your area'
+                  : 'Sign in to see workers in your area'
                 }
               </p>
-              {!user?.profile_completed && user && (
+              {user && !user.profile_completed && (
                 <Link to={createPageUrl("Profile")}>
                   <Button className="bg-orange-600 hover:bg-orange-700">
                     Complete Your Profile
@@ -374,6 +411,16 @@ export default function Home() {
                         <div className="flex items-center justify-center gap-1 text-sm text-gray-600">
                           <MapPin className="w-4 h-4 text-orange-600" />
                           <span className="font-medium">{worker.distance} miles away</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Show approximate location instead of exact coordinates */}
+                    {!worker.distance && worker.location && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <div className="flex items-center justify-center gap-1 text-sm text-gray-600">
+                          <MapPin className="w-4 h-4 text-orange-600" />
+                          <span>{getApproximateLocation(worker.location)}</span>
                         </div>
                       </div>
                     )}

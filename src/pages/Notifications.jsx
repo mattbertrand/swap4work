@@ -26,11 +26,19 @@ export default function Notifications() {
       const allNotifications = await base44.entities.Notification.filter({ 
         user_id: user.id 
       }, '-created_date');
-      console.log(`✅ Loaded ${allNotifications.length} notifications`);
+      console.log(`✅ Loaded ${allNotifications.length} total notifications`);
+      console.log('📋 Notifications:', allNotifications.map(n => ({
+        id: n.id,
+        title: n.title,
+        is_read: n.is_read,
+        created: n.created_date
+      })));
       return allNotifications;
     },
     enabled: !!user,
-    refetchInterval: 5000
+    refetchInterval: 5000,
+    staleTime: 0, // Always fetch fresh data
+    cacheTime: 0  // Don't cache notifications
   });
 
   const markAsReadMutation = useMutation({
@@ -109,7 +117,7 @@ export default function Notifications() {
   const unreadNotifications = notifications.filter(n => !n.is_read);
   const readNotifications = notifications.filter(n => n.is_read);
 
-  console.log(`🔍 Displaying ${unreadNotifications.length} unread, ${readNotifications.length} read notifications`);
+  console.log(`🔍 Displaying ${unreadNotifications.length} unread, ${readNotifications.length} read (stable)`);
 
   return (
     <div className="min-h-screen p-4 md:p-8">
@@ -151,7 +159,10 @@ export default function Notifications() {
             {/* Unread Notifications */}
             {unreadNotifications.length > 0 && (
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">New</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Bell className="w-5 h-5" />
+                  New ({unreadNotifications.length})
+                </h2>
                 <div className="space-y-3">
                   {unreadNotifications.map((notification) => (
                     <Card
@@ -188,15 +199,18 @@ export default function Notifications() {
               </div>
             )}
 
-            {/* Read Notifications */}
+            {/* Read Notifications - STABLE SECTION */}
             {readNotifications.length > 0 && (
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Earlier</h2>
+              <div className="opacity-100">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-gray-500" />
+                  Earlier ({readNotifications.length})
+                </h2>
                 <div className="space-y-3">
                   {readNotifications.map((notification) => (
                     <Card
                       key={notification.id}
-                      className="border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
+                      className="border-gray-200 hover:shadow-md transition-shadow cursor-pointer opacity-100"
                       onClick={() => handleNotificationClick(notification)}
                     >
                       <CardContent className="p-4">
