@@ -461,6 +461,7 @@ export default function Negotiation() {
 
   console.log('🔍 Current messages count:', messages.length);
   console.log('🔍 Current negotiation status:', negotiation.status);
+  console.log('🔍 Offer history:', negotiation.offer_history);
 
   return (
     <div className="min-h-screen p-4 md:p-8">
@@ -540,12 +541,27 @@ export default function Negotiation() {
                   <p className="text-xs mt-2 text-gray-400">Type a message below or click "Counter Offer"</p>
                 </div>
               ) : (
-                messages.map((msg) => {
+                messages.map((msg, idx) => {
+                  console.log(`📨 [MSG ${idx}] Processing message:`, {
+                    id: msg.id,
+                    from: msg.from_user_name,
+                    type: msg.message_type,
+                    text: msg.text?.substring(0, 50),
+                    created: msg.created_date
+                  });
+
                   const isOwnMessage = msg.from_user_id === user.id;
                   const isSystemMessage = msg.message_type === 'system';
                   const isOfferMessage = msg.message_type === 'offer';
 
+                  console.log(`🔍 [MSG ${idx}] Flags:`, {
+                    isOwnMessage,
+                    isSystemMessage,
+                    isOfferMessage
+                  });
+
                   if (isSystemMessage) {
+                    console.log(`✅ [MSG ${idx}] Rendering as SYSTEM message`);
                     return (
                       <div key={msg.id} className="flex justify-center">
                         <div className="bg-gray-100 rounded-lg px-4 py-2 text-sm text-gray-700 max-w-md text-center">
@@ -556,13 +572,31 @@ export default function Negotiation() {
                   }
 
                   if (isOfferMessage) {
+                    console.log(`🎁 [MSG ${idx}] Detected OFFER message, searching in offer_history...`);
+                    console.log(`🔍 [MSG ${idx}] Offer history:`, negotiation.offer_history);
+                    
                     const offer = negotiation.offer_history?.find(
-                      o => o.offered_by === msg.from_user_id && 
-                      Math.abs(new Date(o.timestamp) - new Date(msg.created_date)) < 5000
+                      o => {
+                        const matchesUser = o.offered_by === msg.from_user_id;
+                        const timeDiff = Math.abs(new Date(o.timestamp).getTime() - new Date(msg.created_date).getTime());
+                        const matchesTime = timeDiff < 5000; // Within 5 seconds
+                        
+                        console.log(`  🔎 Checking offer:`, {
+                          offered_by: o.offered_by,
+                          msg_from: msg.from_user_id,
+                          matchesUser,
+                          offer_time: o.timestamp,
+                          msg_time: msg.created_date,
+                          timeDiff,
+                          matchesTime
+                        });
+                        
+                        return matchesUser && matchesTime;
+                      }
                     );
 
                     if (offer) {
-                      console.log('🎯 [RENDER] Rendering OfferCard:', {
+                      console.log(`✅ [MSG ${idx}] Found matching offer, rendering OfferCard:`, {
                         offeredBy: offer.offered_by_name,
                         hours: offer.hours,
                         isOwnOffer: isOwnMessage,
@@ -583,9 +617,13 @@ export default function Negotiation() {
                           canRespond={!isOwnMessage && negotiation.status === 'active'}
                         />
                       );
+                    } else {
+                      console.warn(`⚠️ [MSG ${idx}] OFFER message detected but NO matching offer found in history!`);
+                      console.warn(`   This message will fall through to regular text rendering.`);
                     }
                   }
 
+                  console.log(`📝 [MSG ${idx}] Rendering as regular TEXT message`);
                   return (
                     <div
                       key={msg.id}
