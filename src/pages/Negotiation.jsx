@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -329,6 +330,7 @@ export default function Negotiation() {
   const handleConfirmAgreement = async () => {
     if (!user || !negotiation) return;
 
+    console.log('🚀 [CONFIRM] Starting agreement confirmation');
     const isOfferer = user.id === negotiation.offerer_id;
 
     const existingAgreements = await base44.entities.Agreement.filter({ 
@@ -336,9 +338,12 @@ export default function Negotiation() {
       status: { $in: ['proposed', 'locked', 'in_progress'] }
     });
 
+    console.log('🔍 [CONFIRM] Existing agreements:', existingAgreements);
+
     let agreement = existingAgreements[0];
 
     if (!agreement) {
+      console.log('🆕 [CONFIRM] Creating new agreement...');
       agreement = await createAgreementMutation.mutateAsync({
         item_id: negotiation.item_id,
         item_title: negotiation.item_title,
@@ -352,17 +357,26 @@ export default function Negotiation() {
         offerer_agreed: isOfferer,
         worker_agreed: !isOfferer
       });
+      console.log('✅ [CONFIRM] Agreement created:', agreement);
+      console.log('🆔 [CONFIRM] Agreement ID:', agreement?.id);
     } else {
+      console.log('🔄 [CONFIRM] Updating existing agreement:', agreement.id);
       const updateData = isOfferer 
         ? { offerer_agreed: true }
         : { worker_agreed: true };
       await base44.entities.Agreement.update(agreement.id, updateData);
       
+      // Re-fetch the updated agreement
       const updated = await base44.entities.Agreement.filter({ id: agreement.id });
       agreement = updated[0];
+      console.log('✅ [CONFIRM] Agreement updated:', agreement);
     }
 
+    console.log('👥 [CONFIRM] Checking confirmations - offerer:', agreement.offerer_agreed, 'worker:', agreement.worker_agreed);
+
     if (agreement.offerer_agreed && agreement.worker_agreed) {
+      console.log('🎉 [CONFIRM] Both parties confirmed! Locking agreement...');
+      
       confetti({
         particleCount: 100,
         spread: 70,
@@ -386,11 +400,19 @@ export default function Negotiation() {
         data: { status: 'converted' }
       });
 
-      console.log("Attempting to redirect with agreement ID:", agreement.id);
+      console.log("🔗 [CONFIRM] Attempting to redirect with agreement ID:", agreement.id);
+      
+      // Verify the agreement exists before redirecting
+      const verifyAgreement = await base44.entities.Agreement.filter({ id: agreement.id });
+      console.log("✅ [CONFIRM] Agreement verification:", verifyAgreement[0]);
+      
       setTimeout(() => {
-        navigate(createPageUrl(`TimeTracking?agreementId=${agreement.id}`));
+        const url = createPageUrl(`TimeTracking?agreementId=${agreement.id}`);
+        console.log("🚀 [CONFIRM] Redirecting to:", url);
+        navigate(url);
       }, 2000);
     } else {
+      console.log('⏳ [CONFIRM] Waiting for other party to confirm');
       setHasConfirmed(true);
       toast.success('Agreement confirmed! Waiting for other party...');
     }
