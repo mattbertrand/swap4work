@@ -45,7 +45,7 @@ export default function TimeTracking() {
     return () => clearInterval(interval);
   }, [isTimerRunning]);
 
-  const { data: agreement } = useQuery({
+  const { data: agreement,  isLoading: agreementLoading, error: agreementError } = useQuery({
     queryKey: ['agreement', agreementId],
     queryFn: async () => {
       const results = await base44.entities.Agreement.filter({ id: agreementId });
