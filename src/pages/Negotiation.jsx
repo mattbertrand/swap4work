@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, Send, Clock, AlertTriangle, CheckCircle2, Package, MoreVertical, Ban, Flag } from "lucide-react";
+import { ArrowLeft, Send, Clock, AlertTriangle, CheckCircle2, Package, MoreVertical, Ban, Flag, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
@@ -48,6 +48,13 @@ export default function Negotiation() {
     refetchInterval: 3000,
     retry: 1
   });
+
+  // Check if negotiation was closed - display message and disable actions
+  useEffect(() => {
+    if (negotiation?.status === 'closed') {
+      toast.info('This negotiation was closed because another offer was accepted.');
+    }
+  }, [negotiation?.status]);
 
   const { data: item } = useQuery({
     queryKey: ['item', negotiation?.item_id],
@@ -268,6 +275,7 @@ export default function Negotiation() {
 
     console.log('✅ Accepting offer:', agreedHours, 'hours');
 
+    // Accept this negotiation
     await updateNegotiationMutation.mutateAsync({
       id: negotiationId,
       data: {
@@ -276,6 +284,37 @@ export default function Negotiation() {
       }
     });
 
+    // Close all other active negotiations for this item
+    console.log('🔒 Closing other negotiations for item:', negotiation.item_id);
+    const allNegotiations = await base44.entities.Negotiation.filter({
+      item_id: negotiation.item_id,
+      status: { $in: ['active', 'accepted'] }
+    });
+
+    const otherNegotiations = allNegotiations.filter(n => n.id !== negotiationId);
+    
+    // Close other negotiations and notify users
+    await Promise.all(otherNegotiations.map(async (neg) => {
+      await base44.entities.Negotiation.update(neg.id, { status: 'closed' });
+      
+      // Notify the other user
+      const otherUserId = neg.bidder_id === user.id ? neg.offerer_id : neg.bidder_id;
+      await createNotificationMutation.mutateAsync({
+        user_id: otherUserId,
+        type: 'negotiation_closed',
+        title: 'Negotiation closed',
+        message: `The seller accepted another offer for ${neg.item_title}. This negotiation is now closed.`,
+        related_id: neg.id,
+        related_type: 'negotiation',
+        link_url: createPageUrl(`Browse`),
+        from_user_id: user.id,
+        from_user_name: user.full_name
+      });
+    }));
+
+    console.log(`✅ Closed ${otherNegotiations.length} other negotiations`);
+
+    // Send system message to current negotiation
     const otherUserId = user.id === negotiation.bidder_id ? negotiation.offerer_id : negotiation.bidder_id;
     await sendMessageMutation.mutateAsync({
       negotiation_id: negotiationId,
@@ -367,7 +406,6 @@ export default function Negotiation() {
         : { worker_agreed: true };
       await base44.entities.Agreement.update(agreement.id, updateData);
       
-      // Re-fetch the updated agreement
       const updated = await base44.entities.Agreement.filter({ id: agreement.id });
       agreement = updated[0];
       console.log('✅ [CONFIRM] Agreement updated:', agreement);
@@ -401,9 +439,34 @@ export default function Negotiation() {
         data: { status: 'converted' }
       });
 
+      // Notify users on waitlist
+      console.log('📢 Notifying waitlist users...');
+      const waitlistUsers = await base44.entities.ItemWaitlist.filter({
+        item_id: negotiation.item_id,
+        notified: false
+      });
+
+      await Promise.all(waitlistUsers.map(async (waitlistEntry) => {
+        await createNotificationMutation.mutateAsync({
+          user_id: waitlistEntry.user_id,
+          type: 'item_available',
+          title: 'Item now in progress',
+          message: `The item "${negotiation.item_title}" is now in progress. You will be notified if it becomes available again.`,
+          related_id: negotiation.item_id,
+          related_type: 'item',
+          link_url: createPageUrl(`ItemDetail?id=${negotiation.item_id}`),
+          from_user_id: user.id,
+          from_user_name: 'WorkSwap'
+        });
+
+        await base44.entities.ItemWaitlist.update(waitlistEntry.id, {
+          notified: true,
+          notified_date: new Date().toISOString()
+        });
+      }));
+
       console.log("🔗 [CONFIRM] Attempting to redirect with agreement ID:", agreement.id);
       
-      // Verify the agreement exists before redirecting
       const verifyAgreement = await base44.entities.Agreement.filter({ id: agreement.id });
       console.log("✅ [CONFIRM] Agreement verification:", verifyAgreement[0]);
       
@@ -436,6 +499,7 @@ export default function Negotiation() {
   const isBidder = useMemo(() => user?.id === negotiation?.bidder_id, [user?.id, negotiation?.bidder_id]);
   const otherParty = useMemo(() => isOfferer ? negotiation?.bidder_name : negotiation?.offerer_name, [isOfferer, negotiation?.bidder_name, negotiation?.offerer_name]);
   const currentOfferHours = useMemo(() => negotiation?.counter_offer_hours || negotiation?.initial_offer_hours, [negotiation?.counter_offer_hours, negotiation?.initial_offer_hours]);
+  const isNegotiationClosed = negotiation?.status === 'closed';
 
   if (negError || (!negLoading && !negotiation && negotiationId)) {
     return (
@@ -515,49 +579,62 @@ export default function Negotiation() {
                   negotiation.status === 'accepted' ? 'bg-green-100 text-green-700' :
                   negotiation.status === 'declined' ? 'bg-red-100 text-red-700' :
                   negotiation.status === 'expired' ? 'bg-gray-100 text-gray-700' :
+                  negotiation.status === 'closed' ? 'bg-zinc-100 text-zinc-700' :
                   'bg-purple-100 text-purple-700'
                 }>
                   {negotiation.status}
                 </Badge>
                 {/* Block & Report Button */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem 
-                      onClick={() => {
-                        if (confirm(`Are you sure you want to block ${otherParty}? This will end the negotiation.`)) {
-                          // TODO: Implement block functionality
-                          toast.info('Block feature coming soon');
-                        }
-                      }}
-                      className="text-orange-600"
-                    >
-                      <Ban className="w-4 h-4 mr-2" />
-                      Block User
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => {
-                        if (confirm(`Report ${otherParty} as spam?`)) {
-                          // TODO: Implement report functionality
-                          toast.info('Report feature coming soon');
-                        }
-                      }}
-                      className="text-red-600"
-                    >
-                      <Flag className="w-4 h-4 mr-2" />
-                      Report as Spam
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {!isNegotiationClosed && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem 
+                        onClick={() => {
+                          if (confirm(`Are you sure you want to block ${otherParty}? This will end the negotiation.`)) {
+                            // TODO: Implement block functionality
+                            toast.info('Block feature coming soon');
+                          }
+                        }}
+                        className="text-orange-600"
+                      >
+                        <Ban className="w-4 h-4 mr-2" />
+                        Block User
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => {
+                          if (confirm(`Report ${otherParty} as spam?`)) {
+                            // TODO: Implement report functionality
+                            toast.info('Report feature coming soon');
+                          }
+                        }}
+                        className="text-red-600"
+                      >
+                        <Flag className="w-4 h-4 mr-2" />
+                        Report as Spam
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
             </div>
           </CardHeader>
 
           <CardContent className="p-6">
+            {/* Closed Negotiation Alert */}
+            {isNegotiationClosed && (
+              <Alert className="mb-4 bg-red-50 border-red-200">
+                <AlertCircle className="w-4 h-4 text-red-600" />
+                <AlertDescription className="text-red-900">
+                  <strong>This negotiation was closed.</strong> The seller accepted another offer for this item.
+                </AlertDescription>
+              </Alert>
+            )}
+
             {negotiation.status === 'active' && (
               <Alert className="mb-4 bg-orange-50 border-orange-200">
                 <Clock className="w-4 h-4 text-orange-600" />
@@ -673,7 +750,7 @@ export default function Negotiation() {
                             setShowCounterModal(true);
                           }}
                           onDecline={handleDeclineOffer}
-                          canRespond={!isOwnMessage && negotiation.status === 'active'}
+                          canRespond={!isOwnMessage && negotiation.status === 'active' && !isNegotiationClosed}
                         />
                       );
                     } else {
@@ -707,7 +784,7 @@ export default function Negotiation() {
               <div ref={messagesEndRef} />
             </div>
 
-            {negotiation.status === 'active' && (
+            {negotiation.status === 'active' && !isNegotiationClosed && (
               <div className="flex gap-2">
                 <Input
                   placeholder="Type a message..."

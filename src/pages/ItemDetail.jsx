@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query"; // Added useQueryClient
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { formatDistanceToNow } from "date-fns";
+import { toast } from "sonner"; // Added toast import (assuming sonner or similar is used)
 import {
   ArrowLeft, Clock, MapPin, Star, CheckCircle2,
   AlertCircle, MessageSquare, Eye, User, Crosshair, Calendar
@@ -54,6 +55,8 @@ export default function ItemDetail() {
   const urlParams = new URLSearchParams(window.location.search);
   const itemId = urlParams.get('id');
 
+  const queryClient = useQueryClient(); // Initialize useQueryClient
+
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => setUser(null));
   }, []);
@@ -65,6 +68,20 @@ export default function ItemDetail() {
       return items[0];
     },
     enabled: !!itemId
+  });
+
+  // Check if user is on waitlist
+  const { data: userWaitlist } = useQuery({
+    queryKey: ['waitlist', itemId, user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const waitlist = await base44.entities.ItemWaitlist.filter({
+        item_id: itemId,
+        user_id: user.id
+      });
+      return waitlist[0];
+    },
+    enabled: !!itemId && !!user
   });
 
   // REMOVED: offerer query to fix 403 error
@@ -141,6 +158,37 @@ export default function ItemDetail() {
     });
   };
 
+  const handleJoinWaitlist = async () => {
+    if (!user) {
+      base44.auth.redirectToLogin(window.location.pathname + window.location.search);
+      return;
+    }
+
+    // Check if already on waitlist
+    if (userWaitlist) {
+      toast.info('You are already on the waitlist for this item');
+      return;
+    }
+
+    try {
+      await base44.entities.ItemWaitlist.create({
+        item_id: item.id,
+        item_title: item.title,
+        user_id: user.id,
+        user_name: user.full_name,
+        user_email: user.email
+      });
+
+      toast.success('Added to waitlist! We\'ll notify you when a negotiation spot opens up.');
+      
+      // Invalidate query to reflect the change
+      queryClient.invalidateQueries(['waitlist', itemId, user.id]);
+    } catch (error) {
+      console.error('Error joining waitlist:', error);
+      toast.error('Failed to join waitlist');
+    }
+  };
+
   const handleStartNegotiation = async () => {
     if (!user) {
       base44.auth.redirectToLogin(window.location.pathname + window.location.search);
@@ -186,7 +234,7 @@ export default function ItemDetail() {
 
     // Check negotiation limit (max 3 active per item)
     if (activeNegotiations.length >= 3) {
-      alert("This item already has 3 active negotiations. Please try again later.");
+      toast.info('This item has reached its negotiation limit');
       return;
     }
 
@@ -196,7 +244,7 @@ export default function ItemDetail() {
       return;
     }
 
-    // Create new negotiation
+    // Create new negotiation WITH INITIAL OFFER MESSAGE
     const negotiation = await base44.entities.Negotiation.create({
       item_id: item.id,
       item_title: item.title,
@@ -218,14 +266,15 @@ export default function ItemDetail() {
       expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
     });
 
-    // Send initial system message
+    // Send initial OFFER message (not text)
     await base44.entities.Message.create({
       negotiation_id: negotiation.id,
       from_user_id: user.id,
-      from_user_name: "System",
+      from_user_name: user.full_name,
       to_user_id: item.offerer_id,
-      text: `${user.full_name} started a negotiation for ${item.title}. The initial offer is ${item.required_hours} hours of work.`,
-      message_type: "system"
+      text: `${user.full_name} offered ${item.required_hours} hours for ${item.title}`,
+      message_type: "offer",
+      proposal_hours: item.required_hours
     });
 
     // Create notification for item owner
@@ -488,6 +537,32 @@ export default function ItemDetail() {
                       <strong>{activeNegotiations.length}</strong> active negotiation{activeNegotiations.length > 1 ? 's' : ''}
                     </p>
                   </div>
+                )}
+
+                {/* Waitlist Feature - Only show when at negotiation limit */}
+                {!isOwner && activeNegotiations.length >= 3 && (
+                  <Alert className="bg-purple-50 border-purple-200">
+                    <AlertCircle className="w-4 h-4 text-purple-600" />
+                    <AlertDescription>
+                      <p className="text-purple-900 font-semibold mb-2">
+                        This item has reached its negotiation limit (3/3)
+                      </p>
+                      {userWaitlist ? (
+                        <div className="flex items-center gap-2 text-purple-700">
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span className="text-sm">You're on the waitlist! We'll notify you when a spot opens.</span>
+                        </div>
+                      ) : (
+                        <Button
+                          onClick={handleJoinWaitlist}
+                          size="sm"
+                          className="mt-2 bg-purple-600 hover:bg-purple-700"
+                        >
+                          Join Waitlist
+                        </Button>
+                      )}
+                    </AlertDescription>
+                  </Alert>
                 )}
 
                 {/* Offerer Info - USING DENORMALIZED DATA */}
