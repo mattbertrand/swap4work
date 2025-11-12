@@ -1,9 +1,31 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { MapPin, Clock, CheckCircle2, AlertCircle, Package } from "lucide-react";
+import { MapPin, Clock, CheckCircle2, AlertCircle, Package, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { formatDistanceToNow } from "date-fns";
+
+// Helper to extract city and state from location
+const getCityState = (location) => {
+  if (!location) return "Location not specified";
+  
+  // Split by comma and take last 2-3 parts (typically city, state, zip)
+  const parts = location.split(',').map(p => p.trim());
+  
+  if (parts.length >= 2) {
+    // Return just city and state (skip street address and zip)
+    const state = parts[parts.length - 2]; // State
+    const city = parts[parts.length - 3] || parts[parts.length - 2]; // City or State if only 2 parts
+    
+    // Remove zip codes from state part
+    const cleanState = state.replace(/\d{5}(-\d{4})?/g, '').trim();
+    
+    return `${city}, ${cleanState}`;
+  }
+  
+  return location;
+};
 
 export default function ItemCard({ item, showDistance, userAgreements = [] }) {
   // Find agreement related to this item
@@ -97,12 +119,16 @@ export default function ItemCard({ item, showDistance, userAgreements = [] }) {
               <Clock className="w-5 h-5" />
               <span>{item.required_hours} hours</span>
             </div>
+            <div className="flex items-center gap-1 text-xs text-gray-500">
+              <Calendar className="w-3 h-3" />
+              <span>{formatDistanceToNow(new Date(item.created_date), { addSuffix: true })}</span>
+            </div>
           </div>
 
           <div className="flex items-center justify-between text-sm text-gray-500">
             <div className="flex items-center gap-1">
               <MapPin className="w-4 h-4" />
-              <span className="truncate">{item.location || "Not specified"}</span>
+              <span className="truncate">{getCityState(item.location)}</span>
             </div>
             <div className="flex items-center gap-1">
               <CheckCircle2 className="w-4 h-4 text-green-500" />

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -121,7 +122,7 @@ export default function MyListings() {
                 <div className="flex items-center gap-1 text-gray-500">
                   <Calendar className="w-4 h-4" />
                   <span className="text-xs">
-                    Listed {formatDistanceToNow(new Date(item.created_date), { addSuffix: true })}
+                    {formatDistanceToNow(new Date(item.created_date), { addSuffix: true })}
                   </span>
                 </div>
               </div>

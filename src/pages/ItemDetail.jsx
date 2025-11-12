@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { formatDistanceToNow } from "date-fns";
 import {
   ArrowLeft, Clock, MapPin, Star, CheckCircle2,
-  AlertCircle, MessageSquare, Eye, User, Crosshair
+  AlertCircle, MessageSquare, Eye, User, Crosshair, Calendar
 } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
@@ -25,6 +26,22 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
     Math.sin(dLon/2) * Math.sin(dLon/2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   return R * c;
+};
+
+// Helper to extract city and state from location
+const getCityState = (location) => {
+  if (!location) return "Location not specified";
+  
+  const parts = location.split(',').map(p => p.trim());
+  
+  if (parts.length >= 2) {
+    const state = parts[parts.length - 2];
+    const city = parts[parts.length - 3] || parts[parts.length - 2];
+    const cleanState = state.replace(/\d{5}(-\d{4})?/g, '').trim();
+    return `${city}, ${cleanState}`;
+  }
+  
+  return location;
 };
 
 export default function ItemDetail() {
@@ -406,6 +423,11 @@ export default function ItemDetail() {
                       {item.condition}
                     </Badge>
                   </div>
+                  {/* Time posted */}
+                  <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+                    <Calendar className="w-4 h-4" />
+                    <span>Posted {formatDistanceToNow(new Date(item.created_date), { addSuffix: true })}</span>
+                  </div>
                 </div>
 
                 <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-6 border-2 border-orange-200">
@@ -427,7 +449,7 @@ export default function ItemDetail() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-3 text-gray-700">
                     <MapPin className="w-5 h-5 text-gray-400" />
-                    <span>{item.location}</span>
+                    <span>{getCityState(item.location)}</span>
                   </div>
                   {distance !== null && (
                     <div className="flex items-center gap-3 text-gray-700">

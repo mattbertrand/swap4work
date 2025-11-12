@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, Send, Clock, AlertTriangle, CheckCircle2, Package } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ArrowLeft, Send, Clock, AlertTriangle, CheckCircle2, Package, MoreVertical, Ban, Flag } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
@@ -508,7 +509,7 @@ export default function Negotiation() {
                 </div>
                 <p className="text-gray-600">Negotiating with {otherParty}</p>
               </div>
-              <div className="text-right">
+              <div className="flex flex-col items-end gap-2">
                 <Badge className={
                   negotiation.status === 'active' ? 'bg-blue-100 text-blue-700' :
                   negotiation.status === 'accepted' ? 'bg-green-100 text-green-700' :
@@ -518,6 +519,40 @@ export default function Negotiation() {
                 }>
                   {negotiation.status}
                 </Badge>
+                {/* Block & Report Button */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem 
+                      onClick={() => {
+                        if (confirm(`Are you sure you want to block ${otherParty}? This will end the negotiation.`)) {
+                          // TODO: Implement block functionality
+                          toast.info('Block feature coming soon');
+                        }
+                      }}
+                      className="text-orange-600"
+                    >
+                      <Ban className="w-4 h-4 mr-2" />
+                      Block User
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => {
+                        if (confirm(`Report ${otherParty} as spam?`)) {
+                          // TODO: Implement report functionality
+                          toast.info('Report feature coming soon');
+                        }
+                      }}
+                      className="text-red-600"
+                    >
+                      <Flag className="w-4 h-4 mr-2" />
+                      Report as Spam
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </CardHeader>

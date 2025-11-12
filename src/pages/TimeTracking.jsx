@@ -29,7 +29,11 @@ export default function TimeTracking() {
   });
 
   const urlParams = new URLSearchParams(window.location.search);
-  const agreementId = urlParams.get('agreementId');
+  // Try both case variations to handle URL inconsistencies
+  const agreementId = urlParams.get('agreementId') || urlParams.get('agreementid');
+
+  console.log('🔍 [TIME-TRACKING] Agreement ID from URL:', agreementId);
+  console.log('🔍 [TIME-TRACKING] Full URL search params:', window.location.search);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => setUser(null));
@@ -48,7 +52,9 @@ export default function TimeTracking() {
   const { data: agreement,  isLoading: agreementLoading, error: agreementError } = useQuery({
     queryKey: ['agreement', agreementId],
     queryFn: async () => {
+      console.log('📥 [TIME-TRACKING] Fetching agreement with ID:', agreementId);
       const results = await base44.entities.Agreement.filter({ id: agreementId });
+      console.log('✅ [TIME-TRACKING] Agreement query results:', results);
       return results[0];
     },
     enabled: !!agreementId
@@ -128,6 +134,7 @@ export default function TimeTracking() {
 
 // First, check for an error after the query has attempted to load
 if (agreementError) {
+  console.error('❌ [TIME-TRACKING] Agreement error:', agreementError);
   return (
     <div className="min-h-screen flex items-center justify-center text-red-600">
       Error loading agreement: {agreementError.message || "Unknown error"}
@@ -137,6 +144,7 @@ if (agreementError) {
 
 // Then, check for initial loading state or if user data isn't ready
 if (!user || agreementLoading) {
+  console.log('⏳ [TIME-TRACKING] Loading... user:', !!user, 'agreementLoading:', agreementLoading);
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
@@ -145,13 +153,23 @@ if (!user || agreementLoading) {
 }
 
 // If neither loading nor error, but no agreement data was found
-if (!agreement) { // This implies agreementLoading is false, and no error
+if (!agreement) {
+  console.error('❌ [TIME-TRACKING] No agreement found for ID:', agreementId);
+  console.error('   URL params:', window.location.search);
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center text-gray-500">Agreement not found or invalid ID.</div>
+      <div className="text-center">
+        <div className="text-gray-500 mb-4">Agreement not found or invalid ID.</div>
+        <div className="text-xs text-gray-400 mb-4">ID: {agreementId}</div>
+        <Button onClick={() => navigate(createPageUrl("MyAgreements"))}>
+          Back to My Agreements
+        </Button>
+      </div>
     </div>
   );
 }
+
+  console.log('✅ [TIME-TRACKING] Agreement loaded successfully:', agreement.id);
 
   const isWorker = user.id === agreement.worker_id;
   const totalHours = timeLogs.reduce((sum, log) => sum + log.hours, 0);
