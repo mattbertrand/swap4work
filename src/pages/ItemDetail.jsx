@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useQueryClient } from "@tanstack/react-query"; // Added useQueryClient
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { formatDistanceToNow } from "date-fns";
-import { toast } from "sonner"; // Added toast import (assuming sonner or similar is used)
+import { toast } from "sonner";
 import {
   ArrowLeft, Clock, MapPin, Star, CheckCircle2,
   AlertCircle, MessageSquare, Eye, User, Crosshair, Calendar
@@ -55,7 +55,7 @@ export default function ItemDetail() {
   const urlParams = new URLSearchParams(window.location.search);
   const itemId = urlParams.get('id');
 
-  const queryClient = useQueryClient(); // Initialize useQueryClient
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => setUser(null));
@@ -66,6 +66,33 @@ export default function ItemDetail() {
     queryFn: async () => {
       const items = await base44.entities.Item.filter({ id: itemId });
       return items[0];
+    },
+    enabled: !!itemId
+  });
+
+  // Check all negotiations for this user + item (including closed/declined)
+  const { data: allUserNegotiations = [] } = useQuery({
+    queryKey: ['allUserNegotiations', itemId, user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const negotiations = await base44.entities.Negotiation.filter({
+        item_id: itemId,
+        bidder_id: user.id
+      });
+      return negotiations;
+    },
+    enabled: !!itemId && !!user
+  });
+
+  // Check existing active negotiations for this item (for all users)
+  const { data: activeNegotiations = [] } = useQuery({
+    queryKey: ['negotiations', itemId],
+    queryFn: async () => {
+      const negotiations = await base44.entities.Negotiation.filter({
+        item_id: itemId,
+        status: { $in: ['active', 'accepted'] }
+      });
+      return negotiations;
     },
     enabled: !!itemId
   });
@@ -84,24 +111,20 @@ export default function ItemDetail() {
     enabled: !!itemId && !!user
   });
 
-  // REMOVED: offerer query to fix 403 error
-  // We'll use denormalized data from item.offerer_name instead
+  // Determine user's negotiation status with this item
+  const userActiveNegotiation = user ? allUserNegotiations.find(n => ['active', 'accepted'].includes(n.status)) : null;
+  const userDeclinedNegotiation = user ? allUserNegotiations.find(n => n.status === 'declined') : null;
+  const userClosedNegotiation = user ? allUserNegotiations.find(n => n.status === 'closed') : null;
 
-  // Check existing negotiations for this item
-  const { data: activeNegotiations = [] } = useQuery({
-    queryKey: ['negotiations', itemId],
-    queryFn: async () => {
-      const negotiations = await base44.entities.Negotiation.filter({
-        item_id: itemId,
-        status: { $in: ['active', 'accepted'] }
-      });
-      return negotiations;
-    },
-    enabled: !!itemId
-  });
-
-  // Check if user already has a negotiation for this item
-  const userNegotiation = user ? activeNegotiations.find(n => n.bidder_id === user.id) : null;
+  // Show waitlist only if:
+  // 1. Item has 3 active negotiations AND
+  // 2. User doesn't have an active/accepted negotiation AND
+  // 3. User wasn't declined or closed previously
+  const shouldShowWaitlist =
+    activeNegotiations.length >= 3 &&
+    !userActiveNegotiation &&
+    !userDeclinedNegotiation &&
+    !userClosedNegotiation;
 
   // Calculate distance if both user and item have coordinates
   const distance = userLocation && item?.latitude && item?.longitude
@@ -238,9 +261,9 @@ export default function ItemDetail() {
       return;
     }
 
-    // Check if user already has a negotiation
-    if (userNegotiation) {
-      navigate(createPageUrl(`Negotiation?id=${userNegotiation.id}`));
+    // Check if user already has an active negotiation
+    if (userActiveNegotiation) {
+      navigate(createPageUrl(`Negotiation?id=${userActiveNegotiation.id}`));
       return;
     }
 
@@ -334,8 +357,8 @@ export default function ItemDetail() {
     }
 
     // Create negotiation first
-    if (userNegotiation) {
-      navigate(createPageUrl(`Negotiation?id=${userNegotiation.id}`));
+    if (userActiveNegotiation) {
+      navigate(createPageUrl(`Negotiation?id=${userActiveNegotiation.id}`));
       return;
     }
 
@@ -511,7 +534,7 @@ export default function ItemDetail() {
                 </div>
 
                 {/* Location verification banner */}
-                {!isOwner && !userNegotiation && !userLocation && (
+                {!isOwner && !userActiveNegotiation && !userLocation && (
                   <Alert className="bg-blue-50 border-blue-200">
                     <Crosshair className="w-4 h-4 text-blue-600" />
                     <AlertDescription className="text-blue-900 text-sm">
@@ -530,8 +553,8 @@ export default function ItemDetail() {
                   </Alert>
                 )}
 
-                {/* Active Negotiations Badge */}
-                {activeNegotiations.length > 0 && !isOwner && (
+                {/* Active Negotiations Badge - Only show if not owner and user does not have an active negotiation */}
+                {!isOwner && activeNegotiations.length > 0 && !userActiveNegotiation && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
                     <p className="text-sm text-blue-900">
                       <strong>{activeNegotiations.length}</strong> active negotiation{activeNegotiations.length > 1 ? 's' : ''}
@@ -539,8 +562,8 @@ export default function ItemDetail() {
                   </div>
                 )}
 
-                {/* Waitlist Feature - Only show when at negotiation limit */}
-                {!isOwner && activeNegotiations.length >= 3 && (
+                {/* Waitlist Feature */}
+                {!isOwner && shouldShowWaitlist && (
                   <Alert className="bg-purple-50 border-purple-200">
                     <AlertCircle className="w-4 h-4 text-purple-600" />
                     <AlertDescription>
@@ -594,9 +617,9 @@ export default function ItemDetail() {
                 {/* Action Buttons */}
                 {!isOwner && (
                   <div className="space-y-3">
-                    {userNegotiation ? (
+                    {userActiveNegotiation ? (
                       <Button
-                        onClick={() => navigate(createPageUrl(`Negotiation?id=${userNegotiation.id}`))}
+                        onClick={() => navigate(createPageUrl(`Negotiation?id=${userActiveNegotiation.id}`))}
                         className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700"
                       >
                         <MessageSquare className="w-5 h-5 mr-2" />

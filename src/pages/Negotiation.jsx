@@ -297,22 +297,47 @@ export default function Negotiation() {
     await Promise.all(otherNegotiations.map(async (neg) => {
       await base44.entities.Negotiation.update(neg.id, { status: 'closed' });
       
-      // Notify the other user
+      // Notify the other user - FIXED LINK
       const otherUserId = neg.bidder_id === user.id ? neg.offerer_id : neg.bidder_id;
-      await createNotificationMutation.mutateAsync({
+      await base44.entities.Notification.create({
         user_id: otherUserId,
         type: 'negotiation_closed',
         title: 'Negotiation closed',
-        message: `The seller accepted another offer for ${neg.item_title}. This negotiation is now closed.`,
+        message: `The seller has accepted another offer for ${negotiation.item_title}`,
         related_id: neg.id,
         related_type: 'negotiation',
-        link_url: createPageUrl(`Browse`),
+        link_url: createPageUrl(`Browse`), // FIXED: Navigate to Browse instead of ItemDetail
         from_user_id: user.id,
         from_user_name: user.full_name
       });
     }));
 
     console.log(`✅ Closed ${otherNegotiations.length} other negotiations`);
+
+    // Notify waitlist users that a negotiation closed (spot may open)
+    console.log('📢 Notifying waitlist users about closed negotiations...');
+    const waitlistUsers = await base44.entities.ItemWaitlist.filter({
+      item_id: negotiation.item_id,
+      notified: false
+    });
+
+    await Promise.all(waitlistUsers.map(async (waitlistEntry) => {
+      await base44.entities.Notification.create({
+        user_id: waitlistEntry.user_id,
+        type: 'item_available',
+        title: 'Negotiation spot may be available',
+        message: `A negotiation for ${negotiation.item_title} was closed. You may be able to start negotiating now!`,
+        related_id: negotiation.item_id,
+        related_type: 'item',
+        link_url: createPageUrl(`ItemDetail?id=${negotiation.item_id}`),
+        from_user_id: user.id,
+        from_user_name: 'WorkSwap'
+      });
+      await base44.entities.ItemWaitlist.update(waitlistEntry.id, {
+        notified: true,
+        notified_date: new Date().toISOString()
+      });
+    }));
 
     // Send system message to current negotiation
     const otherUserId = user.id === negotiation.bidder_id ? negotiation.offerer_id : negotiation.bidder_id;
@@ -349,6 +374,27 @@ export default function Negotiation() {
       id: negotiationId,
       data: { status: 'declined' }
     });
+
+    // Notify waitlist users when a negotiation is declined
+    console.log('📢 Notifying waitlist users about declined negotiation...');
+    const waitlistUsers = await base44.entities.ItemWaitlist.filter({
+      item_id: negotiation.item_id,
+      notified: false
+    });
+
+    await Promise.all(waitlistUsers.map(async (waitlistEntry) => {
+      await base44.entities.Notification.create({
+        user_id: waitlistEntry.user_id,
+        type: 'item_available',
+        title: 'Negotiation spot available',
+        message: `A negotiation for ${negotiation.item_title} was declined. You can now start negotiating!`,
+        related_id: negotiation.item_id,
+        related_type: 'item',
+        link_url: createPageUrl(`ItemDetail?id=${negotiation.item_id}`),
+        from_user_id: user.id,
+        from_user_name: 'WorkSwap'
+      });
+    }));
 
     const otherUserId = user.id === negotiation.bidder_id ? negotiation.offerer_id : negotiation.bidder_id;
     await createNotificationMutation.mutateAsync({

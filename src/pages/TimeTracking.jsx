@@ -13,6 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Clock, Plus, CheckCircle2, Play, Pause } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner"; // Added toast import
 
 export default function TimeTracking() {
   const navigate = useNavigate();
@@ -125,8 +126,26 @@ export default function TimeTracking() {
       await base44.entities.Agreement.update(agreementId, {
         status: 'ready_for_handover'
       });
+
+      // Notify the offerer
+      await base44.entities.Notification.create({
+        user_id: agreement.offerer_id,
+        type: 'work_completed',
+        title: 'Work completed!',
+        message: `${user.full_name} has completed the work for ${agreement.item_title}. Please review and confirm handover.`,
+        related_id: agreementId,
+        related_type: 'agreement',
+        link_url: createPageUrl(`AgreementDetail?id=${agreementId}`),
+        from_user_id: user.id,
+        from_user_name: user.full_name
+      });
+
       queryClient.invalidateQueries(['agreement', agreementId]);
-      navigate(createPageUrl(`AgreementDetail?id=${agreementId}`));
+      toast.success('Work marked as complete! Redirecting to handover confirmation...');
+      
+      setTimeout(() => {
+        navigate(createPageUrl(`AgreementDetail?id=${agreementId}`));
+      }, 1500);
     } else {
       alert(`You need to log ${agreement.agreed_hours - totalHours} more hours before completing`);
     }

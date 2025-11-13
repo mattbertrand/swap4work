@@ -13,6 +13,7 @@ import AdminDisputes from './pages/AdminDisputes';
 import Negotiation from './pages/Negotiation';
 import AdminDashboard from './pages/AdminDashboard';
 import Notifications from './pages/Notifications';
+import AgreementDetail from './pages/AgreementDetail';
 import Layout from './Layout.jsx';
 
 
@@ -32,6 +33,7 @@ export const PAGES = {
     "Negotiation": Negotiation,
     "AdminDashboard": AdminDashboard,
     "Notifications": Notifications,
+    "AgreementDetail": AgreementDetail,
 }
 
 export const pagesConfig = {
