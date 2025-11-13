@@ -3,8 +3,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, Award, AlertTriangle } from "lucide-react";
 
-export default function KarmaDisplay({ user, showDetails = true }) {
-  const karmaPoints = user.karma_points || 0;
+export default function KarmaDisplay({ karma, user, showDetails = true }) {
+  // Support both 'karma' prop (number) and 'user' prop (object)
+  const karmaPoints = karma !== undefined ? karma : (user?.karma_points || 0);
   
   const getKarmaTier = (points) => {
     if (points >= 100) return { label: "Elite Trader", color: "bg-purple-100 text-purple-700", icon: Award };
@@ -35,7 +36,7 @@ export default function KarmaDisplay({ user, showDetails = true }) {
           <span className="text-sm text-gray-500">karma points</span>
         </div>
 
-        {showDetails && (
+        {showDetails && user && (
           <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
             {karmaPoints < 0 && user.is_suspended && (
               <div className="flex items-start gap-2 text-sm text-red-600">

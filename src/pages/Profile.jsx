@@ -285,7 +285,7 @@ export default function Profile() {
                   </div>
                 )}
 
-                {user && <KarmaDisplay karma={user.karma_points || 0} showDetails />}
+                <KarmaDisplay karma={user.karma_points || 0} user={user} showDetails />
 
                 {/* Stats Section */}
                 <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-gray-200">
