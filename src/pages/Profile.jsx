@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -51,13 +52,13 @@ export default function Profile() {
   const { data: completedAgreements = [] } = useQuery({
     queryKey: ['completedAgreements', user?.id],
     queryFn: async () => {
-      const asWorker = await base44.entities.Agreement.filter({ 
-        worker_id: user.id, 
-        status: 'completed' 
+      const asWorker = await base44.entities.Agreement.filter({
+        worker_id: user.id,
+        status: 'completed'
       });
-      const asOfferer = await base44.entities.Agreement.filter({ 
-        offerer_id: user.id, 
-        status: 'completed' 
+      const asOfferer = await base44.entities.Agreement.filter({
+        offerer_id: user.id,
+        status: 'completed'
       });
       return [...asWorker, ...asOfferer];
     },
@@ -67,7 +68,7 @@ export default function Profile() {
   const updateProfileMutation = useMutation({
     mutationFn: (data) => base44.auth.updateMe(data),
     onSuccess: async (updatedUserData) => {
-      setUser(updatedUserData); 
+      setUser(updatedUserData);
       setIsEditing(false);
       queryClient.invalidateQueries(['user', updatedUserData.id]);
     },
@@ -86,7 +87,7 @@ export default function Profile() {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-        
+
         try {
           // Use Nominatim OpenStreetMap for reverse geocoding
           const response = await fetch(
@@ -94,7 +95,7 @@ export default function Profile() {
           );
           const data = await response.json();
           const location = `${data.address.city || data.address.town || data.address.village || ''}, ${data.address.state || ''} ${data.address.postcode || ''}`.trim();
-          
+
           setFormData(prev => ({
             ...prev,
             location: location,
@@ -129,13 +130,13 @@ export default function Profile() {
   let geocodeTimeout;
   const geocodeLocation = async (locationString) => {
     if (!locationString || locationString.length < 5) return;
-    
+
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationString)}&limit=1`
       );
       const data = await response.json();
-      
+
       if (data && data.length > 0) {
         setFormData(prev => ({
           ...prev,
@@ -162,7 +163,7 @@ export default function Profile() {
   const handleLocationChange = (e) => {
     const newLocation = e.target.value;
     setFormData(prev => ({...prev, location: newLocation}));
-    
+
     clearTimeout(geocodeTimeout);
     if (newLocation.length > 5) {
       geocodeTimeout = setTimeout(() => geocodeLocation(newLocation), 1000);
@@ -188,7 +189,7 @@ export default function Profile() {
 
   const handleSave = async () => {
     const profileComplete = !!(formData.location && formData.phone && formData.latitude && formData.longitude);
-    
+
     await updateProfileMutation.mutateAsync({
       ...formData,
       profile_completed: profileComplete
@@ -214,111 +215,113 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen p-4 md:p-8">
-      <div className="max-w-5xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">My Profile</h1>
-
-        <div className="grid lg:grid-cols-3 gap-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="grid lg:grid-cols-3 gap-8">
           {/* Left Column - Profile Card */}
-          <div className="space-y-6">
-            <Card className="border-orange-100 shadow-lg">
-              <CardContent className="p-6">
-                <div className="text-center">
-                  <div className="relative inline-block mb-4">
-                    {user.photo_url ? (
-                      <img
-                        src={user.photo_url}
-                        alt={user.full_name}
-                        className="w-32 h-32 rounded-full object-cover border-4 border-orange-200"
-                      />
-                    ) : (
-                      <div className="w-32 h-32 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center border-4 border-orange-200">
-                        <span className="text-white text-4xl font-bold">
-                          {user.full_name?.[0]?.toUpperCase()}
-                        </span>
-                      </div>
-                    )}
-                    <label className="absolute bottom-0 right-0 bg-orange-600 hover:bg-orange-700 text-white p-2 rounded-full cursor-pointer shadow-lg">
-                      <Camera className="w-5 h-5" />
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handlePhotoUpload}
-                        className="hidden"
-                        disabled={uploading}
-                      />
-                    </label>
-                  </div>
-
-                  <h2 className="text-2xl font-bold text-gray-900 mb-1">{user.full_name}</h2>
-                  <p className="text-gray-600 mb-3">{user.email}</p>
-
-                  <div className="flex justify-center gap-2 mb-4">
-                    {user.id_verified && (
-                      <Badge className="bg-blue-100 text-blue-700">
-                        <CheckCircle2 className="w-3 h-3 mr-1" />
-                        ID Verified
-                      </Badge>
-                    )}
-                    {user.phone_verified && (
-                      <Badge className="bg-green-100 text-green-700">
-                        <CheckCircle2 className="w-3 h-3 mr-1" />
-                        Phone Verified
-                      </Badge>
-                    )}
-                  </div>
-
-                  {user.rating > 0 && (
-                    <div className="flex items-center justify-center gap-2 mb-4">
-                      <Star className="w-6 h-6 text-yellow-500 fill-yellow-500" />
-                      <span className="text-2xl font-bold">{user.rating.toFixed(1)}</span>
-                      <span className="text-gray-500">({user.total_ratings} reviews)</span>
+          <div className="lg:col-span-1">
+            <Card className="border-orange-100 shadow-xl sticky top-8">
+              <CardContent className="p-6 text-center">
+                <div className="relative inline-block mb-4">
+                  {user.photo_url ? (
+                    <img
+                      src={user.photo_url}
+                      alt={user.full_name}
+                      className="w-32 h-32 rounded-full object-cover border-4 border-orange-200 mx-auto"
+                    />
+                  ) : (
+                    <div className="w-32 h-32 bg-gradient-to-br from-orange-400 to-amber-500 rounded-full flex items-center justify-center mx-auto border-4 border-orange-200">
+                      <span className="text-white font-bold text-4xl">
+                        {user.full_name?.[0]?.toUpperCase() || 'U'}
+                      </span>
                     </div>
                   )}
-
-                  <Button
-                    onClick={handleLogout}
-                    variant="outline"
-                    className="w-full mt-4"
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Sign Out
-                  </Button>
+                  {/* ID Verified badge on avatar */}
+                  {user.id_verified && (
+                    <div className="absolute bottom-0 right-0 bg-green-500 rounded-full p-2 border-2 border-white">
+                      <CheckCircle2 className="w-5 h-5 text-white" />
+                    </div>
+                  )}
+                  {/* Photo upload button, moved to bottom-left to avoid conflict */}
+                  <label className="absolute bottom-0 left-0 bg-orange-600 hover:bg-orange-700 text-white p-2 rounded-full cursor-pointer shadow-lg">
+                    <Camera className="w-5 h-5" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                      disabled={uploading}
+                    />
+                  </label>
                 </div>
+
+                <h2 className="text-2xl font-bold text-gray-900 mb-1">{user.full_name}</h2>
+                <p className="text-gray-500 text-sm mb-4">{user.email}</p>
+
+                {/* ID and Phone Verified Badges (retained) */}
+                <div className="flex justify-center gap-2 mb-4">
+                  {user.id_verified && (
+                    <Badge className="bg-blue-100 text-blue-700">
+                      <CheckCircle2 className="w-3 h-3 mr-1" />
+                      ID Verified
+                    </Badge>
+                  )}
+                  {user.phone_verified && (
+                    <Badge className="bg-green-100 text-green-700">
+                      <CheckCircle2 className="w-3 h-3 mr-1" />
+                      Phone Verified
+                    </Badge>
+                  )}
+                </div>
+
+                {user.rating > 0 && (
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                    <div className="flex">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`w-5 h-5 ${
+                            star <= user.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-sm text-gray-600">
+                      ({user.total_ratings} {user.total_ratings === 1 ? 'review' : 'reviews'})
+                    </span>
+                  </div>
+                )}
+
+                <KarmaDisplay karma={user.karma_points || 0} showDetails />
+
+                {/* Stats Section - UPDATED */}
+                <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-gray-200">
+                  <div>
+                    <p className="text-2xl font-bold text-orange-600">
+                      {user.hours_completed || 0}
+                    </p>
+                    <p className="text-sm text-gray-600">Hours Completed</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-orange-600">
+                      {user.completed_trades || 0}
+                    </p>
+                    <p className="text-sm text-gray-600">Completed Trades</p>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handleLogout}
+                  variant="outline"
+                  className="w-full mt-6"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </Button>
               </CardContent>
             </Card>
-
-            {/* Stats Card */}
-            <Card className="border-orange-100 shadow-lg">
-              <CardHeader className="border-b border-orange-100">
-                <CardTitle className="text-lg">Statistics</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 space-y-4">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Clock className="w-5 h-5" />
-                    <span>Hours Completed</span>
-                  </div>
-                  <span className="text-2xl font-bold text-orange-600">
-                    {user.hours_completed || 0}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Package className="w-5 h-5" />
-                    <span>Completed Trades</span>
-                  </div>
-                  <span className="text-2xl font-bold text-orange-600">
-                    {completedAgreements.length}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Karma Display */}
-            <KarmaDisplay user={user} showDetails={true} />
           </div>
 
-          {/* Right Column - Details & Reviews */}
+          {/* Right Column - Profile Details & Reviews */}
           <div className="lg:col-span-2 space-y-6">
             {/* Profile Details */}
             <Card className="border-orange-100 shadow-lg">
@@ -394,7 +397,7 @@ export default function Profile() {
                     </div>
                     {formData.latitude && formData.longitude ? (
                       <p className="text-xs text-green-600 mt-1 flex items-center">
-                        <MapPin className="w-3 h-3 mr-1" /> 
+                        <MapPin className="w-3 h-3 mr-1" />
                         Coordinates verified ({formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)})
                       </p>
                     ) : (

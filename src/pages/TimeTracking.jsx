@@ -92,17 +92,28 @@ export default function TimeTracking() {
   });
 
   const handleLogTime = () => {
-    if (!logForm.hours || !user) return;
+    if (!logForm.hours || !user || !agreement) return;
 
-    if (parseFloat(logForm.hours) > 12) {
+    const hoursToLog = parseFloat(logForm.hours);
+
+    if (hoursToLog > 12) {
       alert("Maximum 12 hours can be logged per day");
+      return;
+    }
+
+    // Calculate remaining hours
+    const totalLogged = timeLogs.reduce((sum, log) => sum + log.hours, 0);
+    const remainingHours = agreement.agreed_hours - totalLogged;
+
+    if (hoursToLog > remainingHours) {
+      alert(`You can only log up to ${remainingHours.toFixed(1)} more hours. The agreed total is ${agreement.agreed_hours} hours.`);
       return;
     }
 
     logTimeMutation.mutate({
       agreement_id: agreementId,
       worker_id: user.id,
-      hours: parseFloat(logForm.hours),
+      hours: hoursToLog,
       date: logForm.date,
       description: logForm.description,
       status: "pending"
@@ -193,6 +204,8 @@ if (!agreement) {
   const isWorker = user.id === agreement.worker_id;
   const totalHours = timeLogs.reduce((sum, log) => sum + log.hours, 0);
   const progress = agreement.agreed_hours > 0 ? (totalHours / agreement.agreed_hours) * 100 : 0;
+  const remainingHours = agreement.agreed_hours - totalHours;
+
 
   const formatTimer = (seconds) => {
     const h = Math.floor(seconds / 3600);
@@ -234,9 +247,16 @@ if (!agreement) {
             <div className="mb-6">
               <div className="flex justify-between mb-3">
                 <span className="text-gray-600 font-medium">Work Progress</span>
-                <span className="text-xl font-bold text-orange-600">
-                  {totalHours.toFixed(1)} / {agreement.agreed_hours} hours
-                </span>
+                <div className="text-right">
+                  <span className="text-xl font-bold text-orange-600">
+                    {totalHours.toFixed(1)} / {agreement.agreed_hours} hours
+                  </span>
+                  {remainingHours > 0 && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      {remainingHours.toFixed(1)} hours remaining
+                    </p>
+                  )}
+                </div>
               </div>
               <Progress value={progress} className="h-3" />
             </div>
@@ -289,7 +309,7 @@ if (!agreement) {
               <CardHeader className="border-b border-orange-100">
                 <div className="flex justify-between items-center">
                   <CardTitle>Time Logs</CardTitle>
-                  {isWorker && !showLogForm && (
+                  {isWorker && !showLogForm && remainingHours > 0 && (
                     <Button
                       onClick={() => setShowLogForm(true)}
                       size="sm"
@@ -302,7 +322,7 @@ if (!agreement) {
                 </div>
               </CardHeader>
               <CardContent className="p-6">
-                {showLogForm && isWorker && (
+                {showLogForm && isWorker && remainingHours > 0 && (
                   <div className="mb-6 p-4 bg-orange-50 rounded-xl border border-orange-200">
                     <h3 className="font-semibold mb-4">Log Work Hours</h3>
                     <div className="space-y-4">
@@ -313,12 +333,15 @@ if (!agreement) {
                             id="hours"
                             type="number"
                             step="0.5"
-                            max="12"
+                            max={Math.min(12, remainingHours)}
                             value={logForm.hours}
                             onChange={(e) => setLogForm({...logForm, hours: e.target.value})}
-                            placeholder="e.g., 4.5"
+                            placeholder={`Max: ${Math.min(12, remainingHours).toFixed(1)}`}
                             className="mt-2"
                           />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Remaining: {remainingHours.toFixed(1)}h
+                          </p>
                         </div>
                         <div>
                           <Label htmlFor="date">Date *</Label>
@@ -351,6 +374,14 @@ if (!agreement) {
                         </Button>
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {remainingHours <= 0 && isWorker && (
+                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-center">
+                    <p className="text-sm text-green-900 font-medium">
+                      ✅ All hours have been logged! You can now mark the work as complete.
+                    </p>
                   </div>
                 )}
 
