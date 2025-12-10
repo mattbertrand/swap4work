@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -82,6 +81,11 @@ export default function Layout({ children, currentPageName }) {
       title: "Browse Items",
       url: createPageUrl("Browse"),
       icon: Package,
+    },
+    {
+      title: "Find People",
+      url: createPageUrl("BrowseUsers"),
+      icon: Users,
     },
     {
       title: "My Listings",
