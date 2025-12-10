@@ -10,7 +10,8 @@ import {
   Briefcase,
   Plus,
   LogOut,
-  Bell
+  Bell,
+  Users
 } from "lucide-react";
 import {
   Sidebar,
