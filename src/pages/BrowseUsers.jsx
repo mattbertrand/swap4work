@@ -3,107 +3,13 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Search, MapPin, Star, Filter, Users, ArrowRight, X } from "lucide-react";
+import { Search, MapPin, Star, Filter, Users, ArrowRight, X, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-
-// Mock Data
-const MOCK_USERS = [
-  {
-    id: "mock-1",
-    full_name: "Sarah Jenkins",
-    profile_completed: true,
-    bio: "Experienced gardener and landscaper. I love transforming backyards into paradises.",
-    skills: "Gardening, Landscaping, Plant Care, Pruning",
-    location: "Portland, OR",
-    latitude: 45.5152,
-    longitude: -122.6784,
-    rating: 4.8,
-    total_ratings: 12,
-    completed_trades: 15,
-    hours_completed: 45,
-    photo_url: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop"
-  },
-  {
-    id: "mock-2",
-    full_name: "David Chen",
-    profile_completed: true,
-    bio: "Professional handyman with 10 years of experience. Can fix almost anything around the house.",
-    skills: "Plumbing, Electrical, Carpentry, Repairs, Painting",
-    location: "Beaverton, OR",
-    latitude: 45.4871,
-    longitude: -122.8037,
-    rating: 4.9,
-    total_ratings: 28,
-    completed_trades: 32,
-    hours_completed: 120,
-    photo_url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop"
-  },
-  {
-    id: "mock-3",
-    full_name: "Emily Rodriguez",
-    profile_completed: true,
-    bio: "Graphic designer and digital artist. Happy to help with logos, flyers, and social media graphics.",
-    skills: "Graphic Design, Illustration, Photoshop, Branding",
-    location: "Vancouver, WA",
-    latitude: 45.6387,
-    longitude: -122.6615,
-    rating: 5.0,
-    total_ratings: 8,
-    completed_trades: 10,
-    hours_completed: 30,
-    photo_url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop"
-  },
-  {
-    id: "mock-4",
-    full_name: "Michael Ross",
-    profile_completed: true,
-    bio: "Fitness trainer and nutrition enthusiast. I can help you set up a workout plan or move heavy furniture.",
-    skills: "Moving, Heavy Lifting, Fitness Training, Coaching",
-    location: "Gresham, OR",
-    latitude: 45.4997,
-    longitude: -122.4312,
-    rating: 4.7,
-    total_ratings: 15,
-    completed_trades: 18,
-    hours_completed: 55,
-    photo_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop"
-  },
-  {
-    id: "mock-5",
-    full_name: "Jessica Kim",
-    profile_completed: true,
-    bio: "Tech savvy student offering computer help, coding lessons, and troubleshooting.",
-    skills: "Tech Support, Coding, Web Development, Tutoring",
-    location: "Hillsboro, OR",
-    latitude: 45.5229,
-    longitude: -122.9898,
-    rating: 4.5,
-    total_ratings: 6,
-    completed_trades: 8,
-    hours_completed: 20,
-    photo_url: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&h=150&fit=crop"
-  },
-  {
-    id: "mock-6",
-    full_name: "John Doe",
-    profile_completed: true,
-    bio: "I am a single dad who can help you clear things in your house, garden...",
-    skills: "Gardening, clearing",
-    location: "Petaluma, CA",
-    latitude: 38.244923,
-    longitude: -122.626991,
-    rating: 4.5,
-    total_ratings: 6,
-    completed_trades: 8,
-    hours_completed: 20,
-    photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/John_Doe%2C_born_John_Nommensen_Duchac.jpg/250px-John_Doe%2C_born_John_Nommensen_Duchac.jpg&fit=crop"
-  }
-];
 
 // Calculate distance between two coordinates
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -134,13 +40,11 @@ export default function BrowseUsers() {
     queryKey: ['workers'],
     queryFn: async () => {
       try {
-        const users = await base44.auth.listUsers();
-        // Combine real users with mock users
-        // Filter out real users that might duplicate mock IDs if any (unlikely but safe)
-        return [...users, ...MOCK_USERS];
+        // Fetch from the new Worker entity
+        return await base44.entities.Worker.list();
       } catch (error) {
         console.error('Could not fetch users', error);
-        return MOCK_USERS;
+        return [];
       }
     },
   });
@@ -151,10 +55,11 @@ export default function BrowseUsers() {
 
   const filteredUsers = React.useMemo(() => {
     let users = allUsers.filter(u => {
-      // Basic validation - must have profile completed
-      if (!u.profile_completed) return false;
-      
-      // Search filter
+    // Basic validation - we now use Worker entity so we assume valid, 
+    // but let's just check they have a name
+    if (!u.full_name) return false;
+
+    // Search filter
       if (searchTerm) {
         const nameMatch = u.full_name?.toLowerCase().includes(searchTerm);
         const bioMatch = u.bio?.toLowerCase().includes(searchTerm);
@@ -202,10 +107,18 @@ export default function BrowseUsers() {
     <div className="min-h-screen p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Find Skilled <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600">People</span>
-          </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-center mb-4">
+            <h1 className="text-4xl font-bold text-gray-900">
+              Find Skilled <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600">People</span>
+            </h1>
+            <Link to={createPageUrl("AddWorker")}>
+              <Button className="mt-4 md:mt-0 bg-blue-600 hover:bg-blue-700">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Worker
+              </Button>
+            </Link>
+          </div>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto md:mx-0 mb-8 text-center md:text-left">
             Connect with local community members ready to help with your tasks.
           </p>
         </div>
@@ -294,7 +207,7 @@ export default function BrowseUsers() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredUsers.map(worker => (
-              <Link key={worker.id} to={createPageUrl(`PublicProfile?userId=${worker.id}`)}>
+              <Link key={worker.id} to={createPageUrl(`WorkerProfile?id=${worker.id}`)}>
                 <Card className="hover:shadow-xl transition-shadow border-blue-100 cursor-pointer h-full">
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4 mb-4">
