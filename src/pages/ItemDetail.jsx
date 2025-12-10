@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -588,31 +587,37 @@ export default function ItemDetail() {
                   </Alert>
                 )}
 
-                {/* Offerer Info - USING DENORMALIZED DATA */}
-                <Card className="bg-gray-50 border-gray-200">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      {/* Assuming item.offerer_photo_url might exist, if not, default to initial */}
-                      {item.offerer_photo_url ? (
-                        <img
-                          src={item.offerer_photo_url}
-                          alt={item.offerer_name}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-amber-500 rounded-full flex items-center justify-center">
-                          <span className="text-white font-bold text-lg">
-                            {item.offerer_name?.[0]?.toUpperCase()}
-                          </span>
+                {/* Offerer Info - Link to Public Profile */}
+                <Link to={createPageUrl(`PublicProfile?userId=${item.offerer_id}`)}>
+                  <Card className="bg-gray-50 border-gray-200 hover:border-orange-300 hover:shadow-md transition-all cursor-pointer group">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        {item.offerer_photo_url ? (
+                          <img
+                            src={item.offerer_photo_url}
+                            alt={item.offerer_name}
+                            className="w-12 h-12 rounded-full object-cover group-hover:scale-105 transition-transform"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-amber-500 rounded-full flex items-center justify-center group-hover:scale-105 transition-transform">
+                            <span className="text-white font-bold text-lg">
+                              {item.offerer_name?.[0]?.toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-gray-900 group-hover:text-orange-700 transition-colors">
+                              {item.offerer_name}
+                            </p>
+                            <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-orange-600 opacity-0 group-hover:opacity-100 transition-all" />
+                          </div>
+                          <p className="text-xs text-gray-500">View other items from this user</p>
                         </div>
-                      )}
-                      <div className="flex-1">
-                        <p className="font-semibold text-gray-900">{item.offerer_name}</p>
-                        <p className="text-xs text-gray-500">Item Owner</p>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </Link>
 
                 {/* Action Buttons */}
                 {!isOwner && (

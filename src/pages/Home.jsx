@@ -1,4 +1,3 @@
-
 import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -117,56 +116,65 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-500 text-white py-20 px-4">
-        <div className="max-w-6xl mx-auto text-center">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">
-            Trade Your Skills for Items You Need
+      {/* Hero Section - Dual Options */}
+      <div className="bg-white py-16 px-4 md:py-24">
+        <div className="max-w-7xl mx-auto text-center mb-16">
+          <h1 className="text-4xl md:text-6xl font-extrabold text-gray-900 mb-6 leading-tight">
+            How would you like to <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500">connect?</span>
           </h1>
-          <p className="text-xl md:text-2xl mb-8 text-orange-50 max-w-3xl mx-auto">
-            No money required. Connect with your local community to exchange work hours for physical items.
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            WorkSwap connects people who need help with people who need items. No money changes hands.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            {user ? (
-              <>
-                <Link to={createPageUrl("Browse")}>
-                  <Button size="lg" className="bg-white text-orange-600 hover:bg-orange-50 text-lg px-8 py-6 h-auto">
-                    <Package className="w-5 h-5 mr-2" />
-                    Browse Items
-                  </Button>
-                </Link>
-                <Link to={createPageUrl("CreateItem")}>
-                  <Button 
-                    size="lg" 
-                    variant="outline" 
-                    className="border-2 border-white text-white hover:bg-white/20 text-lg px-8 py-6 h-auto bg-transparent focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white"
-                  >
-                    <Briefcase className="w-5 h-5 mr-2" />
-                    List an Item
-                  </Button>
-                </Link>
-              </>
-            ) : (
-              <>
-                <Button 
-                  size="lg" 
-                  onClick={() => base44.auth.redirectToLogin()}
-                  className="bg-white text-orange-600 hover:bg-orange-50 text-lg px-8 py-6 h-auto"
-                >
-                  Sign In to Get Started
-                </Button>
-                <Link to={createPageUrl("Browse")}>
-                  <Button 
-                    size="lg" 
-                    variant="outline" 
-                    className="border-2 border-white text-white hover:bg-white/20 text-lg px-8 py-6 h-auto bg-transparent focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white"
-                  >
-                    Browse Without Account
-                  </Button>
-                </Link>
-              </>
-            )}
-          </div>
+        </div>
+
+        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8 md:gap-12">
+          {/* Option A: I Need Help (Find Workers) */}
+          <Link to={createPageUrl("BrowseUsers")} className="group">
+            <div className="h-full bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-100 rounded-3xl p-8 md:p-12 hover:shadow-2xl hover:border-blue-300 transition-all duration-300 transform hover:-translate-y-1 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100 rounded-bl-full opacity-50 group-hover:scale-110 transition-transform" />
+              
+              <div className="relative z-10 flex flex-col h-full">
+                <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-8 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                  <Users className="w-8 h-8" />
+                </div>
+                
+                <h2 className="text-3xl font-bold text-gray-900 mb-4 group-hover:text-blue-700 transition-colors">
+                  I need help with a task
+                </h2>
+                <p className="text-lg text-gray-600 mb-8 flex-1">
+                  Find skilled people in your area who can babysit, run errands, clean, or fix things in exchange for your items.
+                </p>
+                
+                <div className="flex items-center text-blue-700 font-bold text-lg group-hover:translate-x-2 transition-transform">
+                  Browse People <ArrowRight className="w-5 h-5 ml-2" />
+                </div>
+              </div>
+            </div>
+          </Link>
+
+          {/* Option B: I Have Something (Find Items) */}
+          <Link to={createPageUrl("Browse")} className="group">
+            <div className="h-full bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-orange-100 rounded-3xl p-8 md:p-12 hover:shadow-2xl hover:border-orange-300 transition-all duration-300 transform hover:-translate-y-1 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-orange-100 rounded-bl-full opacity-50 group-hover:scale-110 transition-transform" />
+              
+              <div className="relative z-10 flex flex-col h-full">
+                <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-8 text-orange-600 group-hover:bg-orange-600 group-hover:text-white transition-colors">
+                  <Package className="w-8 h-8" />
+                </div>
+                
+                <h2 className="text-3xl font-bold text-gray-900 mb-4 group-hover:text-orange-700 transition-colors">
+                  I want to earn an item
+                </h2>
+                <p className="text-lg text-gray-600 mb-8 flex-1">
+                  Offer your skills and time to complete tasks for others in exchange for furniture, electronics, and more.
+                </p>
+                
+                <div className="flex items-center text-orange-700 font-bold text-lg group-hover:translate-x-2 transition-transform">
+                  Browse Items <ArrowRight className="w-5 h-5 ml-2" />
+                </div>
+              </div>
+            </div>
+          </Link>
         </div>
       </div>
 

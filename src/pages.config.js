@@ -14,7 +14,9 @@ import Negotiation from './pages/Negotiation';
 import AdminDashboard from './pages/AdminDashboard';
 import Notifications from './pages/Notifications';
 import AgreementDetail from './pages/AgreementDetail';
-import Layout from './Layout.jsx';
+import BrowseUsers from './pages/BrowseUsers';
+import PublicProfile from './pages/PublicProfile';
+import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
@@ -34,10 +36,12 @@ export const PAGES = {
     "AdminDashboard": AdminDashboard,
     "Notifications": Notifications,
     "AgreementDetail": AgreementDetail,
+    "BrowseUsers": BrowseUsers,
+    "PublicProfile": PublicProfile,
 }
 
 export const pagesConfig = {
     mainPage: "Browse",
     Pages: PAGES,
-    Layout: Layout,
+    Layout: __Layout,
 };
