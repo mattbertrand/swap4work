@@ -88,6 +88,21 @@ const MOCK_USERS = [
     hours_completed: 20,
     photo_url: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&h=150&fit=crop"
   }
+    {
+    id: "mock-5",
+    full_name: "John Doe",
+    profile_completed: true,
+    bio: "I am a single dad who can help you clear things in your house, garden...",
+    skills: "Gardening, clearing",
+    location: "Petaluma, CA",
+    latitude: 38.244923,
+    longitude: -122.626991,
+    rating: 4.5,
+    total_ratings: 6,
+    completed_trades: 8,
+    hours_completed: 20,
+    photo_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/John_Doe%2C_born_John_Nommensen_Duchac.jpg/250px-John_Doe%2C_born_John_Nommensen_Duchac.jpg&fit=crop"
+  }
 ];
 
 // Calculate distance between two coordinates
