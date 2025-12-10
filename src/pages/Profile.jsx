@@ -184,6 +184,65 @@ export default function Profile() {
     setUploading(false);
   };
 
+  const { data: workerProfile } = useQuery({
+    queryKey: ['myWorkerProfile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const workers = await base44.entities.Worker.filter({ user_id: user.id });
+      return workers[0] || null;
+    },
+    enabled: !!user?.id
+  });
+
+  const [workerData, setWorkerData] = useState({
+    is_visible: false,
+    availability: "",
+    skills: "",
+    bio: ""
+  });
+
+  useEffect(() => {
+    if (workerProfile) {
+      setWorkerData({
+        is_visible: workerProfile.is_visible,
+        availability: workerProfile.availability || "",
+        skills: workerProfile.skills || "",
+        bio: workerProfile.bio || ""
+      });
+    } else if (user) {
+      // Pre-fill from user data if no worker profile exists
+      setWorkerData(prev => ({
+        ...prev,
+        skills: user.skills || "",
+        bio: user.bio || ""
+      }));
+    }
+  }, [workerProfile, user]);
+
+  const updateWorkerMutation = useMutation({
+    mutationFn: async (data) => {
+      if (workerProfile) {
+        return base44.entities.Worker.update(workerProfile.id, data);
+      } else {
+        return base44.entities.Worker.create({
+          user_id: user.id,
+          ...data,
+          // Sync basic info
+          full_name: formData.full_name,
+          location: formData.location,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
+          photo_url: user.photo_url,
+          email: user.email,
+          phone: formData.phone
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['myWorkerProfile']);
+    }
+  });
+
   const handleSave = async () => {
     const profileComplete = !!(formData.location && formData.phone && formData.latitude && formData.longitude);
 
@@ -191,6 +250,19 @@ export default function Profile() {
       ...formData,
       profile_completed: profileComplete
     });
+
+    // Sync to Worker entity if it exists or if we are making it visible
+    if (workerProfile || workerData.is_visible) {
+      await updateWorkerMutation.mutateAsync({
+        ...workerData,
+        full_name: formData.full_name,
+        location: formData.location,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
+        photo_url: user.photo_url,
+        phone: formData.phone
+      });
+    }
   };
 
   const handleLogout = () => {
@@ -426,6 +498,52 @@ export default function Profile() {
                       className="mt-2"
                     />
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Worker Settings */}
+            <Card className="border-orange-100 shadow-lg">
+              <CardHeader className="border-b border-orange-100">
+                <CardTitle>Worker Profile Settings</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900">Offer Services</p>
+                      <p className="text-sm text-gray-500">List your profile in "Find People"</p>
+                    </div>
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={workerData.is_visible}
+                        onChange={(e) => setWorkerData({...workerData, is_visible: e.target.checked})}
+                        disabled={!isEditing}
+                        className="w-5 h-5 text-orange-600 rounded focus:ring-orange-500"
+                      />
+                    </div>
+                  </div>
+
+                  {workerData.is_visible && (
+                    <div className="space-y-4 animate-in slide-in-from-top-2">
+                       <div>
+                        <Label htmlFor="availability">Availability</Label>
+                        <Input
+                          id="availability"
+                          value={workerData.availability}
+                          onChange={(e) => setWorkerData({...workerData, availability: e.target.value})}
+                          placeholder="e.g. Weekends, Mon-Fri 5pm-9pm"
+                          disabled={!isEditing}
+                          className="mt-2"
+                        />
+                      </div>
+                      
+                      <div className="bg-blue-50 p-4 rounded-lg text-sm text-blue-800">
+                        <p>Your worker profile will use the name, location, and skills from your main profile above.</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

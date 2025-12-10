@@ -41,7 +41,7 @@ export default function BrowseUsers() {
     queryFn: async () => {
       try {
         // Fetch from the new Worker entity
-        return await base44.entities.Worker.list();
+        return await base44.entities.Worker.filter({ is_visible: true });
       } catch (error) {
         console.error('Could not fetch users', error);
         return [];
@@ -111,10 +111,10 @@ export default function BrowseUsers() {
             <h1 className="text-4xl font-bold text-gray-900">
               Find Skilled <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600">People</span>
             </h1>
-            <Link to={createPageUrl("AddWorker")}>
+            <Link to={createPageUrl("Profile")}>
               <Button className="mt-4 md:mt-0 bg-blue-600 hover:bg-blue-700">
                 <Plus className="w-4 h-4 mr-2" />
-                Add Worker
+                Offer Services
               </Button>
             </Link>
           </div>
@@ -207,7 +207,7 @@ export default function BrowseUsers() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredUsers.map(worker => (
-              <Link key={worker.id} to={createPageUrl(`WorkerProfile?id=${worker.id}`)}>
+              <Link key={worker.id} to={createPageUrl(`PublicProfile?userId=${worker.user_id}`)}>
                 <Card className="hover:shadow-xl transition-shadow border-blue-100 cursor-pointer h-full">
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4 mb-4">

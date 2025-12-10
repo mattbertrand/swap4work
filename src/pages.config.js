@@ -16,8 +16,6 @@ import Notifications from './pages/Notifications';
 import AgreementDetail from './pages/AgreementDetail';
 import BrowseUsers from './pages/BrowseUsers';
 import PublicProfile from './pages/PublicProfile';
-import AddWorker from './pages/AddWorker';
-import WorkerProfile from './pages/WorkerProfile';
 import __Layout from './Layout.jsx';
 
 
@@ -40,8 +38,6 @@ export const PAGES = {
     "AgreementDetail": AgreementDetail,
     "BrowseUsers": BrowseUsers,
     "PublicProfile": PublicProfile,
-    "AddWorker": AddWorker,
-    "WorkerProfile": WorkerProfile,
 }
 
 export const pagesConfig = {
