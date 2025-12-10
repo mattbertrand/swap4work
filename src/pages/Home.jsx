@@ -54,9 +54,10 @@ export default function Home() {
     queryKey: ['workers'],
     queryFn: async () => {
       try {
-        return await base44.auth.listUsers();
+        // Fetch public worker profiles
+        return await base44.entities.Worker.filter({ is_visible: true });
       } catch (error) {
-        console.log('Could not fetch users list', error);
+        console.log('Could not fetch workers list', error);
         return [];
       }
     },
@@ -69,27 +70,22 @@ export default function Home() {
 
   // Filter workers with proper validation
   const workers = React.useMemo(() => {
-    console.log('📊 Total users fetched:', allUsers.length);
+    // allUsers is now a list of Worker entities (filtered by is_visible in the query if we change it, or here)
+    // The query below fetches ALL workers (or all users in the old code)
+    // Let's filter for visibility just in case
     
-    // Filter workers who have completed profiles with required data
-    const potentialWorkers = allUsers.filter(u => {
-      const hasProfile = u.profile_completed;
-      const hasCoordinates = u.latitude && u.longitude;
-      const hasSkills = u.skills;
-      
-      console.log(`User ${u.full_name}: profile=${hasProfile}, coords=${hasCoordinates}, skills=${hasSkills}`);
-      
-      return hasProfile && hasCoordinates && hasSkills;
-    });
-
-    console.log('✅ Qualified workers:', potentialWorkers.length);
+    // Note: The data source 'allUsers' comes from the query below. 
+    // We need to update the query to fetch Worker entities instead of listUsers
+    
+    // Filter visible workers
+    const potentialWorkers = allUsers.filter(w => w.is_visible);
 
     // If user has location, filter by distance and add distance to each worker
     if (user?.latitude && user?.longitude) {
-      console.log(`📍 User location: ${user.latitude}, ${user.longitude}`);
-      
       return potentialWorkers
         .map(worker => {
+          if (!worker.latitude || !worker.longitude) return { ...worker, distance: null };
+          
           const distance = calculateDistance(
             user.latitude,
             user.longitude,
@@ -99,16 +95,16 @@ export default function Home() {
           return { ...worker, distance: distance.toFixed(1) };
         })
         .filter(worker => {
-          const withinRange = parseFloat(worker.distance) <= 100;
-          console.log(`Worker ${worker.full_name}: ${worker.distance} miles ${withinRange ? '✓' : '✗'}`);
-          return withinRange;
+          // Keep if within 100 miles OR if distance is null (maybe just show them at the end?)
+          // Let's filter strictly by distance if location is available
+          if (!worker.distance) return false;
+          return parseFloat(worker.distance) <= 100;
         })
         .sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance))
         .slice(0, 6);
     }
 
-    // If no user location, just return first 6 workers without distance
-    console.log('ℹ️ No user location, showing first 6 workers');
+    // If no user location, just return first 6 visible workers
     return potentialWorkers.slice(0, 6);
   }, [allUsers, user?.latitude, user?.longitude]);
 
@@ -310,11 +306,6 @@ export default function Home() {
                   ? `Talented individuals within 100 miles offering their services` 
                   : 'Connect with talented individuals offering their services'}
               </p>
-              {!user && (
-                <p className="text-sm text-orange-600 mt-2">
-                  Sign in and complete your profile to see workers near you
-                </p>
-              )}
             </div>
             <Link to={createPageUrl("BrowseUsers")}>
               <Button variant="outline" className="hidden md:flex bg-white hover:bg-gray-50 text-blue-600 border-blue-200 hover:border-blue-300">
