@@ -3,12 +3,92 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Search, MapPin, Star, Filter, Users, ArrowRight } from "lucide-react";
+import { Search, MapPin, Star, Filter, Users, ArrowRight, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+
+// Mock Data
+const MOCK_USERS = [
+  {
+    id: "mock-1",
+    full_name: "Sarah Jenkins",
+    profile_completed: true,
+    bio: "Experienced gardener and landscaper. I love transforming backyards into paradises.",
+    skills: "Gardening, Landscaping, Plant Care, Pruning",
+    location: "Portland, OR",
+    latitude: 45.5152,
+    longitude: -122.6784,
+    rating: 4.8,
+    total_ratings: 12,
+    completed_trades: 15,
+    hours_completed: 45,
+    photo_url: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop"
+  },
+  {
+    id: "mock-2",
+    full_name: "David Chen",
+    profile_completed: true,
+    bio: "Professional handyman with 10 years of experience. Can fix almost anything around the house.",
+    skills: "Plumbing, Electrical, Carpentry, Repairs, Painting",
+    location: "Beaverton, OR",
+    latitude: 45.4871,
+    longitude: -122.8037,
+    rating: 4.9,
+    total_ratings: 28,
+    completed_trades: 32,
+    hours_completed: 120,
+    photo_url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop"
+  },
+  {
+    id: "mock-3",
+    full_name: "Emily Rodriguez",
+    profile_completed: true,
+    bio: "Graphic designer and digital artist. Happy to help with logos, flyers, and social media graphics.",
+    skills: "Graphic Design, Illustration, Photoshop, Branding",
+    location: "Vancouver, WA",
+    latitude: 45.6387,
+    longitude: -122.6615,
+    rating: 5.0,
+    total_ratings: 8,
+    completed_trades: 10,
+    hours_completed: 30,
+    photo_url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop"
+  },
+  {
+    id: "mock-4",
+    full_name: "Michael Ross",
+    profile_completed: true,
+    bio: "Fitness trainer and nutrition enthusiast. I can help you set up a workout plan or move heavy furniture.",
+    skills: "Moving, Heavy Lifting, Fitness Training, Coaching",
+    location: "Gresham, OR",
+    latitude: 45.4997,
+    longitude: -122.4312,
+    rating: 4.7,
+    total_ratings: 15,
+    completed_trades: 18,
+    hours_completed: 55,
+    photo_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop"
+  },
+  {
+    id: "mock-5",
+    full_name: "Jessica Kim",
+    profile_completed: true,
+    bio: "Tech savvy student offering computer help, coding lessons, and troubleshooting.",
+    skills: "Tech Support, Coding, Web Development, Tutoring",
+    location: "Hillsboro, OR",
+    latitude: 45.5229,
+    longitude: -122.9898,
+    rating: 4.5,
+    total_ratings: 6,
+    completed_trades: 8,
+    hours_completed: 20,
+    photo_url: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&h=150&fit=crop"
+  }
+];
 
 // Calculate distance between two coordinates
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -28,6 +108,8 @@ export default function BrowseUsers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [sortBy, setSortBy] = useState("rating");
+  const [maxDistance, setMaxDistance] = useState([50]);
+  const [useLocation, setUseLocation] = useState(false);
 
   React.useEffect(() => {
     base44.auth.me().then(setUser).catch(() => setUser(null));
@@ -37,10 +119,13 @@ export default function BrowseUsers() {
     queryKey: ['workers'],
     queryFn: async () => {
       try {
-        return await base44.auth.listUsers();
+        const users = await base44.auth.listUsers();
+        // Combine real users with mock users
+        // Filter out real users that might duplicate mock IDs if any (unlikely but safe)
+        return [...users, ...MOCK_USERS];
       } catch (error) {
         console.error('Could not fetch users', error);
-        return [];
+        return MOCK_USERS;
       }
     },
   });
@@ -74,6 +159,11 @@ export default function BrowseUsers() {
         }
         return u;
       });
+      
+      // Filter by distance if enabled
+      if (useLocation) {
+        users = users.filter(u => u.distance && parseFloat(u.distance) <= maxDistance[0]);
+      }
     }
 
     // Sort
@@ -134,7 +224,43 @@ export default function BrowseUsers() {
                 {user?.latitude && <SelectItem value="distance">Nearest</SelectItem>}
               </SelectContent>
             </Select>
+
+            {user?.latitude && user?.longitude && (
+              <Button
+                onClick={() => setUseLocation(!useLocation)}
+                variant={useLocation ? "secondary" : "outline"}
+                className={`h-12 px-4 ${useLocation ? 'bg-blue-100 text-blue-700 border-blue-200' : ''}`}
+              >
+                <MapPin className="w-4 h-4 mr-2" />
+                {useLocation ? `Within ${maxDistance[0]} mi` : 'Filter by Distance'}
+                {useLocation && <X className="w-4 h-4 ml-2" />}
+              </Button>
+            )}
           </div>
+
+          {/* Distance Filter Slider */}
+          {useLocation && user?.latitude && (
+            <div className="mt-6 pt-6 border-t border-gray-100 animate-in slide-in-from-top-2">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm font-medium text-gray-700">Maximum Distance</span>
+                <Badge variant="secondary" className="bg-blue-50 text-blue-700">
+                  {maxDistance[0]} miles
+                </Badge>
+              </div>
+              <Slider
+                value={maxDistance}
+                onValueChange={setMaxDistance}
+                min={1}
+                max={100}
+                step={1}
+                className="w-full"
+              />
+              <div className="flex justify-between mt-2 text-xs text-gray-400">
+                <span>1 mi</span>
+                <span>100 mi</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Results */}
