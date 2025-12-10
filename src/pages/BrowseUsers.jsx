@@ -87,9 +87,9 @@ const MOCK_USERS = [
     completed_trades: 8,
     hours_completed: 20,
     photo_url: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&h=150&fit=crop"
-  }
-    {
-    id: "mock-5",
+  },
+  {
+    id: "mock-6",
     full_name: "John Doe",
     profile_completed: true,
     bio: "I am a single dad who can help you clear things in your house, garden...",
@@ -196,7 +196,7 @@ export default function BrowseUsers() {
     });
 
     return users;
-  }, [allUsers, searchTerm, user, sortBy]);
+  }, [allUsers, searchTerm, user, sortBy, useLocation, maxDistance]);
 
   return (
     <div className="min-h-screen p-4 md:p-8">
