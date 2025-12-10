@@ -300,20 +300,28 @@ export default function Home() {
       {/* Workers Section */}
       <div className="py-16 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              Skilled Workers {user?.latitude && user?.longitude ? 'Near You' : 'in Your Area'}
-            </h2>
-            <p className="text-gray-600">
-              {user?.latitude && user?.longitude
-                ? `Talented individuals within 100 miles offering their services` 
-                : 'Connect with talented individuals offering their services'}
-            </p>
-            {!user && (
-              <p className="text-sm text-orange-600 mt-2">
-                Sign in and complete your profile to see workers near you
+          <div className="flex flex-col md:flex-row justify-between items-center mb-12 gap-4">
+            <div className="text-center md:text-left">
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                Skilled Workers {user?.latitude && user?.longitude ? 'Near You' : 'in Your Area'}
+              </h2>
+              <p className="text-gray-600">
+                {user?.latitude && user?.longitude
+                  ? `Talented individuals within 100 miles offering their services` 
+                  : 'Connect with talented individuals offering their services'}
               </p>
-            )}
+              {!user && (
+                <p className="text-sm text-orange-600 mt-2">
+                  Sign in and complete your profile to see workers near you
+                </p>
+              )}
+            </div>
+            <Link to={createPageUrl("BrowseUsers")}>
+              <Button variant="outline" className="hidden md:flex bg-white hover:bg-gray-50 text-blue-600 border-blue-200 hover:border-blue-300">
+                View All People
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
           </div>
 
           {usersLoading ? (
@@ -536,10 +544,10 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="text-center mt-12">
+          <div className="text-center mt-12 flex justify-center gap-4">
             <Link to={createPageUrl("Browse")}>
               <Button size="lg" className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-lg px-8 py-6 h-auto">
-                Get Started Now
+                Start Trading
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </Link>
