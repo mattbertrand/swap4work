@@ -67,6 +67,9 @@ export default function BrowseUsers() {
     let users = allUsers.filter(u => {
     // Basic validation
     if (!u.full_name) return false;
+    
+    // Hide own profile
+    if (user && u.user_id === user.id) return false;
 
     // Search filter
       if (searchTerm) {

@@ -77,8 +77,8 @@ export default function Home() {
     // Note: The data source 'allUsers' comes from the query below. 
     // We need to update the query to fetch Worker entities instead of listUsers
     
-    // Filter visible workers
-    const potentialWorkers = allUsers.filter(w => w.is_visible);
+    // Filter visible workers and exclude current user
+    const potentialWorkers = allUsers.filter(w => w.is_visible && w.user_id !== user?.id);
 
     // If user has location, filter by distance and add distance to each worker
     if (user?.latitude && user?.longitude) {
