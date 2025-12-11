@@ -7,7 +7,42 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Star, CheckCircle2, Clock, Package, LogOut, MapPin, Loader2 } from "lucide-react";
+import { Camera, Star, CheckCircle2, Clock, Package, LogOut, MapPin, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const SKILL_CATEGORIES = {
+  "Home Repairs / Maintenance": [
+    "Handyman work", "Furniture assembly", "Mounting (TVs, shelves)", "Minor plumbing",
+    "Minor electrical", "Painting", "Drywall patching", "Appliance installation",
+    "Pressure washing", "HVAC filter change"
+  ],
+  "Home Cleaning & Organization": [
+    "Regular house cleaning", "Deep cleaning", "Move-in / move-out cleaning",
+    "Laundry & folding", "Closet / home organization", "Dishwashing", "Garage / attic clean-out"
+  ],
+  "Outdoor / Yard Work": [
+    "Lawn mowing", "Weeding", "Hedge trimming", "Tree trimming (light)",
+    "Garden maintenance", "Leaf removal", "Snow removal", "Gutter cleaning"
+  ],
+  "Errands & Personal Assistance": [
+    "Grocery shopping", "Package drop-off/pick-up", "Waiting in line",
+    "Personal assistant tasks", "Pet sitting / pet walking", "House sitting", "Transportation"
+  ],
+  "Moving & Delivery": [
+    "Help moving", "Packing / unpacking", "Small deliveries", "Item pickup & drop-off"
+  ],
+  "Digital & Professional Services": [
+    "Basic graphic design", "Social media help", "Photography", "Basic bookkeeping",
+    "Resume writing", "Transcription", "Tutoring", "Tech support"
+  ],
+  "Child / Family Support": [
+    "Babysitting", "Homework help", "Senior assistance (non-medical)"
+  ],
+  "Creative / Craft": [
+    "Custom crafts", "Sewing / alterations", "Event decoration", "Handmade art creation"
+  ]
+};
 import { format } from "date-fns";
 import KarmaDisplay from "../components/profile/KarmaDisplay";
 
@@ -198,7 +233,8 @@ export default function Profile() {
     is_visible: false,
     availability: "",
     skills: "",
-    bio: ""
+    bio: "",
+    max_concurrent_offers: 10
   });
 
   useEffect(() => {
@@ -207,7 +243,8 @@ export default function Profile() {
         is_visible: workerProfile.is_visible,
         availability: workerProfile.availability || "",
         skills: workerProfile.skills || "",
-        bio: workerProfile.bio || ""
+        bio: workerProfile.bio || "",
+        max_concurrent_offers: workerProfile.max_concurrent_offers || 10
       });
     } else if (user) {
       // Pre-fill from user data if no worker profile exists
@@ -253,6 +290,11 @@ export default function Profile() {
 
     // Sync to Worker entity if it exists or if we are making it visible
     if (workerProfile || workerData.is_visible) {
+      if (workerData.is_visible && !workerData.skills) {
+        alert("You must select at least one skill to be visible as a worker.");
+        return;
+      }
+
       await updateWorkerMutation.mutateAsync({
         ...workerData,
         full_name: formData.full_name,
@@ -487,16 +529,63 @@ export default function Profile() {
                   </div>
 
                   <div>
-                    <Label htmlFor="skills">Skills & Interests</Label>
-                    <Textarea
-                      id="skills"
-                      value={formData.skills}
-                      onChange={(e) => setFormData({...formData, skills: e.target.value})}
-                      placeholder="e.g., Carpentry, Gardening, Tech Support..."
-                      rows={3}
-                      disabled={!isEditing}
-                      className="mt-2"
-                    />
+                    <Label>Skills & Services</Label>
+                    <div className="mt-2 space-y-2 border rounded-lg p-4 bg-gray-50 max-h-96 overflow-y-auto">
+                      {isEditing ? (
+                        <Accordion type="multiple" className="w-full">
+                          {Object.entries(SKILL_CATEGORIES).map(([category, skills]) => (
+                            <AccordionItem key={category} value={category}>
+                              <AccordionTrigger className="text-sm font-semibold hover:no-underline py-2">
+                                {category}
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-2">
+                                  {skills.map((skill) => {
+                                    const currentSkills = (workerData.skills || formData.skills || "").split(',').map(s => s.trim()).filter(Boolean);
+                                    const isSelected = currentSkills.includes(skill);
+                                    
+                                    return (
+                                      <div key={skill} className="flex items-center space-x-2">
+                                        <Checkbox 
+                                          id={`skill-${skill}`}
+                                          checked={isSelected}
+                                          onCheckedChange={(checked) => {
+                                            let newSkills = [...currentSkills];
+                                            if (checked) {
+                                              if (!newSkills.includes(skill)) newSkills.push(skill);
+                                            } else {
+                                              newSkills = newSkills.filter(s => s !== skill);
+                                            }
+                                            const skillString = newSkills.join(', ');
+                                            setWorkerData({...workerData, skills: skillString});
+                                            setFormData({...formData, skills: skillString}); // Sync both
+                                          }}
+                                        />
+                                        <label
+                                          htmlFor={`skill-${skill}`}
+                                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                        >
+                                          {skill}
+                                        </label>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+                          ))}
+                        </Accordion>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {(formData.skills || "").split(',').filter(Boolean).map((skill, i) => (
+                            <Badge key={i} variant="secondary" className="bg-white border-gray-200">
+                              {skill.trim()}
+                            </Badge>
+                          ))}
+                          {!formData.skills && <p className="text-sm text-gray-500 italic">No skills selected</p>}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -539,8 +628,23 @@ export default function Profile() {
                         />
                       </div>
                       
+                      <div>
+                        <Label htmlFor="max_offers">Max Concurrent Offers</Label>
+                        <Input
+                          id="max_offers"
+                          type="number"
+                          min="1"
+                          max="50"
+                          value={workerData.max_concurrent_offers || 10}
+                          onChange={(e) => setWorkerData({...workerData, max_concurrent_offers: parseInt(e.target.value) || 10})}
+                          disabled={!isEditing}
+                          className="mt-2"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Maximum number of active negotiations you can handle at once.</p>
+                      </div>
+
                       <div className="bg-blue-50 p-4 rounded-lg text-sm text-blue-800">
-                        <p>Your worker profile will use the name, location, and skills from your main profile above.</p>
+                        <p>Your worker profile uses the name, location, and skills from your main profile above.</p>
                       </div>
                     </div>
                   )}
