@@ -349,7 +349,8 @@ export default function Home() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {workers.map((worker) => (
-                <Card key={worker.id} className="hover:shadow-xl transition-shadow border-orange-100">
+                <Link key={worker.id} to={createPageUrl(`PublicProfile?userId=${worker.user_id}`)}>
+                  <Card className="hover:shadow-xl transition-shadow border-orange-100">
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4 mb-4">
                       {worker.photo_url ? (
@@ -433,6 +434,7 @@ export default function Home() {
                     )}
                   </CardContent>
                 </Card>
+                </Link>
               ))}
             </div>
           )}
