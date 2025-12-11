@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Clock, MapPin, Star, CheckCircle2,
+  ArrowLeft, ArrowRight, Clock, MapPin, Star, CheckCircle2,
   AlertCircle, MessageSquare, Eye, User, Crosshair, Calendar
 } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
