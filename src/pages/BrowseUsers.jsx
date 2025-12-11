@@ -24,6 +24,16 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
   return R * c;
 };
 
+// Get approximate location (city/state) from exact coordinates
+const getApproximateLocation = (fullLocation) => {
+  if (!fullLocation) return null;
+  const parts = fullLocation.split(',').map(p => p.trim());
+  if (parts.length >= 2) {
+    return parts.slice(-2).join(', ');
+  }
+  return fullLocation;
+};
+
 export default function BrowseUsers() {
   const [user, setUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -55,8 +65,7 @@ export default function BrowseUsers() {
 
   const filteredUsers = React.useMemo(() => {
     let users = allUsers.filter(u => {
-    // Basic validation - we now use Worker entity so we assume valid, 
-    // but let's just check they have a name
+    // Basic validation
     if (!u.full_name) return false;
 
     // Search filter
@@ -225,26 +234,26 @@ export default function BrowseUsers() {
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-lg text-gray-900 truncate">{worker.full_name}</h3>
-                        <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-bold text-lg text-gray-900 truncate">{worker.full_name}</h3>
+                          {/* worker.id_verified is not on Worker entity, but we can assume false or check later. Removed for now to avoid confusion or keep if it was there */}
+                        </div>
+                        <div className="flex items-center gap-2 mb-1">
                           {worker.location && (
-                            <span className="flex items-center gap-1 truncate">
+                            <span className="flex items-center gap-1 truncate text-sm text-gray-600">
                               <MapPin className="w-3 h-3" />
-                              {worker.location.split(',')[0]}
-                            </span>
-                          )}
-                          {worker.distance && (
-                            <span className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">
-                              {worker.distance} mi
+                              {getApproximateLocation(worker.location)}
                             </span>
                           )}
                         </div>
-                        {worker.rating > 0 && (
-                          <div className="flex items-center gap-1 text-sm font-medium text-yellow-600">
-                            <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
-                            {worker.rating.toFixed(1)} <span className="text-gray-400 font-normal">({worker.total_ratings})</span>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2 mb-2">
+                          {worker.rating > 0 && (
+                            <div className="flex items-center gap-1 text-sm font-medium text-yellow-600">
+                              <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
+                              {worker.rating.toFixed(1)} <span className="text-gray-400 font-normal">({worker.total_ratings})</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
 
