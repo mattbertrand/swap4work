@@ -6,7 +6,13 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Star, MapPin, CheckCircle2, Clock, Package, Briefcase } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowLeft, Star, MapPin, CheckCircle2, Clock, Package, Briefcase, MessageSquare } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import KarmaDisplay from "../components/profile/KarmaDisplay";
 import ItemCard from "../components/browse/ItemCard";
@@ -50,6 +56,112 @@ export default function PublicProfile() {
     }, '-created_date', 10),
     enabled: !!userId
   });
+
+  const { data: workerEntity } = useQuery({
+    queryKey: ['workerEntity', userId],
+    queryFn: async () => {
+      const workers = await base44.entities.Worker.filter({ user_id: userId });
+      return workers[0];
+    },
+    enabled: !!userId
+  });
+
+  const { data: activeNegotiations = [] } = useQuery({
+    queryKey: ['workerActiveNegotiations', userId],
+    queryFn: () => base44.entities.Negotiation.filter({ 
+      bidder_id: userId, 
+      status: { $in: ['active', 'accepted'] } 
+    }),
+    enabled: !!userId
+  });
+
+  const { data: myItems = [] } = useQuery({
+    queryKey: ['myItems', currentUser?.id],
+    queryFn: () => base44.entities.Item.filter({ 
+      offerer_id: currentUser.id, 
+      status: 'active' 
+    }),
+    enabled: !!currentUser
+  });
+
+  const [serviceModalOpen, setServiceModalOpen] = useState(false);
+  const [selectedItemId, setSelectedItemId] = useState("");
+  const [serviceNote, setServiceNote] = useState("");
+
+  const createNegotiationMutation = useMutation({
+    mutationFn: async () => {
+      const selectedItem = myItems.find(i => i.id === selectedItemId);
+      if (!selectedItem) throw new Error("Item not found");
+
+      const negotiation = await base44.entities.Negotiation.create({
+        item_id: selectedItem.id,
+        item_title: selectedItem.title,
+        offerer_id: currentUser.id,
+        offerer_name: currentUser.full_name,
+        bidder_id: userId, // The worker is the bidder (providing service)
+        bidder_name: userProfile.full_name,
+        initial_offer_hours: selectedItem.required_hours, // Default to item's hours
+        status: "active",
+        current_offer_by: currentUser.id,
+        offer_history: [{
+          offered_by: currentUser.id,
+          offered_by_name: currentUser.full_name,
+          hours: selectedItem.required_hours,
+          work_type: "Service Request",
+          timestamp: new Date().toISOString()
+        }],
+        last_activity: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
+      });
+
+      await base44.entities.Message.create({
+        negotiation_id: negotiation.id,
+        from_user_id: currentUser.id,
+        from_user_name: currentUser.full_name,
+        to_user_id: userId,
+        text: `I'd like to request your service in exchange for my item "${selectedItem.title}".\n\nNote: ${serviceNote}`,
+        message_type: "offer",
+        proposal_hours: selectedItem.required_hours
+      });
+
+      await base44.entities.Notification.create({
+        user_id: userId,
+        type: 'new_negotiation',
+        title: 'New service request',
+        message: `${currentUser.full_name} requested your service in exchange for ${selectedItem.title}`,
+        related_id: negotiation.id,
+        related_type: 'negotiation',
+        link_url: createPageUrl(`Negotiation?id=${negotiation.id}`),
+        from_user_id: currentUser.id,
+        from_user_name: currentUser.full_name
+      });
+
+      return negotiation;
+    },
+    onSuccess: (negotiation) => {
+      toast.success("Service request sent!");
+      setServiceModalOpen(false);
+      navigate(createPageUrl(`Negotiation?id=${negotiation.id}`));
+    },
+    onError: () => {
+      toast.error("Failed to send request");
+    }
+  });
+
+  const handleRequestService = () => {
+    if (!currentUser) {
+      base44.auth.redirectToLogin();
+      return;
+    }
+    if (myItems.length === 0) {
+      toast.error("You need to list an item to offer in exchange first.");
+      return;
+    }
+    setServiceModalOpen(true);
+  };
+
+  const maxOffers = workerEntity?.max_concurrent_offers || 10;
+  const isBusy = activeNegotiations.length >= maxOffers;
 
   if (profileLoading) {
     return (
@@ -137,6 +249,24 @@ export default function PublicProfile() {
                     <p className="text-xs text-gray-500 uppercase tracking-wide">Trades</p>
                   </div>
                 </div>
+
+                {workerEntity?.availability && (
+                  <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
+                    <span className="font-semibold block mb-1">Availability:</span>
+                    {workerEntity.availability}
+                  </div>
+                )}
+
+                {!isOwnProfile && (
+                  <Button 
+                    className="w-full mt-6 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
+                    onClick={handleRequestService}
+                    disabled={isBusy}
+                  >
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    {isBusy ? "Worker Busy (Max Offers)" : "Request Service"}
+                  </Button>
+                )}
 
                 {isOwnProfile && (
                   <Link to={createPageUrl("Profile")}>
@@ -246,6 +376,61 @@ export default function PublicProfile() {
           </div>
         </div>
       </div>
+
+      <Dialog open={serviceModalOpen} onOpenChange={setServiceModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Request Service from {userProfile.full_name}</DialogTitle>
+            <DialogDescription>
+              Select one of your items to offer in exchange for their service.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Offer Item</Label>
+              <Select value={selectedItemId} onValueChange={setSelectedItemId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an item..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {myItems.map(item => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.title} ({item.required_hours}h)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {myItems.length === 0 && (
+                <p className="text-xs text-red-500 mt-1">
+                  You have no active items. <Link to={createPageUrl("CreateItem")} className="underline">Create one first.</Link>
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Label>Message / Details</Label>
+              <Textarea 
+                placeholder="Describe what you need help with..."
+                value={serviceNote}
+                onChange={(e) => setServiceNote(e.target.value)}
+                className="h-24"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setServiceModalOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={() => createNegotiationMutation.mutate()}
+              disabled={!selectedItemId || !serviceNote || createNegotiationMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {createNegotiationMutation.isPending ? "Sending..." : "Send Request"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
