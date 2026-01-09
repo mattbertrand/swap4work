@@ -1,43 +1,43 @@
-import Browse from './pages/Browse';
-import CreateItem from './pages/CreateItem';
-import ItemDetail from './pages/ItemDetail';
-import MyListings from './pages/MyListings';
-import MyAgreements from './pages/MyAgreements';
-import Chat from './pages/Chat';
-import TimeTracking from './pages/TimeTracking';
-import Profile from './pages/Profile';
-import Home from './pages/Home';
-import CompleteProfile from './pages/CompleteProfile';
-import EditItem from './pages/EditItem';
-import AdminDisputes from './pages/AdminDisputes';
-import Negotiation from './pages/Negotiation';
 import AdminDashboard from './pages/AdminDashboard';
-import Notifications from './pages/Notifications';
+import AdminDisputes from './pages/AdminDisputes';
 import AgreementDetail from './pages/AgreementDetail';
+import Browse from './pages/Browse';
 import BrowseUsers from './pages/BrowseUsers';
+import Chat from './pages/Chat';
+import CompleteProfile from './pages/CompleteProfile';
+import CreateItem from './pages/CreateItem';
+import EditItem from './pages/EditItem';
+import Home from './pages/Home';
+import ItemDetail from './pages/ItemDetail';
+import MyAgreements from './pages/MyAgreements';
+import MyListings from './pages/MyListings';
+import Negotiation from './pages/Negotiation';
+import Notifications from './pages/Notifications';
+import Profile from './pages/Profile';
 import PublicProfile from './pages/PublicProfile';
+import TimeTracking from './pages/TimeTracking';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Browse": Browse,
-    "CreateItem": CreateItem,
-    "ItemDetail": ItemDetail,
-    "MyListings": MyListings,
-    "MyAgreements": MyAgreements,
-    "Chat": Chat,
-    "TimeTracking": TimeTracking,
-    "Profile": Profile,
-    "Home": Home,
-    "CompleteProfile": CompleteProfile,
-    "EditItem": EditItem,
-    "AdminDisputes": AdminDisputes,
-    "Negotiation": Negotiation,
     "AdminDashboard": AdminDashboard,
-    "Notifications": Notifications,
+    "AdminDisputes": AdminDisputes,
     "AgreementDetail": AgreementDetail,
+    "Browse": Browse,
     "BrowseUsers": BrowseUsers,
+    "Chat": Chat,
+    "CompleteProfile": CompleteProfile,
+    "CreateItem": CreateItem,
+    "EditItem": EditItem,
+    "Home": Home,
+    "ItemDetail": ItemDetail,
+    "MyAgreements": MyAgreements,
+    "MyListings": MyListings,
+    "Negotiation": Negotiation,
+    "Notifications": Notifications,
+    "Profile": Profile,
     "PublicProfile": PublicProfile,
+    "TimeTracking": TimeTracking,
 }
 
 export const pagesConfig = {

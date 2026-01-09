@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -8,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, X, ArrowLeft, Loader2, MapPin } from "lucide-react";
+import { Upload, X, ArrowLeft, Loader2, MapPin, Package, Briefcase } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function CreateItem() {
@@ -17,7 +16,10 @@ export default function CreateItem() {
   const [uploading, setUploading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [user, setUser] = useState(null); // Added user state
+  const [listingType, setListingType] = useState("item"); // "item" or "service"
   const [formData, setFormData] = useState({
+    listing_type: "item",
+    accepts: "service",
     title: "",
     description: "",
     category: "Electronics",
@@ -187,8 +189,10 @@ export default function CreateItem() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (formData.photos.length < 3) {
-      alert("Please upload at least 3 photos");
+    
+    // Photos are required for items, optional for services
+    if (listingType === "item" && formData.photos.length < 3) {
+      alert("Please upload at least 3 photos for items");
       return;
     }
 
@@ -199,19 +203,19 @@ export default function CreateItem() {
 
     setLoading(true);
     try {
-      // The user object is already available from the useEffect check
       await base44.entities.Item.create({
         ...formData,
+        listing_type: listingType,
         required_hours: parseFloat(formData.required_hours),
         estimated_value: parseFloat(formData.estimated_value) || 0,
-        offerer_id: user.id, // Use the user state
-        offerer_name: user.full_name, // Use the user state
+        offerer_id: user.id,
+        offerer_name: user.full_name,
         status: "active"
       });
       navigate(createPageUrl("MyListings"));
     } catch (error) {
-      console.error("Error creating item:", error);
-      alert("Failed to create item. Please try again.");
+      console.error("Error creating listing:", error);
+      alert("Failed to create listing. Please try again.");
     }
     setLoading(false);
   };
@@ -238,13 +242,99 @@ export default function CreateItem() {
 
         <Card className="border-orange-100 shadow-xl">
           <CardHeader className="border-b border-orange-100">
-            <CardTitle className="text-2xl font-bold">List a New Item</CardTitle>
-            <p className="text-gray-500">Fill in the details about the item you want to trade</p>
+            <CardTitle className="text-2xl font-bold">Create a New Listing</CardTitle>
+            <p className="text-gray-500">List an item or service for trade</p>
           </CardHeader>
 
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Photos Upload */}
+              {/* Listing Type Selection */}
+              <div className="bg-gray-50 p-4 rounded-lg border-2 border-gray-200">
+                <Label className="text-base font-semibold mb-3 block">What are you listing?</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setListingType("item");
+                      setFormData({...formData, listing_type: "item", accepts: "service", category: "Electronics"});
+                    }}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      listingType === "item"
+                        ? "border-orange-500 bg-orange-50"
+                        : "border-gray-300 bg-white hover:border-gray-400"
+                    }`}
+                  >
+                    <Package className={`w-8 h-8 mx-auto mb-2 ${listingType === "item" ? "text-orange-600" : "text-gray-400"}`} />
+                    <p className={`font-semibold ${listingType === "item" ? "text-orange-600" : "text-gray-600"}`}>Physical Item</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setListingType("service");
+                      setFormData({...formData, listing_type: "service", accepts: "both", category: "Home Repairs"});
+                    }}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      listingType === "service"
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-300 bg-white hover:border-gray-400"
+                    }`}
+                  >
+                    <Briefcase className={`w-8 h-8 mx-auto mb-2 ${listingType === "service" ? "text-blue-600" : "text-gray-400"}`} />
+                    <p className={`font-semibold ${listingType === "service" ? "text-blue-600" : "text-gray-600"}`}>Service Offering</p>
+                  </button>
+                </div>
+              </div>
+
+              {/* What do you accept in return */}
+              <div>
+                <Label className="text-base font-semibold mb-3 block">
+                  What do you accept in exchange? <span className="text-red-500">*</span>
+                </Label>
+                <div className="grid grid-cols-3 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, accepts: "item"})}
+                    className={`p-3 rounded-lg border-2 transition-all ${
+                      formData.accepts === "item"
+                        ? "border-orange-500 bg-orange-50 text-orange-700"
+                        : "border-gray-300 bg-white text-gray-600 hover:border-gray-400"
+                    }`}
+                  >
+                    <Package className="w-5 h-5 mx-auto mb-1" />
+                    <p className="text-sm font-semibold">Items Only</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, accepts: "service"})}
+                    className={`p-3 rounded-lg border-2 transition-all ${
+                      formData.accepts === "service"
+                        ? "border-blue-500 bg-blue-50 text-blue-700"
+                        : "border-gray-300 bg-white text-gray-600 hover:border-gray-400"
+                    }`}
+                  >
+                    <Briefcase className="w-5 h-5 mx-auto mb-1" />
+                    <p className="text-sm font-semibold">Services Only</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, accepts: "both"})}
+                    className={`p-3 rounded-lg border-2 transition-all ${
+                      formData.accepts === "both"
+                        ? "border-purple-500 bg-purple-50 text-purple-700"
+                        : "border-gray-300 bg-white text-gray-600 hover:border-gray-400"
+                    }`}
+                  >
+                    <div className="flex gap-1 justify-center mb-1">
+                      <Package className="w-4 h-4" />
+                      <Briefcase className="w-4 h-4" />
+                    </div>
+                    <p className="text-sm font-semibold">Both</p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Photos Upload - Only for items */}
+              {listingType === "item" && (
               <div>
                 <Label className="text-base font-semibold mb-3 block">
                   Item Photos <span className="text-red-500">*</span> (minimum 3)
@@ -285,16 +375,17 @@ export default function CreateItem() {
                   )}
                 </div>
               </div>
+              )}
 
               {/* Basic Info */}
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="title">Item Title <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="title">{listingType === "item" ? "Item" : "Service"} Title <span className="text-red-500">*</span></Label>
                   <Input
                     id="title"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="e.g., MacBook Pro 2020"
+                    placeholder={listingType === "item" ? "e.g., MacBook Pro 2020" : "e.g., Professional House Cleaning"}
                     required
                     className="mt-2"
                   />
@@ -307,35 +398,53 @@ export default function CreateItem() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Electronics">Electronics</SelectItem>
-                      <SelectItem value="Home Goods">Home Goods</SelectItem>
-                      <SelectItem value="Furniture">Furniture</SelectItem>
-                      <SelectItem value="Appliances">Appliances</SelectItem>
-                      <SelectItem value="Tools">Tools</SelectItem>
-                      <SelectItem value="Sports Equipment">Sports Equipment</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
+                      {listingType === "item" ? (
+                        <>
+                          <SelectItem value="Electronics">Electronics</SelectItem>
+                          <SelectItem value="Home Goods">Home Goods</SelectItem>
+                          <SelectItem value="Furniture">Furniture</SelectItem>
+                          <SelectItem value="Appliances">Appliances</SelectItem>
+                          <SelectItem value="Tools">Tools</SelectItem>
+                          <SelectItem value="Sports Equipment">Sports Equipment</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </>
+                      ) : (
+                        <>
+                          <SelectItem value="Home Repairs">Home Repairs</SelectItem>
+                          <SelectItem value="Cleaning">Cleaning</SelectItem>
+                          <SelectItem value="Yard Work">Yard Work</SelectItem>
+                          <SelectItem value="Digital Services">Digital Services</SelectItem>
+                          <SelectItem value="Tutoring">Tutoring</SelectItem>
+                          <SelectItem value="Personal Assistance">Personal Assistance</SelectItem>
+                          <SelectItem value="Creative Services">Creative Services</SelectItem>
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div>
-                  <Label htmlFor="condition">Condition <span className="text-red-500">*</span></Label>
-                  <Select value={formData.condition} onValueChange={(value) => setFormData({ ...formData, condition: value })}>
-                    <SelectTrigger className="mt-2">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="New">New</SelectItem>
-                      <SelectItem value="Like New">Like New</SelectItem>
-                      <SelectItem value="Good">Good</SelectItem>
-                      <SelectItem value="Fair">Fair</SelectItem>
-                      <SelectItem value="Poor">Poor</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {listingType === "item" && (
+                  <div>
+                    <Label htmlFor="condition">Condition <span className="text-red-500">*</span></Label>
+                    <Select value={formData.condition} onValueChange={(value) => setFormData({ ...formData, condition: value })}>
+                      <SelectTrigger className="mt-2">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="New">New</SelectItem>
+                        <SelectItem value="Like New">Like New</SelectItem>
+                        <SelectItem value="Good">Good</SelectItem>
+                        <SelectItem value="Fair">Fair</SelectItem>
+                        <SelectItem value="Poor">Poor</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <div>
-                  <Label htmlFor="required_hours">Required Work Hours <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="required_hours">
+                    {listingType === "item" ? "Work Hours Required" : "Service Hours Offered"} <span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     id="required_hours"
                     type="number"
@@ -381,18 +490,20 @@ export default function CreateItem() {
                   )}
                 </div>
 
-                <div>
-                  <Label htmlFor="estimated_value">Estimated Value ($)</Label>
-                  <Input
-                    id="estimated_value"
-                    type="number"
-                    min="0"
-                    value={formData.estimated_value}
-                    onChange={(e) => setFormData({ ...formData, estimated_value: e.target.value })}
-                    placeholder="e.g., 1200"
-                    className="mt-2"
-                  />
-                </div>
+                {listingType === "item" && (
+                  <div>
+                    <Label htmlFor="estimated_value">Estimated Value ($)</Label>
+                    <Input
+                      id="estimated_value"
+                      type="number"
+                      min="0"
+                      value={formData.estimated_value}
+                      onChange={(e) => setFormData({ ...formData, estimated_value: e.target.value })}
+                      placeholder="e.g., 1200"
+                      className="mt-2"
+                    />
+                  </div>
+                )}
               </div>
 
               <div>
@@ -401,7 +512,9 @@ export default function CreateItem() {
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Detailed description of the item..."
+                  placeholder={listingType === "item" 
+                    ? "Detailed description of the item..." 
+                    : "Describe the service you're offering, your experience, and what's included..."}
                   rows={4}
                   required
                   className="mt-2"
@@ -409,12 +522,16 @@ export default function CreateItem() {
               </div>
 
               <div>
-                <Label htmlFor="suggested_tasks">Suggested Tasks</Label>
+                <Label htmlFor="suggested_tasks">
+                  {listingType === "item" ? "Suggested Tasks" : "Service Details"}
+                </Label>
                 <Textarea
                   id="suggested_tasks"
                   value={formData.suggested_tasks}
                   onChange={(e) => setFormData({ ...formData, suggested_tasks: e.target.value })}
-                  placeholder="e.g., Clean garage, organize storage, help with moving..."
+                  placeholder={listingType === "item"
+                    ? "e.g., Clean garage, organize storage, help with moving..."
+                    : "e.g., Includes materials, takes 2-3 hours, flexible schedule..."}
                   rows={3}
                   className="mt-2"
                 />
@@ -443,7 +560,7 @@ export default function CreateItem() {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={loading || formData.photos.length < 3 || (!formData.latitude || !formData.longitude)}
+                  disabled={loading || (listingType === "item" && formData.photos.length < 3) || (!formData.latitude || !formData.longitude)}
                   className="flex-1 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"
                 >
                   {loading ? (
@@ -452,7 +569,7 @@ export default function CreateItem() {
                       Creating...
                     </>
                   ) : (
-                    "List Item"
+                    `List ${listingType === "item" ? "Item" : "Service"}`
                   )}
                 </Button>
               </div>
