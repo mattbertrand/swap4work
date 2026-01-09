@@ -82,17 +82,12 @@ export default function Layout({ children, currentPageName }) {
       title: "Browse Items",
       url: createPageUrl("Browse"),
       icon: Package,
-      },
-      {
-      title: "Browse Services",
-      url: createPageUrl("BrowseServices"),
-      icon: Briefcase,
-      },
-      {
+    },
+    {
       title: "Find People",
       url: createPageUrl("BrowseUsers"),
       icon: Users,
-      },
+    },
     {
       title: "My Listings",
       url: createPageUrl("MyListings"),
