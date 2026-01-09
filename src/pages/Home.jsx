@@ -116,58 +116,79 @@ export default function Home() {
       <div className="bg-white py-16 px-4 md:py-24">
         <div className="max-w-7xl mx-auto text-center mb-16">
           <h1 className="text-4xl md:text-6xl font-extrabold text-gray-900 mb-6 leading-tight">
-            How would you like to <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500">connect?</span>
+            What can we help you with?
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            WorkSwap connects people who need help with people who need items. No money changes hands.
+            Trade items and services without money — connect with your community!
           </p>
         </div>
 
-        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8 md:gap-12">
-          {/* Option A: I Need Help (Find Workers) */}
+        <div className="max-w-7xl mx-auto grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Need Help */}
           <Link to={createPageUrl("BrowseUsers")} className="group">
-            <div className="h-full bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-100 rounded-3xl p-8 md:p-12 hover:shadow-2xl hover:border-blue-300 transition-all duration-300 transform hover:-translate-y-1 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100 rounded-bl-full opacity-50 group-hover:scale-110 transition-transform" />
-              
-              <div className="relative z-10 flex flex-col h-full">
-                <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-8 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                  <Users className="w-8 h-8" />
-                </div>
-                
-                <h2 className="text-3xl font-bold text-gray-900 mb-4 group-hover:text-blue-700 transition-colors">
-                  I need help with a task
-                </h2>
-                <p className="text-lg text-gray-600 mb-8 flex-1">
-                  Find skilled people in your area who can babysit, run errands, clean, or fix things in exchange for your items.
-                </p>
-                
-                <div className="flex items-center text-blue-700 font-bold text-lg group-hover:translate-x-2 transition-transform">
-                  Browse People <ArrowRight className="w-5 h-5 ml-2" />
-                </div>
+            <div className="h-full bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-100 rounded-2xl p-6 hover:shadow-2xl hover:border-blue-300 transition-all duration-300 transform hover:-translate-y-1">
+              <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center mb-4 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                <Users className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-700 transition-colors">
+                I need help
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Find people to help with tasks in exchange for items
+              </p>
+              <div className="flex items-center text-blue-700 font-semibold text-sm group-hover:translate-x-1 transition-transform">
+                Browse People <ArrowRight className="w-4 h-4 ml-1" />
               </div>
             </div>
           </Link>
 
-          {/* Option B: I Have Something (Find Items) */}
           <Link to={createPageUrl("Browse")} className="group">
-            <div className="h-full bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-orange-100 rounded-3xl p-8 md:p-12 hover:shadow-2xl hover:border-orange-300 transition-all duration-300 transform hover:-translate-y-1 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-orange-100 rounded-bl-full opacity-50 group-hover:scale-110 transition-transform" />
-              
-              <div className="relative z-10 flex flex-col h-full">
-                <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-8 text-orange-600 group-hover:bg-orange-600 group-hover:text-white transition-colors">
-                  <Package className="w-8 h-8" />
-                </div>
-                
-                <h2 className="text-3xl font-bold text-gray-900 mb-4 group-hover:text-orange-700 transition-colors">
-                  I want to earn an item
-                </h2>
-                <p className="text-lg text-gray-600 mb-8 flex-1">
-                  Offer your skills and time to complete tasks for others in exchange for furniture, electronics, and more.
-                </p>
-                
-                <div className="flex items-center text-orange-700 font-bold text-lg group-hover:translate-x-2 transition-transform">
-                  Browse Items <ArrowRight className="w-5 h-5 ml-2" />
-                </div>
+            <div className="h-full bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-orange-100 rounded-2xl p-6 hover:shadow-2xl hover:border-orange-300 transition-all duration-300 transform hover:-translate-y-1">
+              <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center mb-4 text-orange-600 group-hover:bg-orange-600 group-hover:text-white transition-colors">
+                <Package className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-orange-700 transition-colors">
+                I want items
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Work for items you need — no money required
+              </p>
+              <div className="flex items-center text-orange-700 font-semibold text-sm group-hover:translate-x-1 transition-transform">
+                Browse Items <ArrowRight className="w-4 h-4 ml-1" />
+              </div>
+            </div>
+          </Link>
+
+          <Link to={createPageUrl("BrowseServices")} className="group">
+            <div className="h-full bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-100 rounded-2xl p-6 hover:shadow-2xl hover:border-purple-300 transition-all duration-300 transform hover:-translate-y-1">
+              <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center mb-4 text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                <Briefcase className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-purple-700 transition-colors">
+                I need a service
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Find services offered in exchange for items or other services
+              </p>
+              <div className="flex items-center text-purple-700 font-semibold text-sm group-hover:translate-x-1 transition-transform">
+                Browse Services <ArrowRight className="w-4 h-4 ml-1" />
+              </div>
+            </div>
+          </Link>
+
+          <Link to={createPageUrl("CreateItem")} className="group">
+            <div className="h-full bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-100 rounded-2xl p-6 hover:shadow-2xl hover:border-green-300 transition-all duration-300 transform hover:-translate-y-1">
+              <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center mb-4 text-green-600 group-hover:bg-green-600 group-hover:text-white transition-colors">
+                <TrendingUp className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-green-700 transition-colors">
+                I'm offering
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                List your items or services to trade
+              </p>
+              <div className="flex items-center text-green-700 font-semibold text-sm group-hover:translate-x-1 transition-transform">
+                Create Listing <ArrowRight className="w-4 h-4 ml-1" />
               </div>
             </div>
           </Link>

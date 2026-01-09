@@ -84,6 +84,11 @@ export default function Layout({ children, currentPageName }) {
       icon: Package,
     },
     {
+      title: "Browse Services",
+      url: createPageUrl("BrowseServices"),
+      icon: Briefcase,
+    },
+    {
       title: "Find People",
       url: createPageUrl("BrowseUsers"),
       icon: Users,
