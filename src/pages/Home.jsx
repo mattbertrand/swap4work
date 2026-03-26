@@ -522,7 +522,7 @@ export default function Home() {
       <div className="py-16 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">How WorkSwap Works</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">How Swap4Work Works</h2>
             <p className="text-gray-600">Get started in three simple steps</p>
           </div>
 

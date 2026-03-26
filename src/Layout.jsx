@@ -139,7 +139,7 @@ export default function Layout({ children, currentPageName }) {
                 <Briefcase className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h2 className="font-bold text-xl text-gray-900">WorkSwap</h2>
+                <h2 className="font-bold text-xl text-gray-900">Swap4Work</h2>
                 <p className="text-xs text-gray-500">Trade work for items</p>
               </div>
             </Link>
@@ -237,7 +237,7 @@ export default function Layout({ children, currentPageName }) {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <SidebarTrigger className="md:hidden hover:bg-orange-100 p-2 rounded-lg transition-colors duration-200" />
-                <h1 className="text-xl font-bold text-gray-900 hidden md:block">WorkSwap</h1>
+                <h1 className="text-xl font-bold text-gray-900 hidden md:block">Swap4Work</h1>
               </div>
               {user && <NotificationBell user={user} />}
             </div>
@@ -255,7 +255,7 @@ export default function Layout({ children, currentPageName }) {
                     <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg flex items-center justify-center">
                       <Briefcase className="w-5 h-5 text-white" />
                     </div>
-                    <h3 className="font-bold text-lg text-gray-900">WorkSwap</h3>
+                    <h3 className="font-bold text-lg text-gray-900">Swap4Work</h3>
                   </div>
                   <p className="text-sm text-gray-600 mb-4">
                     A local marketplace to trade work and time for physical items — no money required.
@@ -352,7 +352,7 @@ export default function Layout({ children, currentPageName }) {
               <div className="pt-8 border-t border-gray-200">
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                   <p className="text-sm text-gray-500">
-                    © {new Date().getFullYear()} WorkSwap. All rights reserved.
+                    © {new Date().getFullYear()} Swap4Work. All rights reserved.
                   </p>
                   <div className="flex items-center gap-6">
                     <a href="#" className="text-sm text-gray-500 hover:text-orange-600 transition-colors">
