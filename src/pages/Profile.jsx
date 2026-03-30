@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -47,6 +47,9 @@ import { format } from "date-fns";
 import KarmaDisplay from "../components/profile/KarmaDisplay";
 import AuthModal from "@/components/auth/AuthModal";
 
+const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+const TIME_SLOTS = ["Morning (6am–12pm)","Afternoon (12pm–5pm)","Evening (5pm–9pm)","Night (9pm+)"];
+
 export default function Profile() {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
@@ -65,6 +68,8 @@ export default function Profile() {
   });
 
   const [authChecked, setAuthChecked] = useState(false);
+  const [selectedDays, setSelectedDays] = useState([]);
+  const [selectedTimes, setSelectedTimes] = useState([]);
 
   useEffect(() => {
     base44.auth.me().then(userData => {
@@ -78,6 +83,12 @@ export default function Profile() {
         bio: userData.bio || "",
         skills: userData.skills || ""
       });
+      // Parse availability into days/times
+      if (userData.availability) {
+        const parts = userData.availability.split(' | ');
+        if (parts[0]) setSelectedDays(parts[0].split(', ').filter(Boolean));
+        if (parts[1]) setSelectedTimes(parts[1].split(', ').filter(Boolean));
+      }
       setAuthChecked(true);
     }).catch(() => { setUser(null); setAuthChecked(true); });
   }, []);
@@ -287,9 +298,11 @@ export default function Profile() {
 
   const handleSave = async () => {
     const profileComplete = !!(formData.location && formData.phone && formData.latitude && formData.longitude);
+    const availabilityString = [selectedDays.join(', '), selectedTimes.join(', ')].filter(Boolean).join(' | ');
 
     await updateProfileMutation.mutateAsync({
       ...formData,
+      availability: availabilityString,
       profile_completed: profileComplete
     });
 
@@ -302,6 +315,7 @@ export default function Profile() {
 
       await updateWorkerMutation.mutateAsync({
         ...workerData,
+        availability: availabilityString,
         full_name: formData.full_name,
         location: formData.location,
         latitude: formData.latitude,
@@ -631,18 +645,48 @@ export default function Profile() {
                   </div>
 
                   {workerData.is_visible && (
-                    <div className="space-y-4 animate-in slide-in-from-top-2">
-                       <div>
-                        <Label htmlFor="availability">Availability</Label>
-                        <Input
-                          id="availability"
-                          value={workerData.availability}
-                          onChange={(e) => setWorkerData({...workerData, availability: e.target.value})}
-                          placeholder="e.g. Weekends, Mon-Fri 5pm-9pm"
-                          disabled={!isEditing}
-                          className="mt-2"
-                        />
+                  <div className="space-y-4 animate-in slide-in-from-top-2">
+                    <div>
+                      <Label>Availability</Label>
+                      <div className="mt-2 border rounded-lg p-4 bg-gray-50 space-y-4">
+                        <div>
+                          <p className="text-sm font-medium text-gray-700 mb-2">Days available</p>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            {DAYS.map(day => (
+                              <div key={day} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`profile-day-${day}`}
+                                  checked={selectedDays.includes(day)}
+                                  disabled={!isEditing}
+                                  onCheckedChange={(checked) => {
+                                    setSelectedDays(prev => checked ? [...prev, day] : prev.filter(d => d !== day));
+                                  }}
+                                />
+                                <label htmlFor={`profile-day-${day}`} className={`text-sm ${isEditing ? 'cursor-pointer' : 'cursor-default'}`}>{day}</label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-700 mb-2">Time slots</p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {TIME_SLOTS.map(slot => (
+                              <div key={slot} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`profile-time-${slot}`}
+                                  checked={selectedTimes.includes(slot)}
+                                  disabled={!isEditing}
+                                  onCheckedChange={(checked) => {
+                                    setSelectedTimes(prev => checked ? [...prev, slot] : prev.filter(t => t !== slot));
+                                  }}
+                                />
+                                <label htmlFor={`profile-time-${slot}`} className={`text-sm ${isEditing ? 'cursor-pointer' : 'cursor-default'}`}>{slot}</label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
+                    </div>
                       
                       <div>
                         <Label htmlFor="max_offers">Max Concurrent Offers</Label>

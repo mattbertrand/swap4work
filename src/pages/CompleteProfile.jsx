@@ -9,7 +9,24 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Camera, Loader2, CheckCircle2, MapPin } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+
+const SKILL_CATEGORIES = {
+  "Home Repairs / Maintenance": ["Handyman work","Furniture assembly","Mounting (TVs, shelves)","Minor plumbing","Minor electrical","Painting","Drywall patching","Appliance installation","Pressure washing","HVAC filter change"],
+  "Home Cleaning & Organization": ["Regular house cleaning","Deep cleaning","Move-in / move-out cleaning","Laundry & folding","Closet / home organization","Dishwashing","Garage / attic clean-out"],
+  "Outdoor / Yard Work": ["Lawn mowing","Weeding","Hedge trimming","Tree trimming (light)","Garden maintenance","Leaf removal","Snow removal","Gutter cleaning"],
+  "Errands & Personal Assistance": ["Grocery shopping","Package drop-off/pick-up","Waiting in line","Personal assistant tasks","Pet sitting / pet walking","House sitting","Transportation"],
+  "Moving & Delivery": ["Help moving","Packing / unpacking","Small deliveries","Item pickup & drop-off"],
+  "Digital & Professional Services": ["Basic graphic design","Social media help","Photography","Basic bookkeeping","Resume writing","Transcription","Tutoring","Tech support"],
+  "Child / Family Support": ["Babysitting","Homework help","Senior assistance (non-medical)"],
+  "Creative / Craft": ["Custom crafts","Sewing / alterations","Event decoration","Handmade art creation"]
+};
+
+const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+const TIME_SLOTS = ["Morning (6am–12pm)","Afternoon (12pm–5pm)","Evening (5pm–9pm)","Night (9pm+)"];
 
 export default function CompleteProfile() {
   const navigate = useNavigate();
@@ -28,11 +45,14 @@ export default function CompleteProfile() {
     location: "",
     bio: "",
     skills: "",
+    availability: "",
     photo_url: "",
     user_role: "both",
     latitude: null,
     longitude: null
   });
+  const [selectedDays, setSelectedDays] = useState([]);
+  const [selectedTimes, setSelectedTimes] = useState([]);
 
   useEffect(() => {
     base44.auth.me().then(userData => {
@@ -42,11 +62,18 @@ export default function CompleteProfile() {
         location: userData.location || "",
         bio: userData.bio || "",
         skills: userData.skills || "",
+        availability: userData.availability || "",
         photo_url: userData.photo_url || "",
         user_role: userData.user_role || "both",
         latitude: userData.latitude || null,
         longitude: userData.longitude || null
       });
+      // Parse availability back into days/times if it exists
+      if (userData.availability) {
+        const parts = userData.availability.split(' | ');
+        if (parts[0]) setSelectedDays(parts[0].split(', ').filter(Boolean));
+        if (parts[1]) setSelectedTimes(parts[1].split(', ').filter(Boolean));
+      }
     }).catch(() => {
       base44.auth.redirectToLogin(window.location.pathname + window.location.search);
     });
@@ -195,11 +222,17 @@ export default function CompleteProfile() {
       return;
     }
 
+    const availabilityString = [
+      selectedDays.join(', '),
+      selectedTimes.join(', ')
+    ].filter(Boolean).join(' | ');
+
     setLoading(true);
     try {
       console.log('💾 Saving profile:', formData);
       await base44.auth.updateMe({
         ...formData,
+        availability: availabilityString,
         profile_completed: true
       });
       toast.success('Profile completed!');
@@ -383,18 +416,89 @@ export default function CompleteProfile() {
 
               {/* Skills */}
               <div>
-                <Label htmlFor="skills">Skills & Interests</Label>
-                <Textarea
-                  id="skills"
-                  value={formData.skills}
-                  onChange={(e) => setFormData({...formData, skills: e.target.value})}
-                  placeholder="e.g., Carpentry, Cleaning, Tech Support, Gardening..."
-                  rows={3}
-                  className="mt-2"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Comma-separated list of your skills
-                </p>
+                <Label>Skills & Services</Label>
+                <div className="mt-2 border rounded-lg p-4 bg-gray-50 max-h-80 overflow-y-auto">
+                  <Accordion type="multiple" className="w-full">
+                    {Object.entries(SKILL_CATEGORIES).map(([category, skills]) => (
+                      <AccordionItem key={category} value={category}>
+                        <AccordionTrigger className="text-sm font-semibold hover:no-underline py-2">
+                          {category}
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-2">
+                            {skills.map((skill) => {
+                              const currentSkills = (formData.skills || "").split(',').map(s => s.trim()).filter(Boolean);
+                              const isSelected = currentSkills.includes(skill);
+                              return (
+                                <div key={skill} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`cp-skill-${skill}`}
+                                    checked={isSelected}
+                                    onCheckedChange={(checked) => {
+                                      let newSkills = [...currentSkills];
+                                      if (checked) { if (!newSkills.includes(skill)) newSkills.push(skill); }
+                                      else { newSkills = newSkills.filter(s => s !== skill); }
+                                      setFormData({...formData, skills: newSkills.join(', ')});
+                                    }}
+                                  />
+                                  <label htmlFor={`cp-skill-${skill}`} className="text-sm cursor-pointer">{skill}</label>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                </div>
+                {formData.skills && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {formData.skills.split(',').filter(Boolean).map((s, i) => (
+                      <Badge key={i} variant="secondary" className="text-xs">{s.trim()}</Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Availability */}
+              <div>
+                <Label>Availability</Label>
+                <div className="mt-2 border rounded-lg p-4 bg-gray-50 space-y-4">
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">Days available</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      {DAYS.map(day => (
+                        <div key={day} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`day-${day}`}
+                            checked={selectedDays.includes(day)}
+                            onCheckedChange={(checked) => {
+                              setSelectedDays(prev => checked ? [...prev, day] : prev.filter(d => d !== day));
+                            }}
+                          />
+                          <label htmlFor={`day-${day}`} className="text-sm cursor-pointer">{day}</label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">Time slots</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {TIME_SLOTS.map(slot => (
+                        <div key={slot} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`time-${slot}`}
+                            checked={selectedTimes.includes(slot)}
+                            onCheckedChange={(checked) => {
+                              setSelectedTimes(prev => checked ? [...prev, slot] : prev.filter(t => t !== slot));
+                            }}
+                          />
+                          <label htmlFor={`time-${slot}`} className="text-sm cursor-pointer">{slot}</label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <Button

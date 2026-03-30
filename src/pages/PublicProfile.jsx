@@ -32,10 +32,43 @@ export default function PublicProfile() {
   const { data: userProfile, isLoading: profileLoading } = useQuery({
     queryKey: ['publicProfile', userId],
     queryFn: async () => {
-      // Since we can't get a single user by ID easily with non-admin permissions,
-      // we'll list users and find the one (not efficient but functional for now based on current SDK usage in Home.js)
-      const users = await base44.auth.listUsers();
-      return users.find(u => u.id === userId);
+      // Fetch user info from Worker entity (publicly accessible) or reconstruct from items
+      const workers = await base44.entities.Worker.filter({ user_id: userId });
+      const worker = workers[0];
+      if (worker) {
+        return {
+          id: userId,
+          full_name: worker.full_name,
+          photo_url: worker.photo_url,
+          location: worker.location,
+          bio: worker.bio,
+          skills: worker.skills,
+          email: worker.email,
+          hours_completed: worker.hours_completed,
+          completed_trades: worker.completed_trades,
+          rating: worker.rating,
+          total_ratings: worker.total_ratings,
+          karma_points: 0,
+        };
+      }
+      // Fallback: try to get basic info from their items
+      const items = await base44.entities.Item.filter({ offerer_id: userId, status: 'active' }, '-created_date', 1);
+      if (items[0]) {
+        return {
+          id: userId,
+          full_name: items[0].offerer_name,
+          photo_url: null,
+          location: items[0].location,
+          bio: null,
+          skills: null,
+          hours_completed: 0,
+          completed_trades: 0,
+          rating: 0,
+          total_ratings: 0,
+          karma_points: 0,
+        };
+      }
+      return null;
     },
     enabled: !!userId
   });
