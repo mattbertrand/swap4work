@@ -25,12 +25,13 @@ import { format } from "date-fns";
 export default function MyAgreements() {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [deleteItemId, setDeleteItemId] = useState(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [deleteType, setDeleteType] = useState(null); // 'negotiation' or 'agreement'
 
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => setUser(null));
+    base44.auth.me().then(u => { setUser(u); setAuthChecked(true); }).catch(() => { setUser(null); setAuthChecked(true); });
   }, []);
 
   // Fetch both negotiations AND agreements
