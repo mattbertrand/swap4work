@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, X, ArrowLeft, Loader2, MapPin, Package, Briefcase } from "lucide-react";
+import AuthModal from "@/components/auth/AuthModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function CreateItem() {
@@ -15,7 +16,8 @@ export default function CreateItem() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const [user, setUser] = useState(null); // Added user state
+  const [user, setUser] = useState(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [listingType, setListingType] = useState("item"); // "item" or "service"
   const [formData, setFormData] = useState({
     listing_type: "item",
@@ -58,8 +60,9 @@ export default function CreateItem() {
 
         setCheckingAuth(false);
       } catch (error) {
-        // Not authenticated, redirect to login
-        base44.auth.redirectToLogin(window.location.pathname + window.location.search);
+        // Not authenticated - show modal instead of redirect
+        setCheckingAuth(false);
+        setAuthModalOpen(true);
       }
     };
 
@@ -225,6 +228,26 @@ export default function CreateItem() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
       </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <>
+        <div className="min-h-screen flex items-center justify-center p-8">
+          <div className="text-center max-w-md">
+            <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Package className="w-10 h-10 text-orange-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Create a Listing</h2>
+            <p className="text-gray-600 mb-6">Create an account or log in to list your items or services for trade.</p>
+            <Button onClick={() => setAuthModalOpen(true)} className="bg-gradient-to-r from-orange-500 to-amber-600 px-8">
+              Get Started
+            </Button>
+          </div>
+        </div>
+        <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} message="Create an account or log in to create a listing." />
+      </>
     );
   }
 

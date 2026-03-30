@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import KarmaDisplay from "../components/profile/KarmaDisplay";
 import ItemCard from "../components/browse/ItemCard";
+import AuthModal from "@/components/auth/AuthModal";
 
 export default function PublicProfile() {
   const navigate = useNavigate();
@@ -87,6 +88,7 @@ export default function PublicProfile() {
   const [serviceModalOpen, setServiceModalOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState("");
   const [serviceNote, setServiceNote] = useState("");
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const createNegotiationMutation = useMutation({
     mutationFn: async () => {
@@ -150,7 +152,7 @@ export default function PublicProfile() {
 
   const handleRequestService = () => {
     if (!currentUser) {
-      base44.auth.redirectToLogin();
+      setAuthModalOpen(true);
       return;
     }
     if (myItems.length === 0) {
@@ -376,6 +378,8 @@ export default function PublicProfile() {
           </div>
         </div>
       </div>
+
+      <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} message="Create an account or log in to request services." />
 
       <Dialog open={serviceModalOpen} onOpenChange={setServiceModalOpen}>
         <DialogContent>

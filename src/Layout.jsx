@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import NotificationBell from "@/components/notifications/NotificationBell";
+import GuestBanner from "@/components/auth/GuestBanner";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -244,6 +245,7 @@ export default function Layout({ children, currentPageName }) {
           </header>
 
           <div className="flex-1 overflow-auto">
+            {!user && <GuestBanner />}
             {children}
           </div>
 

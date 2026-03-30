@@ -1,0 +1,28 @@
+{
+  "name": "TermsAcceptance",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "User ID who accepted terms"
+    },
+    "terms_version": {
+      "type": "string",
+      "description": "Version of the terms accepted (e.g. v1.0)"
+    },
+    "accepted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of acceptance"
+    },
+    "ip_address": {
+      "type": "string",
+      "description": "IP address at time of acceptance (optional)"
+    }
+  },
+  "required": [
+    "user_id",
+    "terms_version",
+    "accepted_at"
+  ]
+}

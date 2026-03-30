@@ -13,6 +13,7 @@ import {
   ArrowLeft, ArrowRight, Clock, MapPin, Star, CheckCircle2,
   AlertCircle, MessageSquare, Eye, User, Crosshair, Calendar
 } from "lucide-react";
+import AuthModal from "@/components/auth/AuthModal";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 // Calculate distance between two coordinates
@@ -50,6 +51,7 @@ export default function ItemDetail() {
   const [userLocation, setUserLocation] = useState(null);
   const [locationError, setLocationError] = useState(null);
   const [gettingLocation, setGettingLocation] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const urlParams = new URLSearchParams(window.location.search);
   const itemId = urlParams.get('id');
@@ -182,7 +184,7 @@ export default function ItemDetail() {
 
   const handleJoinWaitlist = async () => {
     if (!user) {
-      base44.auth.redirectToLogin(window.location.pathname + window.location.search);
+      setAuthModalOpen(true);
       return;
     }
 
@@ -213,7 +215,7 @@ export default function ItemDetail() {
 
   const handleStartNegotiation = async () => {
     if (!user) {
-      base44.auth.redirectToLogin(window.location.pathname + window.location.search);
+      setAuthModalOpen(true);
       return;
     }
 
@@ -317,7 +319,7 @@ export default function ItemDetail() {
 
   const handleRequestInspection = async () => {
     if (!user) {
-      base44.auth.redirectToLogin(window.location.pathname + window.location.search);
+      setAuthModalOpen(true);
       return;
     }
 
@@ -675,6 +677,7 @@ export default function ItemDetail() {
           </div>
         </div>
       </div>
+      <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} message="Create an account or log in to interact with this listing." />
     </div>
   );
 }

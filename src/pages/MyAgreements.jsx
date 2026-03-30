@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Clock, CheckCircle2, AlertCircle, MessageSquare, TrendingUp, Trash2 } from "lucide-react";
+import AuthModal from "@/components/auth/AuthModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,7 @@ export default function MyAgreements() {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [deleteItemId, setDeleteItemId] = useState(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [deleteType, setDeleteType] = useState(null); // 'negotiation' or 'agreement'
 
   useEffect(() => {
@@ -146,16 +148,27 @@ export default function MyAgreements() {
 
   const isLoading = negsLoading || agreementsLoading;
 
+  if (!authChecked) {
+    return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div></div>;
+  }
+
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600 mb-4">Please sign in to view your agreements</p>
-          <Button onClick={() => base44.auth.redirectToLogin()}>
-            Sign In
-          </Button>
+      <>
+        <div className="min-h-screen flex items-center justify-center p-8">
+          <div className="text-center max-w-md">
+            <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <TrendingUp className="w-10 h-10 text-orange-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Your Agreements Hub</h2>
+            <p className="text-gray-600 mb-6">Track your exchanges and agreements here — log in to get started.</p>
+            <Button onClick={() => setAuthModalOpen(true)} className="bg-gradient-to-r from-orange-500 to-amber-600 px-8">
+              Log In to Continue
+            </Button>
+          </div>
         </div>
-      </div>
+        <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} message="Create an account or log in to continue" />
+      </>
     );
   }
 

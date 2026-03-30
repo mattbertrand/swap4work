@@ -45,10 +45,12 @@ const SKILL_CATEGORIES = {
 };
 import { format } from "date-fns";
 import KarmaDisplay from "../components/profile/KarmaDisplay";
+import AuthModal from "@/components/auth/AuthModal";
 
 export default function Profile() {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
@@ -62,6 +64,8 @@ export default function Profile() {
     skills: ""
   });
 
+  const [authChecked, setAuthChecked] = useState(false);
+
   useEffect(() => {
     base44.auth.me().then(userData => {
       setUser(userData);
@@ -74,7 +78,8 @@ export default function Profile() {
         bio: userData.bio || "",
         skills: userData.skills || ""
       });
-    }).catch(() => setUser(null));
+      setAuthChecked(true);
+    }).catch(() => { setUser(null); setAuthChecked(true); });
   }, []);
 
   const { data: ratings = [] } = useQuery({
@@ -311,16 +316,27 @@ export default function Profile() {
     base44.auth.logout();
   };
 
+  if (!authChecked) {
+    return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div></div>;
+  }
+
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600 mb-4">Please sign in to view your profile</p>
-          <Button onClick={() => base44.auth.redirectToLogin()}>
-            Sign In
-          </Button>
+      <>
+        <div className="min-h-screen flex items-center justify-center p-8">
+          <div className="text-center max-w-md">
+            <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Camera className="w-10 h-10 text-orange-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Your Profile</h2>
+            <p className="text-gray-600 mb-6">Create an account or log in to view and manage your profile.</p>
+            <Button onClick={() => setAuthModalOpen(true)} className="bg-gradient-to-r from-orange-500 to-amber-600 px-8">
+              Log In to Continue
+            </Button>
+          </div>
         </div>
-      </div>
+        <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} message="Create an account or log in to view and manage your profile." />
+      </>
     );
   }
 
