@@ -51,8 +51,8 @@ export default function PublicProfile() {
           karma_points: 0,
         };
       }
-      // Fallback: try to get basic info from their items
-      const items = await base44.entities.Item.filter({ offerer_id: userId, status: 'active' }, '-created_date', 1);
+      // Fallback: try to get basic info from any of their items (any status)
+      const items = await base44.entities.Item.filter({ offerer_id: userId }, '-created_date', 1);
       if (items[0]) {
         return {
           id: userId,

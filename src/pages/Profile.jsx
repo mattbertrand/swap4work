@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Camera, Star, CheckCircle2, Clock, Package, LogOut, MapPin, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import AddressAutocomplete from "@/components/location/AddressAutocomplete";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -507,41 +508,27 @@ export default function Profile() {
                   </div>
 
                   <div>
-                    <Label htmlFor="location">Location</Label>
-                    <div className="flex gap-2 mt-2">
-                      <Input
-                        id="location"
+                    <Label>Location</Label>
+                    <div className="mt-2">
+                      <AddressAutocomplete
                         value={formData.location}
-                        onChange={handleLocationChange}
-                        placeholder="City, State or ZIP"
                         disabled={!isEditing}
-                        className="flex-1"
+                        placeholder="Street address, city, state, ZIP..."
+                        onChange={(locationStr, lat, lon) => {
+                          setFormData(prev => ({
+                            ...prev,
+                            location: locationStr,
+                            latitude: lat,
+                            longitude: lon
+                          }));
+                        }}
                       />
-                      {isEditing && (
-                        <Button
-                          type="button"
-                          onClick={getCurrentLocation}
-                          disabled={gettingLocation}
-                          variant="outline"
-                          className="whitespace-nowrap"
-                        >
-                          {gettingLocation ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <MapPin className="w-4 h-4" />
-                          )}
-                        </Button>
-                      )}
                     </div>
-                    {formData.latitude && formData.longitude ? (
-                      <p className="text-xs text-green-600 mt-1 flex items-center">
-                        <MapPin className="w-3 h-3 mr-1" />
-                        Coordinates verified ({formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)})
+                    {formData.latitude && formData.longitude && (
+                      <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" />
+                        Location verified
                       </p>
-                    ) : (
-                      formData.location && isEditing && (
-                        <p className="text-xs text-amber-600 mt-1">Geocoding location...</p>
-                      )
                     )}
                   </div>
 

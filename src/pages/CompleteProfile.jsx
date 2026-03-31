@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Camera, Loader2, CheckCircle2, MapPin } from "lucide-react";
+import AddressAutocomplete from "@/components/location/AddressAutocomplete";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -218,7 +219,7 @@ export default function CompleteProfile() {
     }
 
     if (!formData.latitude || !formData.longitude) {
-      toast.error("Please ensure your location has valid coordinates. Try using the 'Locate Me' button.");
+      toast.error("Please select an address from the dropdown suggestions or use 'Locate Me' to verify your location.");
       return;
     }
 
@@ -323,64 +324,33 @@ export default function CompleteProfile() {
 
               {/* Location */}
               <div>
-                <Label htmlFor="location">
+                <Label>
                   Location <span className="text-red-500">*</span>
                 </Label>
-                <div className="flex gap-2 mt-2">
-                  <div className="flex-1 relative">
-                    <Input
-                      id="location"
-                      value={formData.location}
-                      onChange={handleLocationChange}
-                      placeholder="e.g., Austin, TX 78701"
-                      required
-                      className="pr-10"
-                    />
-                    {geocoding && (
-                      <Loader2 className="w-4 h-4 animate-spin absolute right-3 top-1/2 -translate-y-1/2 text-orange-600" />
-                    )}
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={getCurrentLocation}
-                    disabled={gettingLocation}
-                    className="flex-shrink-0"
-                  >
-                    {gettingLocation ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <MapPin className="w-4 h-4" />
-                    )}
-                    <span className="ml-1 hidden sm:inline">Locate Me</span>
-                  </Button>
+                <div className="mt-2">
+                  <AddressAutocomplete
+                    value={formData.location}
+                    placeholder="Street address, city, state, ZIP..."
+                    onChange={(locationStr, lat, lon) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        location: locationStr,
+                        latitude: lat,
+                        longitude: lon
+                      }));
+                    }}
+                  />
                 </div>
-                <div className="flex items-center gap-2 mt-1">
-                  {formData.latitude && formData.longitude ? (
-                    <p className="text-xs text-green-600 flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3" />
-                      Location verified ({formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)})
-                    </p>
-                  ) : formData.location && formData.location.length > 5 ? (
-                    <p className="text-xs text-amber-600 flex items-center gap-1">
-                      {geocoding ? (
-                        <>
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                          Verifying location...
-                        </>
-                      ) : (
-                        <>
-                          <MapPin className="w-3 h-3" />
-                          Waiting for location verification...
-                        </>
-                      )}
-                    </p>
-                  ) : (
-                    <p className="text-xs text-gray-500">
-                      Enter your city or ZIP code, or use "Locate Me"
-                    </p>
-                  )}
-                </div>
+                {formData.latitude && formData.longitude ? (
+                  <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Location verified
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Start typing your address and select from suggestions, or use "Locate Me"
+                  </p>
+                )}
               </div>
 
               {/* User Role */}
@@ -503,7 +473,7 @@ export default function CompleteProfile() {
 
               <Button
                 type="submit"
-                disabled={loading || uploading || gettingLocation || geocoding || !formData.latitude || !formData.longitude}
+                disabled={loading || uploading}
                 className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"
               >
                 {loading ? (
