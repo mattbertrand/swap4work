@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Camera, Star, CheckCircle2, Clock, Package, LogOut, MapPin, Loader2, ChevronDown, ChevronUp } from "lucide-react";
-import AddressAutocomplete from "@/components/location/AddressAutocomplete";
+import LocationFields, { parseLocationString } from "@/components/location/LocationFields";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -67,6 +67,8 @@ export default function Profile() {
     bio: "",
     skills: ""
   });
+  const [locationFields, setLocationFields] = useState({ street: "", city: "", state: "", zip: "" });
+  const [zipError, setZipError] = useState("");
 
   const [authChecked, setAuthChecked] = useState(false);
   const [selectedDays, setSelectedDays] = useState([]);
@@ -84,6 +86,7 @@ export default function Profile() {
         bio: userData.bio || "",
         skills: userData.skills || ""
       });
+      setLocationFields(parseLocationString(userData.location || ""));
       // Parse availability into days/times
       if (userData.availability) {
         const parts = userData.availability.split(' | ');
@@ -298,7 +301,8 @@ export default function Profile() {
   });
 
   const handleSave = async () => {
-    const profileComplete = !!(formData.location && formData.phone && formData.latitude && formData.longitude);
+    if (zipError) return;
+    const profileComplete = !!(formData.location && formData.phone && locationFields.city && locationFields.state && locationFields.zip);
     const availabilityString = [selectedDays.join(', '), selectedTimes.join(', ')].filter(Boolean).join(' | ');
 
     await updateProfileMutation.mutateAsync({
@@ -508,28 +512,20 @@ export default function Profile() {
                   </div>
 
                   <div>
-                    <Label>Location</Label>
+                    <Label className="text-sm font-medium">Location</Label>
                     <div className="mt-2">
-                      <AddressAutocomplete
-                        value={formData.location}
+                      <LocationFields
+                        value={locationFields}
                         disabled={!isEditing}
-                        placeholder="Street address, city, state, ZIP..."
-                        onChange={(locationStr, lat, lon) => {
-                          setFormData(prev => ({
-                            ...prev,
-                            location: locationStr,
-                            latitude: lat,
-                            longitude: lon
-                          }));
+                        errors={{ zip: zipError }}
+                        onChange={(fields, locationStr) => {
+                          setLocationFields(fields);
+                          const hasZip = fields.zip && !/^\d{5}(-\d{4})?$/.test(fields.zip);
+                          setZipError(hasZip ? "Enter a valid 5-digit ZIP code" : "");
+                          setFormData(prev => ({ ...prev, location: locationStr, latitude: null, longitude: null }));
                         }}
                       />
                     </div>
-                    {formData.latitude && formData.longitude && (
-                      <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" />
-                        Location verified
-                      </p>
-                    )}
                   </div>
 
                   <div>

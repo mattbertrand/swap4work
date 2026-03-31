@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Camera, Loader2, CheckCircle2, MapPin } from "lucide-react";
-import AddressAutocomplete from "@/components/location/AddressAutocomplete";
+import { Camera, Loader2, CheckCircle2 } from "lucide-react";
+import LocationFields, { parseLocationString } from "@/components/location/LocationFields";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -37,9 +37,8 @@ export default function CompleteProfile() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [gettingLocation, setGettingLocation] = useState(false);
-  const [geocoding, setGeocoding] = useState(false);
-  const locationTimeoutRef = useRef(null);
+  const [zipError, setZipError] = useState("");
+  const [locationFields, setLocationFields] = useState({ street: "", city: "", state: "", zip: "" });
 
   const [formData, setFormData] = useState({
     phone: "",
@@ -69,6 +68,7 @@ export default function CompleteProfile() {
         latitude: userData.latitude || null,
         longitude: userData.longitude || null
       });
+      setLocationFields(parseLocationString(userData.location || ""));
       // Parse availability back into days/times if it exists
       if (userData.availability) {
         const parts = userData.availability.split(' | ');
@@ -96,130 +96,19 @@ export default function CompleteProfile() {
     setUploading(false);
   };
 
-  const getCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      toast.error("Geolocation is not supported by your browser");
-      return;
-    }
-
-    setGettingLocation(true);
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        console.log('📍 Got location:', latitude, longitude);
-        
-        try {
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
-          );
-          const data = await response.json();
-          
-          const addressParts = [];
-          if (data.address.road) addressParts.push(data.address.road);
-          if (data.address.city || data.address.town || data.address.village) {
-            addressParts.push(data.address.city || data.address.town || data.address.village);
-          }
-          if (data.address.state) addressParts.push(data.address.state);
-          if (data.address.postcode) addressParts.push(data.address.postcode);
-          const location = addressParts.filter(Boolean).join(', ');
-
-          setFormData(prev => ({
-            ...prev,
-            location: location || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
-            latitude,
-            longitude
-          }));
-          
-          console.log('✅ Location set:', location);
-          toast.success('Location detected!');
-        } catch (error) {
-          console.error("Error getting address:", error);
-          setFormData(prev => ({
-            ...prev,
-            location: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
-            latitude,
-            longitude
-          }));
-          toast.info('Location coordinates saved');
-        }
-        setGettingLocation(false);
-      },
-      (error) => {
-        console.error("Error getting location:", error);
-        toast.error('Unable to get your location. Please enter it manually.');
-        setGettingLocation(false);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
-      }
-    );
-  };
-
-  const geocodeLocation = async (locationString) => {
-    if (!locationString || locationString.length < 5) {
-      setFormData(prev => ({...prev, latitude: null, longitude: null}));
-      return;
-    }
-    
-    console.log('🔍 Geocoding location:', locationString);
-    setGeocoding(true);
-    
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationString)}&limit=1`
-      );
-      const data = await response.json();
-      
-      if (data && data.length > 0) {
-        const lat = parseFloat(data[0].lat);
-        const lon = parseFloat(data[0].lon);
-        console.log('✅ Geocoded to:', lat, lon);
-        setFormData(prev => ({
-          ...prev,
-          latitude: lat,
-          longitude: lon
-        }));
-        toast.success('Location verified!');
-      } else {
-        console.log('❌ No geocoding results');
-        setFormData(prev => ({...prev, latitude: null, longitude: null}));
-        toast.warning('Could not verify location. Try using "Locate Me" button.');
-      }
-    } catch (error) {
-      console.error("Error geocoding location:", error);
-      setFormData(prev => ({...prev, latitude: null, longitude: null}));
-    }
-    
-    setGeocoding(false);
-  };
-
-  const handleLocationChange = (e) => {
-    const newLocation = e.target.value;
-    setFormData(prev => ({...prev, location: newLocation}));
-    
-    if (locationTimeoutRef.current) {
-      clearTimeout(locationTimeoutRef.current);
-    }
-
-    if (newLocation.length > 5) {
-      locationTimeoutRef.current = setTimeout(() => geocodeLocation(newLocation), 1500);
-    } else {
-      setFormData(prev => ({ ...prev, latitude: null, longitude: null }));
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.location || !formData.phone) {
-      toast.error("Please fill in all required fields (location and phone)");
+    if (!formData.phone) {
+      toast.error("Please fill in your phone number");
       return;
     }
-
-    if (!formData.latitude || !formData.longitude) {
-      toast.error("Please select an address from the dropdown suggestions or use 'Locate Me' to verify your location.");
+    if (!locationFields.city || !locationFields.state || !locationFields.zip) {
+      toast.error("Please fill in city, state, and ZIP code");
+      return;
+    }
+    if (zipError) {
+      toast.error("Please enter a valid ZIP code");
       return;
     }
 
@@ -324,33 +213,19 @@ export default function CompleteProfile() {
 
               {/* Location */}
               <div>
-                <Label>
+                <Label className="text-base font-semibold">
                   Location <span className="text-red-500">*</span>
                 </Label>
-                <div className="mt-2">
-                  <AddressAutocomplete
-                    value={formData.location}
-                    placeholder="Street address, city, state, ZIP..."
-                    onChange={(locationStr, lat, lon) => {
-                      setFormData(prev => ({
-                        ...prev,
-                        location: locationStr,
-                        latitude: lat,
-                        longitude: lon
-                      }));
-                    }}
-                  />
-                </div>
-                {formData.latitude && formData.longitude ? (
-                  <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
-                    <CheckCircle2 className="w-3 h-3" />
-                    Location verified
-                  </p>
-                ) : (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Start typing your address and select from suggestions, or use "Locate Me"
-                  </p>
-                )}
+                <p className="text-xs text-gray-500 mb-2">Used to connect you with nearby community members</p>
+                <LocationFields
+                  value={locationFields}
+                  errors={{ zip: zipError }}
+                  onChange={(fields, locationStr) => {
+                    setLocationFields(fields);
+                    setZipError(fields.zip && !/^\d{5}(-\d{4})?$/.test(fields.zip) ? "Enter a valid 5-digit ZIP code" : "");
+                    setFormData(prev => ({ ...prev, location: locationStr }));
+                  }}
+                />
               </div>
 
               {/* User Role */}

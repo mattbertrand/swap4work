@@ -22,6 +22,7 @@ export default function PublicProfile() {
   const navigate = useNavigate();
   const urlParams = new URLSearchParams(window.location.search);
   const userId = urlParams.get('userId');
+  const nameFromUrl = urlParams.get('name') || "";
 
   const [currentUser, setCurrentUser] = useState(null);
 
@@ -56,9 +57,25 @@ export default function PublicProfile() {
       if (items[0]) {
         return {
           id: userId,
-          full_name: items[0].offerer_name,
+          full_name: items[0].offerer_name || nameFromUrl,
           photo_url: null,
           location: items[0].location,
+          bio: null,
+          skills: null,
+          hours_completed: 0,
+          completed_trades: 0,
+          rating: 0,
+          total_ratings: 0,
+          karma_points: 0,
+        };
+      }
+      // Last resort: if we have a name from URL, show a minimal profile
+      if (nameFromUrl) {
+        return {
+          id: userId,
+          full_name: nameFromUrl,
+          photo_url: null,
+          location: null,
           bio: null,
           skills: null,
           hours_completed: 0,
