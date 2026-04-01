@@ -21,8 +21,8 @@ import AuthModal from "@/components/auth/AuthModal";
 export default function PublicProfile() {
   const navigate = useNavigate();
   const urlParams = new URLSearchParams(window.location.search);
-  const userId = urlParams.get('userId');
-  const workerId = urlParams.get('workerId');
+  const userId = urlParams.get('userid') || urlParams.get('userId');
+  const workerId = urlParams.get('workerid') || urlParams.get('workerId');
   const nameFromUrl = urlParams.get('name') || "";
 
   const [currentUser, setCurrentUser] = useState(null);
