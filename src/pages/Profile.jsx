@@ -554,7 +554,7 @@ export default function Profile() {
                               <AccordionContent>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-2">
                                   {skills.map((skill) => {
-                                    const currentSkills = (workerData.skills || formData.skills || "").split(',').map(s => s.trim()).filter(Boolean);
+                                                    const currentSkills = (workerData.skills || formData.skills || "").split(';;').map(s => s.trim()).filter(Boolean);
                                     const isSelected = currentSkills.includes(skill);
                                     
                                     return (
@@ -569,7 +569,7 @@ export default function Profile() {
                                             } else {
                                               newSkills = newSkills.filter(s => s !== skill);
                                             }
-                                            const skillString = newSkills.join(', ');
+                                            const skillString = newSkills.join(';;');
                                             setWorkerData({...workerData, skills: skillString});
                                             setFormData({...formData, skills: skillString}); // Sync both
                                           }}
@@ -590,7 +590,7 @@ export default function Profile() {
                         </Accordion>
                       ) : (
                         <div className="flex flex-wrap gap-2">
-                          {(formData.skills || "").split(',').filter(Boolean).map((skill, i) => (
+                          {(formData.skills || "").split(';;').filter(Boolean).map((skill, i) => (
                             <Badge key={i} variant="secondary" className="bg-white border-gray-200">
                               {skill.trim()}
                             </Badge>

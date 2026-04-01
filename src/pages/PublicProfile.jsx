@@ -22,6 +22,7 @@ export default function PublicProfile() {
   const navigate = useNavigate();
   const urlParams = new URLSearchParams(window.location.search);
   const userId = urlParams.get('userId');
+  const workerId = urlParams.get('workerId');
   const nameFromUrl = urlParams.get('name') || "";
 
   const [currentUser, setCurrentUser] = useState(null);
@@ -31,14 +32,25 @@ export default function PublicProfile() {
   }, []);
 
   const { data: userProfile, isLoading: profileLoading } = useQuery({
-    queryKey: ['publicProfile', userId],
+    queryKey: ['publicProfile', userId, workerId],
     queryFn: async () => {
-      // Fetch user info from Worker entity (publicly accessible) or reconstruct from items
-      const workers = await base44.entities.Worker.filter({ user_id: userId });
-      const worker = workers[0];
+      // Try by user_id first, then by worker record id directly
+      let worker = null;
+      if (userId) {
+        const workers = await base44.entities.Worker.filter({ user_id: userId });
+        worker = workers[0];
+      }
+      // Fallback: look up worker directly by its own id
+      if (!worker && workerId) {
+        try {
+          const workers = await base44.entities.Worker.filter({ id: workerId });
+          worker = workers[0];
+        } catch {}
+      }
       if (worker) {
+        const resolvedUserId = userId || worker.user_id;
         return {
-          id: userId,
+          id: resolvedUserId,
           full_name: worker.full_name,
           photo_url: worker.photo_url,
           location: worker.location,
@@ -87,43 +99,53 @@ export default function PublicProfile() {
       }
       return null;
     },
-    enabled: !!userId
+    enabled: !!(userId || workerId)
   });
 
+  // Resolved userId: prefer URL param, fallback to worker's user_id from profile
+  const resolvedUserId = userId || userProfile?.id;
+
   const { data: userItems = [], isLoading: itemsLoading } = useQuery({
-    queryKey: ['userActiveItems', userId],
+    queryKey: ['userActiveItems', resolvedUserId],
     queryFn: () => base44.entities.Item.filter({ 
-      offerer_id: userId, 
+      offerer_id: resolvedUserId, 
       status: 'active' 
     }, '-created_date'),
-    enabled: !!userId
+    enabled: !!resolvedUserId
   });
 
   const { data: ratings = [] } = useQuery({
-    queryKey: ['userRatings', userId],
+    queryKey: ['userRatings', resolvedUserId],
     queryFn: () => base44.entities.Rating.filter({ 
-      to_user_id: userId, 
+      to_user_id: resolvedUserId, 
       published: true 
     }, '-created_date', 10),
-    enabled: !!userId
+    enabled: !!resolvedUserId
   });
 
   const { data: workerEntity } = useQuery({
-    queryKey: ['workerEntity', userId],
+    queryKey: ['workerEntity', resolvedUserId, workerId],
     queryFn: async () => {
-      const workers = await base44.entities.Worker.filter({ user_id: userId });
-      return workers[0];
+      if (resolvedUserId) {
+        const workers = await base44.entities.Worker.filter({ user_id: resolvedUserId });
+        if (workers[0]) return workers[0];
+      }
+      if (workerId) {
+        const workers = await base44.entities.Worker.filter({ id: workerId });
+        return workers[0];
+      }
+      return null;
     },
-    enabled: !!userId
+    enabled: !!(resolvedUserId || workerId)
   });
 
   const { data: activeNegotiations = [] } = useQuery({
-    queryKey: ['workerActiveNegotiations', userId],
+    queryKey: ['workerActiveNegotiations', resolvedUserId],
     queryFn: () => base44.entities.Negotiation.filter({ 
-      bidder_id: userId, 
+      bidder_id: resolvedUserId, 
       status: { $in: ['active', 'accepted'] } 
     }),
-    enabled: !!userId
+    enabled: !!resolvedUserId
   });
 
   const { data: myItems = [] } = useQuery({
@@ -349,7 +371,7 @@ export default function PublicProfile() {
                   <h3 className="font-semibold text-gray-900 mb-2">Skills & Interests</h3>
                   <div className="flex flex-wrap gap-2">
                     {userProfile.skills ? (
-                      userProfile.skills.split(',').map((skill, i) => (
+                      userProfile.skills.split(';;').map((skill, i) => (
                         <Badge key={i} variant="secondary" className="px-3 py-1 bg-gray-100 text-gray-700">
                           {skill.trim()}
                         </Badge>

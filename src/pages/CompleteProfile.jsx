@@ -272,7 +272,7 @@ export default function CompleteProfile() {
                         <AccordionContent>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-2">
                             {skills.map((skill) => {
-                              const currentSkills = (formData.skills || "").split(',').map(s => s.trim()).filter(Boolean);
+                              const currentSkills = (formData.skills || "").split(';;').map(s => s.trim()).filter(Boolean);
                               const isSelected = currentSkills.includes(skill);
                               return (
                                 <div key={skill} className="flex items-center space-x-2">
@@ -283,7 +283,7 @@ export default function CompleteProfile() {
                                       let newSkills = [...currentSkills];
                                       if (checked) { if (!newSkills.includes(skill)) newSkills.push(skill); }
                                       else { newSkills = newSkills.filter(s => s !== skill); }
-                                      setFormData({...formData, skills: newSkills.join(', ')});
+                                      setFormData({...formData, skills: newSkills.join(';;')});
                                     }}
                                   />
                                   <label htmlFor={`cp-skill-${skill}`} className="text-sm cursor-pointer">{skill}</label>
@@ -298,7 +298,7 @@ export default function CompleteProfile() {
                 </div>
                 {formData.skills && (
                   <div className="flex flex-wrap gap-1 mt-2">
-                    {formData.skills.split(',').filter(Boolean).map((s, i) => (
+                    {formData.skills.split(';;').filter(Boolean).map((s, i) => (
                       <Badge key={i} variant="secondary" className="text-xs">{s.trim()}</Badge>
                     ))}
                   </div>

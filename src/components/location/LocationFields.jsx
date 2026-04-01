@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MapPin, Loader2 } from "lucide-react";
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
@@ -29,20 +31,18 @@ const STATE_NAMES = {
  * 
  * Props:
  *   value: { street, city, state, zip }
- *   onChange: (fields, locationString, lat, lon) => void
- *     - locationString: "city, state zip" (used for display/storage)
- *     - lat/lon: null (geocoding done on save if needed externally)
+ *   onChange: (fields, locationString) => void
  *   disabled: bool
  *   errors: { zip?: string }
  */
 export default function LocationFields({ value = {}, onChange, disabled = false, errors = {} }) {
   const { street = "", city = "", state = "", zip = "" } = value;
+  const [locating, setLocating] = useState(false);
 
   const zipError = errors.zip || (zip && !/^\d{5}(-\d{4})?$/.test(zip) ? "Enter a valid 5-digit ZIP code" : "");
 
   const handleChange = (field, val) => {
     const updated = { street, city, state, zip, [field]: val };
-    // Build location string: "street, city, state zip" or just "city, state zip"
     const parts = [];
     if (updated.street) parts.push(updated.street);
     if (updated.city) parts.push(updated.city);
@@ -52,18 +52,67 @@ export default function LocationFields({ value = {}, onChange, disabled = false,
     onChange(updated, locationString);
   };
 
+  const handleLocateMe = () => {
+    if (!navigator.geolocation) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+          const data = await response.json();
+          const addr = data.address || {};
+          const detectedCity = addr.city || addr.town || addr.village || addr.hamlet || "";
+          const detectedZip = addr.postcode ? addr.postcode.slice(0, 5) : "";
+          const detectedStateAbbr = Object.entries(STATE_NAMES).find(
+            ([abbr, name]) => name.toLowerCase() === (addr.state || "").toLowerCase()
+          )?.[0] || "";
+          const updated = { street: street, city: detectedCity, state: detectedStateAbbr, zip: detectedZip };
+          const parts = [];
+          if (updated.street) parts.push(updated.street);
+          if (updated.city) parts.push(updated.city);
+          const stateZip = [updated.state, updated.zip].filter(Boolean).join(" ");
+          if (stateZip) parts.push(stateZip);
+          onChange(updated, parts.join(", "));
+        } catch (e) {
+          console.error("Reverse geocode failed", e);
+        }
+        setLocating(false);
+      },
+      () => setLocating(false),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
+
   return (
     <div className="space-y-3">
-      <div>
-        <Label htmlFor="loc-street">Street Address</Label>
-        <Input
-          id="loc-street"
-          value={street}
-          onChange={(e) => handleChange("street", e.target.value)}
-          placeholder="123 Main St"
-          disabled={disabled}
-          className="mt-1"
-        />
+      <div className="flex items-end gap-2">
+        <div className="flex-1">
+          <Label htmlFor="loc-street">Street Address</Label>
+          <Input
+            id="loc-street"
+            value={street}
+            onChange={(e) => handleChange("street", e.target.value)}
+            placeholder="123 Main St"
+            disabled={disabled}
+            className="mt-1"
+          />
+        </div>
+        {!disabled && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleLocateMe}
+            disabled={locating}
+            className="h-9 shrink-0 text-orange-600 border-orange-200 hover:bg-orange-50"
+          >
+            {locating ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
+            <span className="ml-1">{locating ? "Locating..." : "Locate Me"}</span>
+          </Button>
+        )}
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -111,12 +160,10 @@ export default function LocationFields({ value = {}, onChange, disabled = false,
 /** Helper: parse a location string back into fields */
 export function parseLocationString(locationStr) {
   if (!locationStr) return { street: "", city: "", state: "", zip: "" };
-  // Try to match "..., City, ST 12345" or "City, ST 12345"
   const zipMatch = locationStr.match(/(\d{5}(-\d{4})?)$/);
   const zip = zipMatch ? zipMatch[1] : "";
   const withoutZip = zip ? locationStr.slice(0, locationStr.lastIndexOf(zip)).replace(/,?\s*$/, "") : locationStr;
   const parts = withoutZip.split(",").map(p => p.trim());
-  // Last part might be state abbreviation
   const lastPart = parts[parts.length - 1] || "";
   const stateAbbr = US_STATES.find(s => s === lastPart.toUpperCase()) ? lastPart.toUpperCase() : "";
   const withoutState = stateAbbr ? parts.slice(0, -1) : parts;

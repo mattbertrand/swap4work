@@ -219,7 +219,7 @@ export default function BrowseUsers() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredUsers.map(worker => (
-              <Link key={worker.id} to={createPageUrl(`PublicProfile?userId=${worker.user_id}&name=${encodeURIComponent(worker.full_name || '')}`)}>
+              <Link key={worker.id} to={createPageUrl(`PublicProfile?userId=${worker.user_id}&workerId=${worker.id}&name=${encodeURIComponent(worker.full_name || '')}`)}>
 
                 <Card className="hover:shadow-xl transition-shadow border-blue-100 cursor-pointer h-full">
                   <CardContent className="p-6">
@@ -266,14 +266,14 @@ export default function BrowseUsers() {
                     </p>
 
                     <div className="flex flex-wrap gap-1 mb-4">
-                      {worker.skills?.split(',').slice(0, 3).map((skill, idx) => (
+                      {worker.skills?.split(';;').slice(0, 3).map((skill, idx) => (
                         <Badge key={idx} variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
                           {skill.trim()}
                         </Badge>
                       ))}
-                      {worker.skills?.split(',').length > 3 && (
+                      {worker.skills?.split(';;').length > 3 && (
                         <Badge variant="outline" className="text-xs text-gray-500">
-                          +{worker.skills.split(',').length - 3} more
+                          +{worker.skills.split(';;').length - 3} more
                         </Badge>
                       )}
                     </div>
