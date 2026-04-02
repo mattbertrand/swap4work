@@ -135,11 +135,11 @@ export default function Layout({ children, currentPageName }) {
       <div className="min-h-screen flex w-full bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
         <Sidebar className="border-r border-orange-100">
           <SidebarHeader className="border-b border-orange-100 p-6">
-            <Link to={createPageUrl("Home")} className="flex items-center">
+            <Link to={createPageUrl("Home")} className="flex items-center justify-center w-full">
               <img
                 src="https://media.base44.com/images/public/690d293b21b2ce5e9a6db7c8/72467c977_Swap4WorkFinalLogov2.png"
                 alt="Swap4Work"
-                className="h-20 w-auto object-contain"
+                className="h-40 w-auto object-contain"
               />
             </Link>
           </SidebarHeader>
