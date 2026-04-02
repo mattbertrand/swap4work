@@ -255,7 +255,7 @@ export default function Layout({ children, currentPageName }) {
                     <img
                       src="https://media.base44.com/images/public/690d293b21b2ce5e9a6db7c8/72467c977_Swap4WorkFinalLogov2.png"
                       alt="Swap4Work"
-                      className="h-12 w-auto object-contain"
+                      className="h-24 w-auto object-contain"
                     />
                   </div>
                   <p className="text-sm text-gray-600 mb-4">
