@@ -135,14 +135,12 @@ export default function Layout({ children, currentPageName }) {
       <div className="min-h-screen flex w-full bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
         <Sidebar className="border-r border-orange-100">
           <SidebarHeader className="border-b border-orange-100 p-6">
-            <Link to={createPageUrl("Home")} className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center shadow-md">
-                <Briefcase className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h2 className="font-bold text-xl text-gray-900">Swap4Work</h2>
-                <p className="text-xs text-gray-500">Trade work for items</p>
-              </div>
+            <Link to={createPageUrl("Home")} className="flex items-center">
+              <img
+                src="https://media.base44.com/images/public/690d293b21b2ce5e9a6db7c8/72467c977_Swap4WorkFinalLogov2.png"
+                alt="Swap4Work"
+                className="h-12 w-auto object-contain"
+              />
             </Link>
           </SidebarHeader>
 
@@ -253,11 +251,12 @@ export default function Layout({ children, currentPageName }) {
             <div className="max-w-7xl mx-auto px-4 py-12 md:px-8">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
                 <div>
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg flex items-center justify-center">
-                      <Briefcase className="w-5 h-5 text-white" />
-                    </div>
-                    <h3 className="font-bold text-lg text-gray-900">Swap4Work</h3>
+                  <div className="mb-4">
+                    <img
+                      src="https://media.base44.com/images/public/690d293b21b2ce5e9a6db7c8/72467c977_Swap4WorkFinalLogov2.png"
+                      alt="Swap4Work"
+                      className="h-12 w-auto object-contain"
+                    />
                   </div>
                   <p className="text-sm text-gray-600 mb-4">
                     A local marketplace to trade work and time for physical items — no money required.

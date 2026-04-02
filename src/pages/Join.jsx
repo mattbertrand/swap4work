@@ -43,12 +43,11 @@ export default function Join() {
     <div className="min-h-screen bg-white flex flex-col font-sans">
       {/* Header */}
       <header className="px-6 py-4 flex items-center justify-between border-b border-orange-100 bg-white sticky top-0 z-10">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg flex items-center justify-center">
-            <Briefcase className="w-4 h-4 text-white" />
-          </div>
-          <span className="font-bold text-gray-900 text-lg">Swap4Work</span>
-        </div>
+        <img
+          src="https://media.base44.com/images/public/690d293b21b2ce5e9a6db7c8/72467c977_Swap4WorkFinalLogov2.png"
+          alt="Swap4Work"
+          className="h-10 w-auto object-contain"
+        />
         <button
           onClick={handleLogIn}
           className="text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors"
@@ -183,11 +182,12 @@ export default function Join() {
 
       {/* Footer */}
       <footer className="px-6 py-6 bg-white border-t border-gray-100 text-center">
-        <div className="flex items-center justify-center gap-2 mb-3">
-          <div className="w-6 h-6 bg-gradient-to-br from-orange-500 to-amber-600 rounded-md flex items-center justify-center">
-            <Briefcase className="w-3 h-3 text-white" />
-          </div>
-          <span className="font-bold text-gray-700 text-sm">Swap4Work</span>
+        <div className="flex items-center justify-center mb-3">
+          <img
+            src="https://media.base44.com/images/public/690d293b21b2ce5e9a6db7c8/72467c977_Swap4WorkFinalLogov2.png"
+            alt="Swap4Work"
+            className="h-10 w-auto object-contain"
+          />
         </div>
         <div className="flex items-center justify-center gap-4 text-xs text-gray-400">
           <a href="#" className="hover:text-gray-600 transition-colors">Terms of Service</a>
