@@ -209,7 +209,7 @@ export default function AgreementDetail() {
       queryClient.invalidateQueries(['rating', agreementId, user.id]);
       
       setTimeout(() => {
-        navigate(createPageUrl('MyAgreements'));
+        navigate(createPageUrl('Home'));
       }, 1000);
     } catch (error) {
       console.error('Error submitting review:', error);

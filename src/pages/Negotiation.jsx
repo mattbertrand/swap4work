@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -25,6 +24,8 @@ export default function Negotiation() {
   const [user, setUser] = useState(null);
   const [message, setMessage] = useState("");
   const [showCounterModal, setShowCounterModal] = useState(false);
+  const [showReviewOfferModal, setShowReviewOfferModal] = useState(false);
+  const [reviewOfferShown, setReviewOfferShown] = useState(false);
   const [hasConfirmed, setHasConfirmed] = useState(false);
   const [otherConfirmed, setOtherConfirmed] = useState(false);
 
@@ -141,6 +142,21 @@ export default function Negotiation() {
       }
     }
   }, [negotiation?.status, negotiation?.expires_at, negotiationId]);
+
+  // Show "Review Offer" modal on first load if there's an offer to respond to
+  useEffect(() => {
+    if (
+      !reviewOfferShown &&
+      negotiation &&
+      user &&
+      negotiation.status === 'active' &&
+      negotiation.current_offer_by &&
+      negotiation.current_offer_by !== user.id
+    ) {
+      setShowReviewOfferModal(true);
+      setReviewOfferShown(true);
+    }
+  }, [negotiation?.id, user?.id, reviewOfferShown]);
 
   useEffect(() => {
     const checkConfirmations = async () => {
@@ -426,6 +442,17 @@ export default function Negotiation() {
 
     console.log('🔍 [CONFIRM] Existing agreements:', existingAgreements);
 
+    // Check if agreement was cancelled by other party
+    const cancelledAgreements = await base44.entities.Agreement.filter({
+      item_id: negotiation.item_id,
+      status: 'cancelled'
+    });
+    if (cancelledAgreements.length > 0 && existingAgreements.length === 0) {
+      toast.error('This agreement was cancelled by the other party.');
+      queryClient.invalidateQueries(['negotiation', negotiationId]);
+      return;
+    }
+
     let agreement = existingAgreements[0];
 
     if (!agreement) {
@@ -526,6 +553,56 @@ export default function Negotiation() {
       setHasConfirmed(true);
       toast.success('Agreement confirmed! Waiting for other party...');
     }
+  };
+
+  const handleCancelAgreement = async () => {
+    if (!user || !negotiation) return;
+
+    // Find the existing agreement
+    const existingAgreements = await base44.entities.Agreement.filter({
+      item_id: negotiation.item_id,
+      status: { $in: ['proposed', 'locked', 'in_progress'] }
+    });
+
+    const agreement = existingAgreements[0];
+    if (agreement) {
+      await base44.entities.Agreement.update(agreement.id, {
+        status: 'cancelled'
+      });
+    }
+
+    // Also cancel the negotiation
+    await updateNegotiationMutation.mutateAsync({
+      id: negotiationId,
+      data: { status: 'declined' }
+    });
+
+    // Notify the other party
+    const otherUserId = user.id === negotiation.bidder_id ? negotiation.offerer_id : negotiation.bidder_id;
+    await createNotificationMutation.mutateAsync({
+      user_id: otherUserId,
+      type: 'offer_declined',
+      title: 'Agreement cancelled',
+      message: `${user.full_name} cancelled the agreement for ${negotiation.item_title}`,
+      related_id: negotiationId,
+      related_type: 'negotiation',
+      link_url: createPageUrl('Browse'),
+      from_user_id: user.id,
+      from_user_name: user.full_name
+    });
+
+    // Send system message
+    await sendMessageMutation.mutateAsync({
+      negotiation_id: negotiationId,
+      from_user_id: user.id,
+      from_user_name: user.full_name,
+      to_user_id: otherUserId,
+      text: `❌ ${user.full_name} cancelled the agreement.`,
+      message_type: "system"
+    });
+
+    toast.info('Agreement cancelled');
+    navigate(createPageUrl("Browse"));
   };
 
   const handleEditAgreementTerms = async (editData) => {
@@ -710,9 +787,18 @@ export default function Negotiation() {
                   otherPartyConfirmed={otherConfirmed}
                   onConfirm={handleConfirmAgreement}
                   onEdit={handleEditAgreementTerms}
-                  onCancel={() => navigate(createPageUrl("Browse"))}
+                  onCancel={handleCancelAgreement}
                 />
               </div>
+            )}
+
+            {negotiation.status === 'declined' && (
+              <Alert className="mb-4 bg-red-50 border-red-200">
+                <AlertCircle className="w-4 h-4 text-red-600" />
+                <AlertDescription className="text-red-900">
+                  <strong>Agreement cancelled.</strong> This negotiation has been cancelled.
+                </AlertDescription>
+              </Alert>
             )}
 
             <div className="h-96 overflow-y-auto space-y-4 mb-4 bg-gray-50 rounded-lg p-4">
@@ -903,6 +989,25 @@ export default function Negotiation() {
         defaultHours={item?.required_hours}
         defaultWorkType={negotiation?.work_type || ""}
         onSubmit={handleCounterOffer}
+      />
+
+      <CounterOfferModal
+        open={showReviewOfferModal}
+        onClose={() => setShowReviewOfferModal(false)}
+        currentOffer={currentOfferHours}
+        suggestedHours={null}
+        defaultHours={currentOfferHours}
+        defaultWorkType={negotiation?.work_type || ""}
+        onSubmit={(offerData) => {
+          setShowReviewOfferModal(false);
+          handleCounterOffer(offerData);
+        }}
+        title="Review Offer"
+        submitLabel="Confirm Offer"
+        onAccept={() => {
+          setShowReviewOfferModal(false);
+          handleAcceptOffer();
+        }}
       />
     </div>
   );

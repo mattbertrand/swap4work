@@ -14,7 +14,10 @@ export default function CounterOfferModal({
   suggestedHours, 
   onSubmit,
   defaultHours = null,
-  defaultWorkType = ""
+  defaultWorkType = "",
+  title = "Make a Counter Offer",
+  submitLabel = "Send Counter Offer",
+  onAccept = null
 }) {
   const [hours, setHours] = useState("");
   const [workType, setWorkType] = useState("");
@@ -84,7 +87,7 @@ export default function CounterOfferModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Clock className="w-5 h-5 text-orange-600" />
-            Make a Counter Offer
+            {title}
           </DialogTitle>
           <DialogDescription>
             Current offer is {currentOffer} hours. What would you like to propose?
@@ -152,12 +155,20 @@ export default function CounterOfferModal({
           <Button variant="outline" onClick={handleClose}>
             Cancel
           </Button>
+          {onAccept && (
+            <Button
+              onClick={() => { handleClose(); onAccept(); }}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Accept As-Is
+            </Button>
+          )}
           <Button 
             onClick={handleSubmit}
             disabled={!hours || parseFloat(hours) <= 0}
             className="bg-orange-600 hover:bg-orange-700"
           >
-            Send Counter Offer
+            {submitLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -579,7 +579,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to={createPageUrl("CreateItem")}>
               <Button size="lg" className="bg-white text-orange-600 hover:bg-orange-50 text-lg px-8 py-6 h-auto w-full sm:w-auto">
-                List Your First Item
+                List an Item
               </Button>
             </Link>
             <Link to={createPageUrl("Browse")}>
