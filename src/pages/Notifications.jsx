@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Bell, MessageSquare, Clock, CheckCircle2, AlertCircle, Package } from "lucide-react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 
 export default function Notifications() {
   const navigate = useNavigate();
@@ -193,7 +193,7 @@ export default function Notifications() {
                             </div>
                             <p className="text-sm text-gray-700 mb-2">{notification.message}</p>
                             <div className="flex items-center gap-2 text-xs text-gray-500">
-                              <span>{format(new Date(notification.created_date), 'MMM d, h:mm a')}</span>
+                              <span>{format(parseISO(notification.created_date.endsWith('Z') ? notification.created_date : notification.created_date + 'Z'), 'MMM d, h:mm a')}</span>
                               {notification.from_user_name && (
                                 <>
                                   <span>•</span>
@@ -233,7 +233,7 @@ export default function Notifications() {
                             <h3 className="font-semibold text-gray-900 mb-1">{notification.title}</h3>
                             <p className="text-sm text-gray-600 mb-2">{notification.message}</p>
                             <div className="flex items-center gap-2 text-xs text-gray-500">
-                              <span>{format(new Date(notification.created_date), 'MMM d, h:mm a')}</span>
+                              <span>{format(parseISO(notification.created_date.endsWith('Z') ? notification.created_date : notification.created_date + 'Z'), 'MMM d, h:mm a')}</span>
                               {notification.from_user_name && (
                                 <>
                                   <span>•</span>

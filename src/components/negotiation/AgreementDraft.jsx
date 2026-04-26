@@ -185,9 +185,9 @@ export default function AgreementDraft({
 
         {/* Actions */}
         {!bothConfirmed && (
-          <div className="flex gap-3 pt-2">
-            {!hasConfirmed ? (
-              <>
+          <div className="flex flex-col gap-3 pt-2">
+            {!hasConfirmed && (
+              <div className="flex gap-3">
                 <Button
                   onClick={onConfirm}
                   className="flex-1 bg-green-600 hover:bg-green-700 h-12"
@@ -205,16 +205,15 @@ export default function AgreementDraft({
                     Edit Terms
                   </Button>
                 )}
-              </>
-            ) : (
-              <Button
-                onClick={onCancel}
-                variant="outline"
-                className="w-full h-12"
-              >
-                Cancel Negotiation
-              </Button>
+              </div>
             )}
+            <Button
+              onClick={onCancel}
+              variant="outline"
+              className="w-full h-10 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+            >
+              Cancel Agreement
+            </Button>
           </div>
         )}
 

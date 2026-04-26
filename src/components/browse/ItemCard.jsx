@@ -4,24 +4,24 @@ import { createPageUrl } from "@/utils";
 import { MapPin, Clock, CheckCircle2, AlertCircle, Package, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, parseISO } from "date-fns";
 
 // Helper to extract city and state from location
 const getCityState = (location) => {
   if (!location) return "Location not specified";
   
-  // Split by comma and take last 2-3 parts (typically city, state, zip)
   const parts = location.split(',').map(p => p.trim());
   
   if (parts.length >= 2) {
-    // Return just city and state (skip street address and zip)
-    const state = parts[parts.length - 2]; // State
-    const city = parts[parts.length - 3] || parts[parts.length - 2]; // City or State if only 2 parts
+    const city = parts[0]; // First part is always city
+    // Last part may be "State ZIP" or just "State"
+    const lastPart = parts[parts.length - 1].replace(/\d{5}(-\d{4})?/g, '').trim();
+    // Second-to-last may be state if there are 3+ parts (street, city, state zip)
+    const statePart = parts.length >= 3
+      ? parts[parts.length - 1].replace(/\d{5}(-\d{4})?/g, '').trim()
+      : lastPart;
     
-    // Remove zip codes from state part
-    const cleanState = state.replace(/\d{5}(-\d{4})?/g, '').trim();
-    
-    return `${city}, ${cleanState}`;
+    return `${city}, ${statePart}`;
   }
   
   return location;
@@ -121,7 +121,7 @@ export default function ItemCard({ item, showDistance, userAgreements = [] }) {
             </div>
             <div className="flex items-center gap-1 text-xs text-gray-500">
               <Calendar className="w-3 h-3" />
-              <span>{formatDistanceToNow(new Date(item.created_date), { addSuffix: true })}</span>
+              <span>{formatDistanceToNow(parseISO(item.created_date.endsWith('Z') ? item.created_date : item.created_date + 'Z'), { addSuffix: true })}</span>
             </div>
           </div>
 

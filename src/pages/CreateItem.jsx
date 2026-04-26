@@ -50,13 +50,33 @@ export default function CreateItem() {
           return;
         }
 
-        // Pre-fill location from user profile
+        // Pre-fill location from user profile (including coords so submit isn't blocked)
+        const lat = userData.latitude ?? null;
+        const lng = userData.longitude ?? null;
         setFormData(prev => ({
           ...prev,
           location: userData.location || "",
-          latitude: userData.latitude || null,
-          longitude: userData.longitude || null
+          latitude: lat,
+          longitude: lng
         }));
+        // If user has a location string but no coords, geocode it automatically
+        if (userData.location && !lat && !lng) {
+          try {
+            const geoRes = await fetch(
+              `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(userData.location)}&limit=1`
+            );
+            const geoData = await geoRes.json();
+            if (geoData && geoData.length > 0) {
+              setFormData(prev => ({
+                ...prev,
+                latitude: parseFloat(geoData[0].lat),
+                longitude: parseFloat(geoData[0].lon)
+              }));
+            }
+          } catch (e) {
+            // coords stay null, user will see the amber hint
+          }
+        }
 
         setCheckingAuth(false);
       } catch (error) {
@@ -507,10 +527,10 @@ export default function CreateItem() {
                     </Button>
                   </div>
                   {formData.latitude && formData.longitude ? (
-                    <p className="text-xs text-green-600 mt-1 flex items-center"><MapPin className="w-3 h-3 mr-1" /> Coordinates detected</p>
-                  ) : (
-                    formData.location && <p className="text-xs text-gray-500 mt-1">Geocoding location...</p>
-                  )}
+                    <p className="text-xs text-green-600 mt-1 flex items-center"><MapPin className="w-3 h-3 mr-1" /> Location verified</p>
+                  ) : formData.location ? (
+                    <p className="text-xs text-amber-600 mt-1">Could not verify coordinates — try clicking the locate button or editing the address.</p>
+                  ) : null}
                 </div>
 
                 {listingType === "item" && (
