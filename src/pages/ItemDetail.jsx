@@ -30,20 +30,14 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
   return R * c;
 };
 
-// Helper to extract city and state from location
+// Helper to extract only city and state (never street) from location string
 const getCityState = (location) => {
   if (!location) return "Location not specified";
-  
   const parts = location.split(',').map(p => p.trim());
-  
-  if (parts.length >= 2) {
-    const state = parts[parts.length - 2];
-    const city = parts[parts.length - 3] || parts[parts.length - 2];
-    const cleanState = state.replace(/\d{5}(-\d{4})?/g, '').trim();
-    return `${city}, ${cleanState}`;
-  }
-  
-  return location;
+  const lastRaw = parts[parts.length - 1].replace(/\d{5}(-\d{4})?/g, '').trim();
+  if (parts.length === 1) return lastRaw || location;
+  const city = parts[parts.length - 2];
+  return lastRaw ? `${city}, ${lastRaw}` : city;
 };
 
 export default function ItemDetail() {

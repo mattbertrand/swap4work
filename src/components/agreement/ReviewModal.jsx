@@ -16,11 +16,15 @@ export default function ReviewModal({
   const [hoveredStar, setHoveredStar] = useState(0);
   const [review, setReview] = useState("");
 
+  const [submitted, setSubmitted] = useState(false);
+
   const handleSubmit = () => {
     if (stars === 0) {
       alert("Please select a rating");
       return;
     }
+    if (submitted) return;
+    setSubmitted(true);
     onSubmit({ stars, review });
   };
 
@@ -96,10 +100,10 @@ export default function ReviewModal({
           </Button>
           <Button 
             onClick={handleSubmit}
-            disabled={stars === 0 || isSubmitting}
+            disabled={stars === 0 || isSubmitting || submitted}
             className="bg-orange-600 hover:bg-orange-700"
           >
-            {isSubmitting ? 'Submitting...' : 'Submit Review'}
+            {isSubmitting || submitted ? 'Submitting...' : 'Submit Review'}
           </Button>
         </DialogFooter>
       </DialogContent>

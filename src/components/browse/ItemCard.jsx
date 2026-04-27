@@ -6,25 +6,16 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { formatDistanceToNow, parseISO } from "date-fns";
 
-// Helper to extract city and state from location
+// Helper to extract only city and state (never street) from location string
 const getCityState = (location) => {
   if (!location) return "Location not specified";
-  
   const parts = location.split(',').map(p => p.trim());
-  
-  if (parts.length >= 2) {
-    const city = parts[0]; // First part is always city
-    // Last part may be "State ZIP" or just "State"
-    const lastPart = parts[parts.length - 1].replace(/\d{5}(-\d{4})?/g, '').trim();
-    // Second-to-last may be state if there are 3+ parts (street, city, state zip)
-    const statePart = parts.length >= 3
-      ? parts[parts.length - 1].replace(/\d{5}(-\d{4})?/g, '').trim()
-      : lastPart;
-    
-    return `${city}, ${statePart}`;
-  }
-  
-  return location;
+  // Last part: strip ZIP, get state abbr
+  const lastRaw = parts[parts.length - 1].replace(/\d{5}(-\d{4})?/g, '').trim();
+  if (parts.length === 1) return lastRaw || location;
+  // City is always second-to-last (handles "Street, City, State ZIP" and "City, State ZIP")
+  const city = parts[parts.length - 2];
+  return lastRaw ? `${city}, ${lastRaw}` : city;
 };
 
 export default function ItemCard({ item, showDistance, userAgreements = [] }) {
