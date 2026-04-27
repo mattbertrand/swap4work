@@ -24,8 +24,6 @@ export default function Negotiation() {
   const [user, setUser] = useState(null);
   const [message, setMessage] = useState("");
   const [showCounterModal, setShowCounterModal] = useState(false);
-  const [showReviewOfferModal, setShowReviewOfferModal] = useState(false);
-  const [reviewOfferShown, setReviewOfferShown] = useState(false);
   const [hasConfirmed, setHasConfirmed] = useState(false);
   const [otherConfirmed, setOtherConfirmed] = useState(false);
 
@@ -142,21 +140,6 @@ export default function Negotiation() {
       }
     }
   }, [negotiation?.status, negotiation?.expires_at, negotiationId]);
-
-  // Show "Review Offer" modal on first load if there's an offer to respond to
-  useEffect(() => {
-    if (
-      !reviewOfferShown &&
-      negotiation &&
-      user &&
-      negotiation.status === 'active' &&
-      negotiation.current_offer_by &&
-      negotiation.current_offer_by !== user.id
-    ) {
-      setShowReviewOfferModal(true);
-      setReviewOfferShown(true);
-    }
-  }, [negotiation?.id, user?.id, reviewOfferShown]);
 
   useEffect(() => {
     const checkConfirmations = async () => {
@@ -991,24 +974,6 @@ export default function Negotiation() {
         onSubmit={handleCounterOffer}
       />
 
-      <CounterOfferModal
-        open={showReviewOfferModal}
-        onClose={() => setShowReviewOfferModal(false)}
-        currentOffer={currentOfferHours}
-        suggestedHours={null}
-        defaultHours={currentOfferHours}
-        defaultWorkType={negotiation?.work_type || ""}
-        onSubmit={(offerData) => {
-          setShowReviewOfferModal(false);
-          handleCounterOffer(offerData);
-        }}
-        title="Review Offer"
-        submitLabel="Confirm Offer"
-        onAccept={() => {
-          setShowReviewOfferModal(false);
-          handleAcceptOffer();
-        }}
-      />
     </div>
   );
 }

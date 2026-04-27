@@ -14,6 +14,7 @@ import {
   AlertCircle, MessageSquare, Eye, User, Crosshair, Calendar
 } from "lucide-react";
 import AuthModal from "@/components/auth/AuthModal";
+import StartNegotiationModal from "@/components/negotiation/StartNegotiationModal";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 // Calculate distance between two coordinates
@@ -52,6 +53,8 @@ export default function ItemDetail() {
   const [locationError, setLocationError] = useState(null);
   const [gettingLocation, setGettingLocation] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [startNegModalOpen, setStartNegModalOpen] = useState(false);
+  const [startNegLoading, setStartNegLoading] = useState(false);
 
   const urlParams = new URLSearchParams(window.location.search);
   const itemId = urlParams.get('id');
@@ -226,13 +229,25 @@ export default function ItemDetail() {
       return;
     }
 
+    // Check if user already has an active negotiation
+    if (userActiveNegotiation) {
+      navigate(createPageUrl(`Negotiation?id=${userActiveNegotiation.id}`));
+      return;
+    }
+
+    // Check negotiation limit (max 3 active per item)
+    if (activeNegotiations.length >= 3) {
+      toast.info('This item has reached its negotiation limit');
+      return;
+    }
+
     // Get user location if not already obtained
     let currentLocation = userLocation;
     if (!currentLocation) {
       try {
         currentLocation = await getUserLocation();
       } catch (error) {
-        return; // Error already set in state
+        return;
       }
     }
 
@@ -250,71 +265,69 @@ export default function ItemDetail() {
       item.longitude
     );
 
-    // Check distance
     if (calculatedDistance > 50) {
       setLocationError(`This item is ${calculatedDistance.toFixed(1)} miles away. You must be within 50 miles to start a negotiation.`);
       return;
     }
 
-    // Check negotiation limit (max 3 active per item)
-    if (activeNegotiations.length >= 3) {
-      toast.info('This item has reached its negotiation limit');
-      return;
+    // All checks passed — open the review modal
+    setStartNegModalOpen(true);
+  };
+
+  const handleConfirmOffer = async ({ hours, work_type, message }) => {
+    setStartNegLoading(true);
+    try {
+      const negotiation = await base44.entities.Negotiation.create({
+        item_id: item.id,
+        item_title: item.title,
+        offerer_id: item.offerer_id,
+        offerer_name: item.offerer_name,
+        bidder_id: user.id,
+        bidder_name: user.full_name,
+        initial_offer_hours: hours,
+        work_type: work_type || "",
+        status: "active",
+        current_offer_by: user.id,
+        offer_history: [{
+          offered_by: user.id,
+          offered_by_name: user.full_name,
+          hours,
+          work_type: work_type || "",
+          timestamp: new Date().toISOString()
+        }],
+        last_activity: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
+      });
+
+      const offerText = `${user.full_name} offered ${hours} hours${work_type ? ` for ${work_type}` : ''}${message ? `\n\n${message}` : ''}`;
+
+      await base44.entities.Message.create({
+        negotiation_id: negotiation.id,
+        from_user_id: user.id,
+        from_user_name: user.full_name,
+        to_user_id: item.offerer_id,
+        text: offerText,
+        message_type: "offer",
+        proposal_hours: hours
+      });
+
+      await base44.entities.Notification.create({
+        user_id: item.offerer_id,
+        type: 'new_negotiation',
+        title: 'New negotiation started',
+        message: `${user.full_name} wants to trade work for your ${item.title}`,
+        related_id: negotiation.id,
+        related_type: 'negotiation',
+        link_url: createPageUrl(`Negotiation?id=${negotiation.id}`),
+        from_user_id: user.id,
+        from_user_name: user.full_name
+      });
+
+      setStartNegModalOpen(false);
+      navigate(createPageUrl(`Negotiation?id=${negotiation.id}`));
+    } finally {
+      setStartNegLoading(false);
     }
-
-    // Check if user already has an active negotiation
-    if (userActiveNegotiation) {
-      navigate(createPageUrl(`Negotiation?id=${userActiveNegotiation.id}`));
-      return;
-    }
-
-    // Create new negotiation WITH INITIAL OFFER MESSAGE
-    const negotiation = await base44.entities.Negotiation.create({
-      item_id: item.id,
-      item_title: item.title,
-      offerer_id: item.offerer_id,
-      offerer_name: item.offerer_name,
-      bidder_id: user.id,
-      bidder_name: user.full_name,
-      initial_offer_hours: item.required_hours,
-      status: "active",
-      current_offer_by: user.id,
-      offer_history: [{
-        offered_by: user.id,
-        offered_by_name: user.full_name,
-        hours: item.required_hours,
-        work_type: "",
-        timestamp: new Date().toISOString()
-      }],
-      last_activity: new Date().toISOString(),
-      expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
-    });
-
-    // Send initial OFFER message (not text)
-    await base44.entities.Message.create({
-      negotiation_id: negotiation.id,
-      from_user_id: user.id,
-      from_user_name: user.full_name,
-      to_user_id: item.offerer_id,
-      text: `${user.full_name} offered ${item.required_hours} hours for ${item.title}`,
-      message_type: "offer",
-      proposal_hours: item.required_hours
-    });
-
-    // Create notification for item owner
-    await base44.entities.Notification.create({
-      user_id: item.offerer_id,
-      type: 'new_negotiation',
-      title: 'New negotiation started',
-      message: `${user.full_name} wants to trade work for your ${item.title}`,
-      related_id: negotiation.id,
-      related_type: 'negotiation',
-      link_url: createPageUrl(`Negotiation?id=${negotiation.id}`),
-      from_user_id: user.id,
-      from_user_name: user.full_name
-    });
-
-    navigate(createPageUrl(`Negotiation?id=${negotiation.id}`));
   };
 
   const handleRequestInspection = async () => {
@@ -678,6 +691,13 @@ export default function ItemDetail() {
         </div>
       </div>
       <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} message="Create an account or log in to interact with this listing." />
+      <StartNegotiationModal
+        open={startNegModalOpen}
+        onClose={() => setStartNegModalOpen(false)}
+        item={item}
+        onConfirm={handleConfirmOffer}
+        loading={startNegLoading}
+      />
     </div>
   );
 }
