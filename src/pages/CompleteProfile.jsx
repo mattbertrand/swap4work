@@ -106,6 +106,11 @@ export default function CompleteProfile() {
       toast.error("Please fill in your phone number");
       return;
     }
+    const isValidPhone = (p) => /^\+?[1-9]\d{6,14}$/.test(p.replace(/[\s\-().]/g, ""));
+    if (!isValidPhone(formData.phone)) {
+      toast.error("Please enter a valid phone number (e.g. +1 555-555-5555)");
+      return;
+    }
     if (!locationFields.city || !locationFields.state || !locationFields.zip) {
       toast.error("Please fill in city, state, and ZIP code");
       return;
@@ -202,6 +207,7 @@ export default function CompleteProfile() {
                 onChange={(val) => setFormData(p => ({ ...p, phone: val }))}
                 isVerified={phoneVerified}
                 onVerified={() => setPhoneVerified(true)}
+                onUnverified={() => setPhoneVerified(false)}
                 userEmail={user?.email}
               />
 

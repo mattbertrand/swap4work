@@ -14,7 +14,7 @@ const isValidPhone = (phone) => {
   return /^\+?[1-9]\d{6,14}$/.test(cleaned);
 };
 
-export default function PhoneVerificationField({ value, onChange, isVerified, onVerified, userEmail, disabled = false }) {
+export default function PhoneVerificationField({ value, onChange, isVerified, onVerified, onUnverified, userEmail, disabled = false }) {
   const [code, setCode] = useState("");
   const [sentCode, setSentCode] = useState(null);
   const [codeSent, setCodeSent] = useState(false);
@@ -30,12 +30,11 @@ export default function PhoneVerificationField({ value, onChange, isVerified, on
     } else {
       setPhoneError("");
     }
-    // Reset verification if phone changes
-    if (codeSent) {
-      setCodeSent(false);
-      setSentCode(null);
-      setCode("");
-    }
+    // Reset verification whenever phone number changes
+    if (isVerified && onUnverified) onUnverified();
+    setCodeSent(false);
+    setSentCode(null);
+    setCode("");
   };
 
   const handleSendCode = async () => {

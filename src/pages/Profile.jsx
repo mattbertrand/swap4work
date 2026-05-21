@@ -8,6 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Camera, Star, CheckCircle2, Clock, Package, LogOut, MapPin, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { toast } from "sonner";
+
+const isValidPhone = (phone) => {
+  const cleaned = phone.replace(/[\s\-().]/g, "");
+  return /^\+?[1-9]\d{6,14}$/.test(cleaned);
+};
 import PhoneVerificationField from "@/components/profile/PhoneVerificationField";
 import LocationFields, { parseLocationString } from "@/components/location/LocationFields";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -305,6 +311,10 @@ export default function Profile() {
 
   const handleSave = async () => {
     if (zipError) return;
+    if (formData.phone && !isValidPhone(formData.phone)) {
+      toast.error("Please enter a valid phone number before saving.");
+      return;
+    }
     const profileComplete = !!(formData.location && formData.phone && locationFields.city && locationFields.state && locationFields.zip);
     const availabilityString = [selectedDays.join(', '), selectedTimes.join(', ')].filter(Boolean).join(' | ');
 
@@ -510,6 +520,7 @@ export default function Profile() {
                       onChange={(val) => setFormData(p => ({ ...p, phone: val }))}
                       isVerified={phoneVerified}
                       onVerified={() => setPhoneVerified(true)}
+                      onUnverified={() => setPhoneVerified(false)}
                       userEmail={user?.email}
                       disabled={!isEditing}
                     />
