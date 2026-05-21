@@ -11,8 +11,8 @@ import {
   Plus,
   LogOut,
   Bell,
-  Users
-} from "lucide-react";
+  Users } from
+"lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -24,15 +24,15 @@ import {
   SidebarHeader,
   SidebarFooter,
   SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+  SidebarTrigger } from
+"@/components/ui/sidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  DropdownMenuTrigger } from
+"@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import GuestBanner from "@/components/auth/GuestBanner";
@@ -50,14 +50,14 @@ export default function Layout({ children, currentPageName }) {
 
         if (userData && !userData.profile_completed && !window.location.pathname.includes('CompleteProfile')) {
           const protectedPages = [
-            createPageUrl('CreateItem'),
-            createPageUrl('MyListings'),
-            createPageUrl('MyAgreements')
-          ].map(url => new URL(url, window.location.origin).pathname);
+          createPageUrl('CreateItem'),
+          createPageUrl('MyListings'),
+          createPageUrl('MyAgreements')].
+          map((url) => new URL(url, window.location.origin).pathname);
 
           const currentPath = window.location.pathname;
 
-          if (protectedPages.some(pagePath => currentPath.startsWith(pagePath))) {
+          if (protectedPages.some((pagePath) => currentPath.startsWith(pagePath))) {
             window.location.href = createPageUrl(`CompleteProfile?returnUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`);
           }
         }
@@ -74,53 +74,53 @@ export default function Layout({ children, currentPageName }) {
   const isAdmin = user?.role === 'admin';
 
   const navigationItems = [
-    {
-      title: "Home",
-      url: createPageUrl("Home"),
-      icon: Home,
-    },
-    {
-      title: "Browse Items",
-      url: createPageUrl("Browse"),
-      icon: Package,
-    },
-    {
-      title: "Browse Services",
-      url: createPageUrl("BrowseServices"),
-      icon: Briefcase,
-    },
-    {
-      title: "Find People",
-      url: createPageUrl("BrowseUsers"),
-      icon: Users,
-    },
-    {
-      title: "My Listings",
-      url: createPageUrl("MyListings"),
-      icon: Package,
-    },
-    {
-      title: "My Agreements",
-      url: createPageUrl("MyAgreements"),
-      icon: Briefcase,
-    },
-    {
-      title: "Notifications",
-      url: createPageUrl("Notifications"),
-      icon: Bell,
-    },
-    {
-      title: "Profile",
-      url: createPageUrl("Profile"),
-      icon: User,
-    },
-  ];
+  {
+    title: "Home",
+    url: createPageUrl("Home"),
+    icon: Home
+  },
+  {
+    title: "Browse Items",
+    url: createPageUrl("Browse"),
+    icon: Package
+  },
+  {
+    title: "Browse Services",
+    url: createPageUrl("BrowseServices"),
+    icon: Briefcase
+  },
+  {
+    title: "Find People",
+    url: createPageUrl("BrowseUsers"),
+    icon: Users
+  },
+  {
+    title: "My Listings",
+    url: createPageUrl("MyListings"),
+    icon: Package
+  },
+  {
+    title: "My Agreements",
+    url: createPageUrl("MyAgreements"),
+    icon: Briefcase
+  },
+  {
+    title: "Notifications",
+    url: createPageUrl("Notifications"),
+    icon: Bell
+  },
+  {
+    title: "Profile",
+    url: createPageUrl("Profile"),
+    icon: User
+  }];
+
 
   if (isAdmin) {
     navigationItems.push({
       title: "Admin Dashboard",
       url: createPageUrl("AdminDashboard"),
-      icon: Shield,
+      icon: Shield
     });
   }
 
@@ -139,8 +139,8 @@ export default function Layout({ children, currentPageName }) {
               <img
                 src="https://media.base44.com/images/public/690d293b21b2ce5e9a6db7c8/72467c977_Swap4WorkFinalLogov2.png"
                 alt="Swap4Work"
-                className="h-40 w-auto object-contain"
-              />
+                className="h-40 w-auto object-contain" />
+              
             </Link>
           </SidebarHeader>
 
@@ -148,21 +148,21 @@ export default function Layout({ children, currentPageName }) {
             <SidebarGroup>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {navigationItems.map((item) => (
-                    <SidebarMenuItem key={item.title}>
+                  {navigationItems.map((item) =>
+                  <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton
-                        asChild
-                        className={`hover:bg-orange-100 hover:text-orange-700 transition-colors duration-200 rounded-xl mb-1 ${
-                          location.pathname === item.url ? 'bg-orange-100 text-orange-700' : ''
-                        }`}
-                      >
+                      asChild
+                      className={`hover:bg-orange-100 hover:text-orange-700 transition-colors duration-200 rounded-xl mb-1 ${
+                      location.pathname === item.url ? 'bg-orange-100 text-orange-700' : ''}`
+                      }>
+                      
                         <Link to={item.url} className="flex items-center gap-3 px-4 py-3">
                           <item.icon className="w-5 h-5 flex-shrink-0" />
                           <span className="font-medium">{item.title}</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
-                  ))}
+                  )}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
@@ -178,23 +178,23 @@ export default function Layout({ children, currentPageName }) {
           </SidebarContent>
 
           <SidebarFooter className="border-t border-orange-100 p-4">
-            {user ? (
-              <DropdownMenu>
+            {user ?
+            <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-3 w-full hover:bg-orange-50 p-2 rounded-lg transition-colors">
-                    {user.photo_url ? (
-                      <img
-                        src={user.photo_url}
-                        alt={user.full_name}
-                        className="w-10 h-10 rounded-full object-cover border-2 border-orange-200"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-amber-500 rounded-full flex items-center justify-center">
+                    {user.photo_url ?
+                  <img
+                    src={user.photo_url}
+                    alt={user.full_name}
+                    className="w-10 h-10 rounded-full object-cover border-2 border-orange-200" /> :
+
+
+                  <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-amber-500 rounded-full flex items-center justify-center">
                         <span className="text-white font-semibold text-sm">
                           {user.full_name?.[0]?.toUpperCase() || 'U'}
                         </span>
                       </div>
-                    )}
+                  }
                     <div className="flex-1 min-w-0 text-left">
                       <p className="font-medium text-gray-900 text-sm truncate">{user.full_name}</p>
                       <p className="text-xs text-gray-500 truncate">{user.email}</p>
@@ -210,24 +210,24 @@ export default function Layout({ children, currentPageName }) {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={() => {
-                      base44.auth.logout(createPageUrl("Home"));
-                    }}
-                    className="text-red-600 focus:text-red-600 cursor-pointer"
-                  >
+                  onClick={() => {
+                    base44.auth.logout(createPageUrl("Home"));
+                  }}
+                  className="text-red-600 focus:text-red-600 cursor-pointer">
+                  
                     <LogOut className="w-4 h-4 mr-2" />
                     Sign Out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button
-                onClick={() => base44.auth.redirectToLogin()}
-                className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"
-              >
+              </DropdownMenu> :
+
+            <Button
+              onClick={() => base44.auth.redirectToLogin()}
+              className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700">
+              
                 Sign In
               </Button>
-            )}
+            }
           </SidebarFooter>
         </Sidebar>
 
@@ -255,8 +255,8 @@ export default function Layout({ children, currentPageName }) {
                     <img
                       src="https://media.base44.com/images/public/690d293b21b2ce5e9a6db7c8/72467c977_Swap4WorkFinalLogov2.png"
                       alt="Swap4Work"
-                      className="h-24 w-auto object-contain"
-                    />
+                      className="w-auto object-contain h-2" />
+                    
                   </div>
                   <p className="text-sm text-gray-600 mb-4">
                     A local marketplace to trade work and time for physical items — no money required.
@@ -372,6 +372,6 @@ export default function Layout({ children, currentPageName }) {
           </footer>
         </main>
       </div>
-    </SidebarProvider>
-  );
+    </SidebarProvider>);
+
 }
