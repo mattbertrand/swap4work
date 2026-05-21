@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Camera, Star, CheckCircle2, Clock, Package, LogOut, MapPin, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import PhoneVerificationField from "@/components/profile/PhoneVerificationField";
 import LocationFields, { parseLocationString } from "@/components/location/LocationFields";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -71,6 +72,7 @@ export default function Profile() {
   const [zipError, setZipError] = useState("");
 
   const [authChecked, setAuthChecked] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
   const [selectedDays, setSelectedDays] = useState([]);
   const [selectedTimes, setSelectedTimes] = useState([]);
 
@@ -86,6 +88,7 @@ export default function Profile() {
         bio: userData.bio || "",
         skills: userData.skills || ""
       });
+      setPhoneVerified(userData.phone_verified || false);
       setLocationFields(parseLocationString(userData.location || ""));
       // Parse availability into days/times
       if (userData.availability) {
@@ -308,6 +311,7 @@ export default function Profile() {
     await updateProfileMutation.mutateAsync({
       ...formData,
       availability: availabilityString,
+      phone_verified: phoneVerified,
       profile_completed: profileComplete
     });
 
@@ -501,13 +505,13 @@ export default function Profile() {
                   </div>
 
                   <div>
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <Input
-                      id="phone"
+                    <PhoneVerificationField
                       value={formData.phone}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      onChange={(val) => setFormData(p => ({ ...p, phone: val }))}
+                      isVerified={phoneVerified}
+                      onVerified={() => setPhoneVerified(true)}
+                      userEmail={user?.email}
                       disabled={!isEditing}
-                      className="mt-2"
                     />
                   </div>
 

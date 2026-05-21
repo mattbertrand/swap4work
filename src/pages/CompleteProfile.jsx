@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Camera, Loader2, CheckCircle2 } from "lucide-react";
+import PhoneVerificationField from "@/components/profile/PhoneVerificationField";
 import LocationFields, { parseLocationString } from "@/components/location/LocationFields";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -40,6 +41,7 @@ export default function CompleteProfile() {
   const [zipError, setZipError] = useState("");
   const [locationFields, setLocationFields] = useState({ street: "", city: "", state: "", zip: "" });
 
+  const [phoneVerified, setPhoneVerified] = useState(false);
   const [formData, setFormData] = useState({
     phone: "",
     location: "",
@@ -57,6 +59,7 @@ export default function CompleteProfile() {
   useEffect(() => {
     base44.auth.me().then(userData => {
       setUser(userData);
+      setPhoneVerified(userData.phone_verified || false);
       setFormData({
         phone: userData.phone || "",
         location: userData.location || "",
@@ -123,6 +126,7 @@ export default function CompleteProfile() {
       await base44.auth.updateMe({
         ...formData,
         availability: availabilityString,
+        phone_verified: phoneVerified,
         profile_completed: true
       });
       toast.success('Profile completed!');
@@ -193,23 +197,13 @@ export default function CompleteProfile() {
               </div>
 
               {/* Phone */}
-              <div>
-                <Label htmlFor="phone">
-                  Phone Number <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  placeholder="e.g., +1-555-0123"
-                  required
-                  className="mt-2"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Used for verification and coordination
-                </p>
-              </div>
+              <PhoneVerificationField
+                value={formData.phone}
+                onChange={(val) => setFormData(p => ({ ...p, phone: val }))}
+                isVerified={phoneVerified}
+                onVerified={() => setPhoneVerified(true)}
+                userEmail={user?.email}
+              />
 
               {/* Location */}
               <div>
