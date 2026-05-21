@@ -50,11 +50,15 @@ export default function Home() {
     queryFn: () => base44.entities.Item.filter({ status: "active" }, '-created_date', 6),
   });
 
+  const { data: allActiveItems = [] } = useQuery({
+    queryKey: ['allActiveItems'],
+    queryFn: () => base44.entities.Item.filter({ status: "active" }),
+  });
+
   const { data: allUsers = [], isLoading: usersLoading } = useQuery({
     queryKey: ['workers'],
     queryFn: async () => {
       try {
-        // Fetch public worker profiles
         return await base44.entities.Worker.filter({ is_visible: true });
       } catch (error) {
         console.log('Could not fetch workers list', error);
@@ -63,10 +67,31 @@ export default function Home() {
     },
   });
 
+  const { data: allMembers = [] } = useQuery({
+    queryKey: ['allMembers'],
+    queryFn: () => base44.entities.Worker.list(),
+  });
+
+  const { data: completedAgreements = [] } = useQuery({
+    queryKey: ['completedAgreements'],
+    queryFn: () => base44.entities.Agreement.filter({ status: "completed" }),
+  });
+
   const { data: recentRatings = [], isLoading: ratingsLoading } = useQuery({
     queryKey: ['recentRatings'],
     queryFn: () => base44.entities.Rating.filter({ published: true }, '-created_date', 6),
   });
+
+  const { data: allRatings = [] } = useQuery({
+    queryKey: ['allRatings'],
+    queryFn: () => base44.entities.Rating.filter({ published: true }),
+  });
+
+  const avgRating = React.useMemo(() => {
+    if (!allRatings.length) return null;
+    const avg = allRatings.reduce((sum, r) => sum + r.stars, 0) / allRatings.length;
+    return avg.toFixed(1);
+  }, [allRatings]);
 
   // Filter workers with proper validation
   const workers = React.useMemo(() => {
@@ -203,28 +228,28 @@ export default function Home() {
               <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Package className="w-8 h-8 text-orange-600" />
               </div>
-              <div className="text-3xl font-bold text-gray-900">{featuredItems.length}+</div>
+              <div className="text-3xl font-bold text-gray-900">{allActiveItems.length}+</div>
               <div className="text-gray-600">Active Items</div>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Users className="w-8 h-8 text-blue-600" />
               </div>
-              <div className="text-3xl font-bold text-gray-900">{allUsers.length}+</div>
+              <div className="text-3xl font-bold text-gray-900">{allMembers.length}+</div>
               <div className="text-gray-600">Community Members</div>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <CheckCircle2 className="w-8 h-8 text-green-600" />
               </div>
-              <div className="text-3xl font-bold text-gray-900">{recentRatings.length}+</div>
+              <div className="text-3xl font-bold text-gray-900">{completedAgreements.length}+</div>
               <div className="text-gray-600">Completed Trades</div>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <TrendingUp className="w-8 h-8 text-purple-600" />
               </div>
-              <div className="text-3xl font-bold text-gray-900">4.8</div>
+              <div className="text-3xl font-bold text-gray-900">{avgRating ?? "—"}</div>
               <div className="text-gray-600">Avg Rating</div>
             </div>
           </div>
