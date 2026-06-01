@@ -139,6 +139,21 @@ export default function PublicProfile() {
     enabled: !!(resolvedUserId || workerId)
   });
 
+  const { data: completedAgreements = [] } = useQuery({
+    queryKey: ['completedAgreements', resolvedUserId],
+    queryFn: () => base44.entities.Agreement.filter({ 
+      worker_id: resolvedUserId,
+      status: 'completed'
+    }),
+    enabled: !!resolvedUserId
+  });
+
+  const hoursCompleted = React.useMemo(() => 
+    completedAgreements.reduce((sum, a) => sum + (a.hours_logged || a.agreed_hours || 0), 0)
+  , [completedAgreements]);
+
+  const tradesCompleted = completedAgreements.length;
+
   const { data: karmaTransactions = [] } = useQuery({
     queryKey: ['karmaTransactions', resolvedUserId],
     queryFn: () => base44.entities.KarmaTransaction.filter({ user_id: resolvedUserId }),
@@ -361,15 +376,11 @@ export default function PublicProfile() {
 
                 <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-gray-100">
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-orange-600">
-                      {workerEntity ? (workerEntity.hours_completed || 0) : (userProfile.hours_completed || 0)}
-                    </p>
+                    <p className="text-2xl font-bold text-orange-600">{hoursCompleted}</p>
                     <p className="text-xs text-gray-500 uppercase tracking-wide">Hours Done</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-blue-600">
-                      {workerEntity ? (workerEntity.completed_trades || 0) : (userProfile.completed_trades || 0)}
-                    </p>
+                    <p className="text-2xl font-bold text-blue-600">{tradesCompleted}</p>
                     <p className="text-xs text-gray-500 uppercase tracking-wide">Trades</p>
                   </div>
                 </div>
