@@ -125,12 +125,19 @@ export default function Negotiation() {
     }
   });
 
+  const isInitialMessagesLoad = useRef(true);
+
   // Scroll to top on mount
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
   useEffect(() => {
+    // Skip auto-scroll on the very first load so page doesn't jump to bottom
+    if (isInitialMessagesLoad.current) {
+      isInitialMessagesLoad.current = false;
+      return;
+    }
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
@@ -964,7 +971,7 @@ export default function Negotiation() {
                       onClick={async () => {
                         const agreements = await base44.entities.Agreement.filter({
                           item_id: negotiation.item_id,
-                          status: { $in: ['locked', 'in_progress'] }
+                          status: { $in: ['locked', 'in_progress', 'ready_for_handover'] }
                         });
                         if (agreements[0]) {
                           navigate(createPageUrl(`TimeTracking?agreementId=${agreements[0].id}`));

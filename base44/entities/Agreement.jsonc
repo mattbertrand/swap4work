@@ -1,0 +1,178 @@
+{
+  "name": "Agreement",
+  "type": "object",
+  "properties": {
+    "item_id": {
+      "type": "string",
+      "description": "Reference to the Item"
+    },
+    "item_title": {
+      "type": "string",
+      "description": "Item title (denormalized)"
+    },
+    "offerer_id": {
+      "type": "string",
+      "description": "User ID of the offerer"
+    },
+    "offerer_name": {
+      "type": "string",
+      "description": "Name of the offerer"
+    },
+    "worker_id": {
+      "type": "string",
+      "description": "User ID of the worker"
+    },
+    "worker_name": {
+      "type": "string",
+      "description": "Name of the worker"
+    },
+    "agreed_hours": {
+      "type": "number",
+      "description": "Final agreed work hours"
+    },
+    "hours_logged": {
+      "type": "number",
+      "default": 0,
+      "description": "Total hours logged by worker"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "proposed",
+        "locked",
+        "in_progress",
+        "ready_for_handover",
+        "completed",
+        "disputed",
+        "cancelled",
+        "cancelled_mutual"
+      ],
+      "default": "proposed",
+      "description": "Agreement status"
+    },
+    "task_description": {
+      "type": "string",
+      "description": "Agreed task description"
+    },
+    "estimated_due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Target completion date"
+    },
+    "offerer_agreed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Has offerer agreed to terms"
+    },
+    "worker_agreed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Has worker agreed to terms"
+    },
+    "offerer_handover_confirmed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Has offerer confirmed handover"
+    },
+    "worker_handover_confirmed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Has worker confirmed handover"
+    },
+    "item_received": {
+      "type": "boolean",
+      "default": false,
+      "description": "Worker confirmed item receipt"
+    },
+    "completion_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Actual completion date"
+    },
+    "is_locked": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether agreement is locked (work started)"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when agreement was locked and work started"
+    },
+    "timer_started_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the work timer was last started"
+    },
+    "timer_started_by": {
+      "type": "string",
+      "description": "User ID who started the timer"
+    },
+    "cancellation_request": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "none",
+            "pending_mutual",
+            "approved",
+            "rejected"
+          ],
+          "default": "none"
+        },
+        "requested_by": {
+          "type": "string",
+          "description": "User ID who requested cancellation"
+        },
+        "requested_by_name": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "requested_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date",
+          "description": "48 hours from request"
+        }
+      }
+    },
+    "history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actor_id": {
+            "type": "string"
+          },
+          "actor_name": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "default": [],
+      "description": "Audit trail of agreement events"
+    }
+  },
+  "required": [
+    "item_id",
+    "offerer_id",
+    "worker_id",
+    "agreed_hours"
+  ]
+}
