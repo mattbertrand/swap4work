@@ -90,21 +90,21 @@ export default function AgreementDetail() {
         completion_date: new Date().toISOString()
       });
 
-      // Update both users' stats
-      const offererUser = await base44.entities.User.filter({ id: agreement.offerer_id });
-      const workerUser = await base44.entities.User.filter({ id: agreement.worker_id });
+      // Update both workers' stats in the Worker entity
+      const offererWorkers = await base44.entities.Worker.filter({ user_id: agreement.offerer_id });
+      const workerWorkers = await base44.entities.Worker.filter({ user_id: agreement.worker_id });
 
-      if (offererUser[0]) {
-        await base44.entities.User.update(agreement.offerer_id, {
-          hours_completed: (offererUser[0].hours_completed || 0) + agreement.agreed_hours,
-          completed_trades: (offererUser[0].completed_trades || 0) + 1
+      if (offererWorkers[0]) {
+        await base44.entities.Worker.update(offererWorkers[0].id, {
+          hours_completed: (offererWorkers[0].hours_completed || 0) + (updatedAgreement.hours_logged || updatedAgreement.agreed_hours),
+          completed_trades: (offererWorkers[0].completed_trades || 0) + 1
         });
       }
 
-      if (workerUser[0]) {
-        await base44.entities.User.update(agreement.worker_id, {
-          hours_completed: (workerUser[0].hours_completed || 0) + agreement.agreed_hours,
-          completed_trades: (workerUser[0].completed_trades || 0) + 1
+      if (workerWorkers[0]) {
+        await base44.entities.Worker.update(workerWorkers[0].id, {
+          hours_completed: (workerWorkers[0].hours_completed || 0) + (updatedAgreement.hours_logged || updatedAgreement.agreed_hours),
+          completed_trades: (workerWorkers[0].completed_trades || 0) + 1
         });
       }
 
@@ -154,15 +154,18 @@ export default function AgreementDetail() {
         published: true
       });
 
-      // Update rated user's average rating
+      // Update rated user's average rating in Worker entity
       const allRatings = await base44.entities.Rating.filter({ to_user_id: otherUserId });
       const totalStars = allRatings.reduce((sum, r) => sum + r.stars, 0);
       const avgRating = totalStars / allRatings.length;
 
-      await base44.entities.User.update(otherUserId, {
-        rating: avgRating,
-        total_ratings: allRatings.length
-      });
+      const ratedWorkers = await base44.entities.Worker.filter({ user_id: otherUserId });
+      if (ratedWorkers[0]) {
+        await base44.entities.Worker.update(ratedWorkers[0].id, {
+          rating: avgRating,
+          total_ratings: allRatings.length
+        });
+      }
 
       // Award karma based on rating
       let karmaPoints = 0;
@@ -173,12 +176,7 @@ export default function AgreementDetail() {
       else if (stars === 1) karmaPoints = -10;
 
       if (karmaPoints !== 0) {
-        const ratedUser = await base44.entities.User.filter({ id: otherUserId });
-        if (ratedUser[0]) {
-          await base44.entities.User.update(otherUserId, {
-            karma_points: (ratedUser[0].karma_points || 0) + karmaPoints
-          });
-
+        {
           await base44.entities.KarmaTransaction.create({
             user_id: otherUserId,
             user_name: otherUserName,

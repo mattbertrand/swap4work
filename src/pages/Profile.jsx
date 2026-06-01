@@ -454,13 +454,13 @@ export default function Profile() {
                 <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-gray-200">
                   <div>
                     <p className="text-2xl font-bold text-orange-600">
-                      {user.hours_completed || 0}
+                      {workerProfile?.hours_completed || 0}
                     </p>
                     <p className="text-sm text-gray-600">Hours Completed</p>
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-orange-600">
-                      {user.completed_trades || 0}
+                      {workerProfile?.completed_trades || 0}
                     </p>
                     <p className="text-sm text-gray-600">Completed Trades</p>
                   </div>
