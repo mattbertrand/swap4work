@@ -54,6 +54,16 @@ export default function TimeTracking() {
     return () => clearInterval(interval);
   }, [isTimerRunning]);
 
+  const { data: agreement, isLoading: agreementLoading, error: agreementError } = useQuery({
+    queryKey: ['agreement', agreementId],
+    queryFn: async () => {
+      const results = await base44.entities.Agreement.filter({ id: agreementId });
+      return results[0];
+    },
+    enabled: !!agreementId,
+    refetchInterval: 5000
+  });
+
   // Sync timer from agreement when started by the other party
   useEffect(() => {
     if (!agreement || !user) return;
@@ -67,16 +77,6 @@ export default function TimeTracking() {
       }
     }
   }, [agreement?.timer_started_at, agreement?.timer_started_by, user?.id]);
-
-  const { data: agreement,  isLoading: agreementLoading, error: agreementError } = useQuery({
-    queryKey: ['agreement', agreementId],
-    queryFn: async () => {
-      const results = await base44.entities.Agreement.filter({ id: agreementId });
-      return results[0];
-    },
-    enabled: !!agreementId,
-    refetchInterval: 5000
-  });
 
   const { data: timeLogs = [] } = useQuery({
     queryKey: ['timeLogs', agreementId],
