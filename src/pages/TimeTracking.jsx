@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -36,6 +35,11 @@ export default function TimeTracking() {
   console.log('🔍 [TIME-TRACKING] Agreement ID from URL:', agreementId);
   console.log('🔍 [TIME-TRACKING] Full URL search params:', window.location.search);
 
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => setUser(null));
   }, []);
@@ -50,15 +54,28 @@ export default function TimeTracking() {
     return () => clearInterval(interval);
   }, [isTimerRunning]);
 
+  // Sync timer from agreement when started by the other party
+  useEffect(() => {
+    if (!agreement || !user) return;
+    if (agreement.timer_started_at && agreement.timer_started_by && agreement.timer_started_by !== user.id) {
+      if (!isTimerRunning) {
+        const elapsed = Math.floor((Date.now() - new Date(agreement.timer_started_at).getTime()) / 1000);
+        if (elapsed > 0) {
+          setTimerSeconds(elapsed);
+          setIsTimerRunning(true);
+        }
+      }
+    }
+  }, [agreement?.timer_started_at, agreement?.timer_started_by, user?.id]);
+
   const { data: agreement,  isLoading: agreementLoading, error: agreementError } = useQuery({
     queryKey: ['agreement', agreementId],
     queryFn: async () => {
-      console.log('📥 [TIME-TRACKING] Fetching agreement with ID:', agreementId);
       const results = await base44.entities.Agreement.filter({ id: agreementId });
-      console.log('✅ [TIME-TRACKING] Agreement query results:', results);
       return results[0];
     },
-    enabled: !!agreementId
+    enabled: !!agreementId,
+    refetchInterval: 5000
   });
 
   const { data: timeLogs = [] } = useQuery({
@@ -131,35 +148,29 @@ export default function TimeTracking() {
   const handleMarkComplete = async () => {
     if (!agreement) return;
 
-    const totalHours = timeLogs.reduce((sum, log) => sum + log.hours, 0);
+    await base44.entities.Agreement.update(agreementId, {
+      status: 'ready_for_handover'
+    });
+
+    // Notify the offerer
+    await base44.entities.Notification.create({
+      user_id: agreement.offerer_id,
+      type: 'work_completed',
+      title: 'Work completed!',
+      message: `${user.full_name} has completed the work for ${agreement.item_title}. Please review and confirm handover.`,
+      related_id: agreementId,
+      related_type: 'agreement',
+      link_url: createPageUrl(`AgreementDetail?id=${agreementId}`),
+      from_user_id: user.id,
+      from_user_name: user.full_name
+    });
+
+    queryClient.invalidateQueries(['agreement', agreementId]);
+    toast.success('Work marked as complete! Redirecting to handover confirmation...');
     
-    if (totalHours >= agreement.agreed_hours) {
-      await base44.entities.Agreement.update(agreementId, {
-        status: 'ready_for_handover'
-      });
-
-      // Notify the offerer
-      await base44.entities.Notification.create({
-        user_id: agreement.offerer_id,
-        type: 'work_completed',
-        title: 'Work completed!',
-        message: `${user.full_name} has completed the work for ${agreement.item_title}. Please review and confirm handover.`,
-        related_id: agreementId,
-        related_type: 'agreement',
-        link_url: createPageUrl(`AgreementDetail?id=${agreementId}`),
-        from_user_id: user.id,
-        from_user_name: user.full_name
-      });
-
-      queryClient.invalidateQueries(['agreement', agreementId]);
-      toast.success('Work marked as complete! Redirecting to handover confirmation...');
-      
-      setTimeout(() => {
-        navigate(createPageUrl(`AgreementDetail?id=${agreementId}`));
-      }, 1500);
-    } else {
-      alert(`You need to log ${agreement.agreed_hours - totalHours} more hours before completing`);
-    }
+    setTimeout(() => {
+      navigate(createPageUrl(`AgreementDetail?id=${agreementId}`));
+    }, 1500);
   };
 
 // First, check for an error after the query has attempted to load
@@ -202,6 +213,7 @@ if (!agreement) {
   console.log('✅ [TIME-TRACKING] Agreement loaded successfully:', agreement.id);
 
   const isWorker = user.id === agreement.worker_id;
+  const isParticipant = user.id === agreement.worker_id || user.id === agreement.offerer_id;
   const totalHours = timeLogs.reduce((sum, log) => sum + log.hours, 0);
   const progress = agreement.agreed_hours > 0 ? (totalHours / agreement.agreed_hours) * 100 : 0;
   const remainingHours = agreement.agreed_hours - totalHours;
@@ -261,10 +273,20 @@ if (!agreement) {
               <Progress value={progress} className="h-3" />
             </div>
 
+            {/* Optional time logging note */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+              💡 <strong>Time logging is optional.</strong> You can use the timer below or log hours manually using the "Log Time" button. Either party can log time.
+            </div>
+
             {/* Timer */}
-            {isWorker && (
+            {isParticipant && (
               <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-6 border-2 border-orange-200">
                 <h3 className="font-semibold text-gray-900 mb-4">Work Timer</h3>
+                {agreement.timer_started_at && !isTimerRunning && (
+                  <p className="text-sm text-orange-700 mb-3">
+                    ⏱ Timer was started by the other party. You can also start your own session.
+                  </p>
+                )}
                 <div className="flex items-center justify-between">
                   <div className="text-4xl font-mono font-bold text-gray-900">
                     {formatTimer(timerSeconds)}
@@ -272,7 +294,13 @@ if (!agreement) {
                   <div className="flex gap-3">
                     {!isTimerRunning ? (
                       <Button
-                        onClick={() => setIsTimerRunning(true)}
+                        onClick={async () => {
+                          setIsTimerRunning(true);
+                          await base44.entities.Agreement.update(agreementId, {
+                            timer_started_at: new Date().toISOString(),
+                            timer_started_by: user.id
+                          });
+                        }}
                         className="bg-green-600 hover:bg-green-700"
                       >
                         <Play className="w-5 h-5 mr-2" />
@@ -309,7 +337,7 @@ if (!agreement) {
               <CardHeader className="border-b border-orange-100">
                 <div className="flex justify-between items-center">
                   <CardTitle>Time Logs</CardTitle>
-                  {isWorker && !showLogForm && remainingHours > 0 && (
+                  {isParticipant && !showLogForm && remainingHours > 0 && (
                     <Button
                       onClick={() => setShowLogForm(true)}
                       size="sm"
@@ -322,7 +350,7 @@ if (!agreement) {
                 </div>
               </CardHeader>
               <CardContent className="p-6">
-                {showLogForm && isWorker && remainingHours > 0 && (
+                {showLogForm && isParticipant && remainingHours > 0 && (
                   <div className="mb-6 p-4 bg-orange-50 rounded-xl border border-orange-200">
                     <h3 className="font-semibold mb-4">Log Work Hours</h3>
                     <div className="space-y-4">
@@ -377,7 +405,7 @@ if (!agreement) {
                   </div>
                 )}
 
-                {remainingHours <= 0 && isWorker && (
+                {remainingHours <= 0 && isParticipant && (
                   <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-center">
                     <p className="text-sm text-green-900 font-medium">
                       ✅ All hours have been logged! You can now mark the work as complete.
@@ -466,8 +494,8 @@ if (!agreement) {
               </CardContent>
             </Card>
 
-            {/* Mark Complete Button */}
-            {isWorker && progress >= 100 && (
+            {/* Mark Complete Button - only worker can mark complete */}
+            {isWorker && agreement.status !== 'ready_for_handover' && agreement.status !== 'completed' && (
               <Button
                 onClick={handleMarkComplete}
                 className="w-full mt-6 h-12 text-lg font-semibold bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"

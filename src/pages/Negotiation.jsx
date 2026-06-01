@@ -125,6 +125,11 @@ export default function Negotiation() {
     }
   });
 
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -899,7 +904,7 @@ export default function Negotiation() {
               <div ref={messagesEndRef} />
             </div>
 
-            {negotiation.status === 'active' && !isNegotiationClosed && (
+            {(negotiation.status === 'active' || negotiation.status === 'accepted') && !isNegotiationClosed && (
               <div className="flex gap-2">
                 <Input
                   placeholder="Type a message..."
@@ -917,22 +922,20 @@ export default function Negotiation() {
                   }}
                   className="flex-1"
                 />
-                <Button
-                  onClick={() => {
-                    console.log('🎯 [BUTTON] Counter Offer button clicked');
-                    setShowCounterModal(true);
-                  }}
-                  variant="outline"
-                  className="px-4"
-                >
-                  <Clock className="w-5 h-5 mr-2" />
-                  Counter Offer
-                </Button>
+                {negotiation.status === 'active' && (
+                  <Button
+                    onClick={() => {
+                      setShowCounterModal(true);
+                    }}
+                    variant="outline"
+                    className="px-4"
+                  >
+                    <Clock className="w-5 h-5 mr-2" />
+                    Counter Offer
+                  </Button>
+                )}
                 <Button 
-                  onClick={() => {
-                    console.log('📤 [BUTTON] Send button clicked');
-                    handleSendMessage();
-                  }}
+                  onClick={handleSendMessage}
                   disabled={!message.trim() || sendMessageMutation.isLoading}
                   className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"
                 >
@@ -953,7 +956,24 @@ export default function Negotiation() {
               <Alert className="bg-green-100 border-green-300">
                 <CheckCircle2 className="w-4 h-4 text-green-600" />
                 <AlertDescription className="text-green-900">
-                  Agreement confirmed! Redirecting to time tracking...
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                    <span className="font-semibold">🎉 Agreement confirmed!</span>
+                    <Button
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700 shrink-0"
+                      onClick={async () => {
+                        const agreements = await base44.entities.Agreement.filter({
+                          item_id: negotiation.item_id,
+                          status: { $in: ['locked', 'in_progress'] }
+                        });
+                        if (agreements[0]) {
+                          navigate(createPageUrl(`TimeTracking?agreementId=${agreements[0].id}`));
+                        }
+                      }}
+                    >
+                      Go to Work Progress →
+                    </Button>
+                  </div>
                 </AlertDescription>
               </Alert>
             )}

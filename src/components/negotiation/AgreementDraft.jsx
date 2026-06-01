@@ -130,7 +130,13 @@ export default function AgreementDraft({
                 <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
                 <div>
                   <p className="text-sm font-semibold text-gray-700">Location</p>
-                  <p className="text-gray-900">{negotiation.location || "Not specified"}</p>
+                  {negotiation.location ? (
+                    <p className="text-gray-900">{negotiation.location}</p>
+                  ) : (
+                    <p className="text-gray-500 text-sm italic">
+                      📍 The item owner will share the exact location once the worker is ready to begin.
+                    </p>
+                  )}
                 </div>
               </div>
 
