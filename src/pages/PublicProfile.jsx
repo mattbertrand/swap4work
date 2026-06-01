@@ -139,6 +139,16 @@ export default function PublicProfile() {
     enabled: !!(resolvedUserId || workerId)
   });
 
+  const { data: karmaTransactions = [] } = useQuery({
+    queryKey: ['karmaTransactions', resolvedUserId],
+    queryFn: () => base44.entities.KarmaTransaction.filter({ user_id: resolvedUserId }),
+    enabled: !!resolvedUserId
+  });
+
+  const karmaPoints = React.useMemo(() => {
+    return karmaTransactions.reduce((sum, t) => sum + (t.type === 'gain' ? t.points : -Math.abs(t.points)), 0);
+  }, [karmaTransactions]);
+
   const { data: activeNegotiations = [] } = useQuery({
     queryKey: ['workerActiveNegotiations', resolvedUserId],
     queryFn: () => base44.entities.Negotiation.filter({ 
@@ -347,15 +357,19 @@ export default function PublicProfile() {
                   </div>
                 )}
 
-                <KarmaDisplay user={workerEntity || userProfile} showDetails={false} />
+                <KarmaDisplay karma={karmaPoints} showDetails={false} />
 
                 <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-gray-100">
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-orange-600">{workerEntity?.hours_completed ?? userProfile.hours_completed ?? 0}</p>
+                    <p className="text-2xl font-bold text-orange-600">
+                      {workerEntity ? (workerEntity.hours_completed || 0) : (userProfile.hours_completed || 0)}
+                    </p>
                     <p className="text-xs text-gray-500 uppercase tracking-wide">Hours Done</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-blue-600">{workerEntity?.completed_trades ?? userProfile.completed_trades ?? 0}</p>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {workerEntity ? (workerEntity.completed_trades || 0) : (userProfile.completed_trades || 0)}
+                    </p>
                     <p className="text-xs text-gray-500 uppercase tracking-wide">Trades</p>
                   </div>
                 </div>
@@ -409,7 +423,6 @@ export default function PublicProfile() {
                     {(workerEntity?.skills || userProfile.skills) ? (
                       (workerEntity?.skills || userProfile.skills)
                         .split(';;')
-                        .flatMap(s => s.split(','))
                         .map(s => s.trim())
                         .filter(Boolean)
                         .map((skill, i) => (
