@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Star, MapPin, CheckCircle2, Clock, Package, Briefcase, MessageSquare } from "lucide-react";
+import { ArrowLeft, Star, MapPin, CheckCircle2, Clock, Package, Briefcase, MessageSquare, Filter } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -161,6 +161,25 @@ export default function PublicProfile() {
   const [selectedItemId, setSelectedItemId] = useState("");
   const [serviceNote, setServiceNote] = useState("");
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [reviewSort, setReviewSort] = useState("newest");
+  const [reviewFilter, setReviewFilter] = useState("all");
+
+  const filteredAndSortedRatings = React.useMemo(() => {
+    let result = [...ratings];
+    if (reviewFilter !== "all") {
+      result = result.filter(r => r.stars === parseInt(reviewFilter));
+    }
+    if (reviewSort === "newest") result.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+    else if (reviewSort === "oldest") result.sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
+    else if (reviewSort === "highest") result.sort((a, b) => b.stars - a.stars);
+    else if (reviewSort === "lowest") result.sort((a, b) => a.stars - b.stars);
+    return result;
+  }, [ratings, reviewSort, reviewFilter]);
+
+  const avgRating = React.useMemo(() => {
+    if (!ratings.length) return 0;
+    return (ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length).toFixed(1);
+  }, [ratings]);
 
   const createNegotiationMutation = useMutation({
     mutationFn: async () => {
@@ -299,7 +318,11 @@ export default function PublicProfile() {
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">{userProfile.full_name}</h1>
                 <div className="flex justify-center items-center gap-1 text-gray-500 mb-4 text-sm">
                   <MapPin className="w-3 h-3" />
-                  {userProfile.location}
+                  {(() => {
+                    const parts = (userProfile.location || "").split(',').map(p => p.trim());
+                    if (parts.length >= 2) return parts.slice(-2).join(', ');
+                    return userProfile.location;
+                  })()}
                 </div>
 
                 <div className="flex justify-center gap-2 mb-6">
@@ -311,15 +334,28 @@ export default function PublicProfile() {
                   )}
                 </div>
 
-                <KarmaDisplay user={userProfile} showDetails={false} />
+                {/* Star rating summary */}
+                {ratings.length > 0 && (
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                    <div className="flex">
+                      {[1,2,3,4,5].map(star => (
+                        <Star key={star} className={`w-5 h-5 ${star <= Math.round(avgRating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
+                      ))}
+                    </div>
+                    <span className="font-semibold text-gray-800">{avgRating}</span>
+                    <span className="text-sm text-gray-500">({ratings.length} {ratings.length === 1 ? 'review' : 'reviews'})</span>
+                  </div>
+                )}
+
+                <KarmaDisplay user={workerEntity || userProfile} showDetails={false} />
 
                 <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-gray-100">
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-orange-600">{userProfile.hours_completed || 0}</p>
+                    <p className="text-2xl font-bold text-orange-600">{workerEntity?.hours_completed ?? userProfile.hours_completed ?? 0}</p>
                     <p className="text-xs text-gray-500 uppercase tracking-wide">Hours Done</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-blue-600">{userProfile.completed_trades || 0}</p>
+                    <p className="text-2xl font-bold text-blue-600">{workerEntity?.completed_trades ?? userProfile.completed_trades ?? 0}</p>
                     <p className="text-xs text-gray-500 uppercase tracking-wide">Trades</p>
                   </div>
                 </div>
@@ -370,12 +406,17 @@ export default function PublicProfile() {
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-2">Skills & Interests</h3>
                   <div className="flex flex-wrap gap-2">
-                    {userProfile.skills ? (
-                      userProfile.skills.split(';;').map((skill, i) => (
-                        <Badge key={i} variant="secondary" className="px-3 py-1 bg-gray-100 text-gray-700">
-                          {skill.trim()}
-                        </Badge>
-                      ))
+                    {(workerEntity?.skills || userProfile.skills) ? (
+                      (workerEntity?.skills || userProfile.skills)
+                        .split(';;')
+                        .flatMap(s => s.split(','))
+                        .map(s => s.trim())
+                        .filter(Boolean)
+                        .map((skill, i) => (
+                          <Badge key={i} variant="secondary" className="px-3 py-1 bg-gray-100 text-gray-700">
+                            {skill}
+                          </Badge>
+                        ))
                     ) : (
                       <span className="text-gray-500 italic">No skills listed</span>
                     )}
@@ -412,10 +453,43 @@ export default function PublicProfile() {
 
             {/* Reviews */}
             <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Reviews</h2>
-              {ratings.length > 0 ? (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <h2 className="text-xl font-bold text-gray-900">
+                  Reviews {ratings.length > 0 && <span className="text-gray-500 font-normal text-base">({ratings.length})</span>}
+                </h2>
+                {ratings.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <Select value={reviewFilter} onValueChange={setReviewFilter}>
+                      <SelectTrigger className="w-32 h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Stars</SelectItem>
+                        <SelectItem value="5">⭐⭐⭐⭐⭐ 5</SelectItem>
+                        <SelectItem value="4">⭐⭐⭐⭐ 4</SelectItem>
+                        <SelectItem value="3">⭐⭐⭐ 3</SelectItem>
+                        <SelectItem value="2">⭐⭐ 2</SelectItem>
+                        <SelectItem value="1">⭐ 1</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={reviewSort} onValueChange={setReviewSort}>
+                      <SelectTrigger className="w-32 h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="newest">Newest</SelectItem>
+                        <SelectItem value="oldest">Oldest</SelectItem>
+                        <SelectItem value="highest">Highest ★</SelectItem>
+                        <SelectItem value="lowest">Lowest ★</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+              {filteredAndSortedRatings.length > 0 ? (
                 <div className="space-y-4">
-                  {ratings.map(rating => (
+                  {filteredAndSortedRatings.map(rating => (
                     <Card key={rating.id} className="border-gray-100">
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between mb-2">
@@ -442,7 +516,7 @@ export default function PublicProfile() {
               ) : (
                 <Card className="bg-gray-50 border-dashed border-2 border-gray-200">
                   <CardContent className="p-8 text-center text-gray-500">
-                    No reviews yet
+                    {ratings.length > 0 ? "No reviews match this filter" : "No reviews yet"}
                   </CardContent>
                 </Card>
               )}
