@@ -1,38 +1,72 @@
 import React, { useState } from "react";
-import { UserPlus, X } from "lucide-react";
+import { UserPlus, X, Zap, Star, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import AuthModal from "./AuthModal";
+import { base44 } from "@/api/base44Client";
 
 export default function GuestBanner() {
   const [dismissed, setDismissed] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
 
   if (dismissed) return null;
 
   return (
-    <>
-      <div className="bg-gradient-to-r from-orange-500 to-amber-600 text-white px-4 py-2.5 flex items-center justify-between gap-4">
-        <p className="text-sm font-medium">
-          You're browsing as a guest — create an account to start exchanging.
-        </p>
-        <div className="flex items-center gap-2 flex-shrink-0">
+    <div className="relative bg-gradient-to-r from-orange-600 via-amber-500 to-orange-500 text-white shadow-lg">
+      {/* Dismiss button */}
+      <button
+        onClick={() => setDismissed(true)}
+        className="absolute top-3 right-3 text-white/70 hover:text-white transition-colors z-10"
+        aria-label="Dismiss"
+      >
+        <X className="w-5 h-5" />
+      </button>
+
+      <div className="max-w-5xl mx-auto px-6 py-6 flex flex-col md:flex-row items-center gap-6">
+        {/* Left: headline + perks */}
+        <div className="flex-1 text-center md:text-left">
+          <div className="inline-block bg-white/20 text-white text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-3">
+            🎉 100% Free — No credit card needed
+          </div>
+          <h2 className="text-2xl md:text-3xl font-extrabold leading-tight mb-2">
+            Join Swap4Work and trade skills for items
+          </h2>
+          <p className="text-orange-100 text-sm md:text-base max-w-xl">
+            Sign up in seconds to list items, find work, negotiate deals, and connect with your local community — all without spending a dime.
+          </p>
+
+          {/* Perks row */}
+          <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-4 text-sm font-medium">
+            <div className="flex items-center gap-1.5">
+              <Zap className="w-4 h-4 text-yellow-300" />
+              <span>Instant access to listings</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Star className="w-4 h-4 text-yellow-300" />
+              <span>Build your reputation</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-yellow-300" />
+              <span>Safe & verified community</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: CTA */}
+        <div className="flex flex-col items-center gap-3 flex-shrink-0">
           <Button
-            size="sm"
-            onClick={() => setModalOpen(true)}
-            className="bg-white text-orange-600 hover:bg-orange-50 h-7 text-xs font-semibold"
+            size="lg"
+            onClick={() => base44.auth.redirectToLogin()}
+            className="bg-white text-orange-600 hover:bg-orange-50 font-bold text-base px-8 py-6 h-auto shadow-xl rounded-xl"
           >
-            <UserPlus className="w-3 h-3 mr-1" />
-            Sign Up
+            <UserPlus className="w-5 h-5 mr-2" />
+            Create Free Account
           </Button>
           <button
-            onClick={() => setDismissed(true)}
-            className="text-white/80 hover:text-white"
+            onClick={() => base44.auth.redirectToLogin()}
+            className="text-orange-100 hover:text-white text-sm underline underline-offset-2 transition-colors"
           >
-            <X className="w-4 h-4" />
+            Already have an account? Sign in
           </button>
         </div>
       </div>
-      <AuthModal open={modalOpen} onClose={() => setModalOpen(false)} />
-    </>
+    </div>
   );
 }
