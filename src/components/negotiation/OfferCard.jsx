@@ -1,11 +1,24 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Clock, CheckCircle2, XCircle, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function OfferCard({ offer, isOwnOffer, onAccept, onCounter, onDecline, canRespond }) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
   return (
     <Card className={`border-2 ${isOwnOffer ? 'border-blue-200 bg-blue-50' : 'border-orange-200 bg-orange-50'}`}>
       <CardContent className="p-4">
@@ -60,14 +73,38 @@ export default function OfferCard({ offer, isOwnOffer, onAccept, onCounter, onDe
               <MessageSquare className="w-4 h-4 mr-2" />
               Counter
             </Button>
-            <Button
-              onClick={onDecline}
-              variant="outline"
-              className="text-red-600 hover:text-red-700"
-              size="sm"
-            >
-              <XCircle className="w-4 h-4" />
-            </Button>
+            <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="text-red-600 hover:text-red-700"
+                  size="sm"
+                >
+                  <XCircle className="w-4 h-4 mr-2" />
+                  Decline
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Decline this negotiation?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to decline this offer? This will end the negotiation and the other party will be notified.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      setConfirmOpen(false);
+                      onDecline();
+                    }}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Yes, Decline
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         )}
 

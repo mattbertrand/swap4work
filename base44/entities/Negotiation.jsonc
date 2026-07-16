@@ -62,7 +62,8 @@
         "accepted",
         "declined",
         "expired",
-        "converted"
+        "converted",
+        "closed"
       ],
       "default": "active",
       "description": "Negotiation status"
@@ -87,6 +88,10 @@
           },
           "work_type": {
             "type": "string"
+          },
+          "message": {
+            "type": "string",
+            "description": "Optional message accompanying the offer"
           },
           "timestamp": {
             "type": "string",
