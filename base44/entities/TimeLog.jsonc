@@ -1,0 +1,47 @@
+{
+  "name": "TimeLog",
+  "type": "object",
+  "properties": {
+    "agreement_id": {
+      "type": "string",
+      "description": "Reference to Agreement"
+    },
+    "worker_id": {
+      "type": "string",
+      "description": "User ID of worker logging time"
+    },
+    "hours": {
+      "type": "number",
+      "description": "Hours worked in this entry"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of work"
+    },
+    "description": {
+      "type": "string",
+      "description": "What was accomplished"
+    },
+    "milestone_id": {
+      "type": "string",
+      "description": "Associated milestone (optional)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "disputed"
+      ],
+      "default": "pending",
+      "description": "Verification status"
+    }
+  },
+  "required": [
+    "agreement_id",
+    "worker_id",
+    "hours",
+    "date"
+  ]
+}

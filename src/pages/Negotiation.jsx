@@ -238,6 +238,7 @@ export default function Negotiation() {
         offered_by_name: user.full_name,
         hours: offerData.hours,
         work_type: offerData.work_type || "",
+        message: offerData.message || "",
         timestamp: new Date().toISOString()
       }
     ];

@@ -1,0 +1,61 @@
+{
+  "name": "Message",
+  "type": "object",
+  "properties": {
+    "negotiation_id": {
+      "type": "string",
+      "description": "Reference to Negotiation"
+    },
+    "agreement_id": {
+      "type": "string",
+      "description": "Reference to Agreement (for post-agreement messages)"
+    },
+    "item_id": {
+      "type": "string",
+      "description": "Reference to Item (for pre-agreement messages)"
+    },
+    "from_user_id": {
+      "type": "string",
+      "description": "Sender user ID"
+    },
+    "from_user_name": {
+      "type": "string",
+      "description": "Sender name"
+    },
+    "to_user_id": {
+      "type": "string",
+      "description": "Recipient user ID"
+    },
+    "text": {
+      "type": "string",
+      "description": "Message content"
+    },
+    "attachments": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Photo/video URLs"
+    },
+    "message_type": {
+      "type": "string",
+      "enum": [
+        "text",
+        "proposal",
+        "inspection_request",
+        "system",
+        "offer"
+      ],
+      "default": "text",
+      "description": "Type of message"
+    },
+    "proposal_hours": {
+      "type": "number",
+      "description": "Proposed hours (if type is proposal)"
+    }
+  },
+  "required": [
+    "from_user_id",
+    "text"
+  ]
+}

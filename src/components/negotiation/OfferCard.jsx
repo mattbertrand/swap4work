@@ -34,6 +34,11 @@ export default function OfferCard({ offer, isOwnOffer, onAccept, onCounter, onDe
               <strong>Work Type:</strong> {offer.work_type}
             </p>
           )}
+          {offer.message && (
+            <p className="text-sm text-gray-600 mt-2 whitespace-pre-wrap">
+              {offer.message}
+            </p>
+          )}
         </div>
 
         {!isOwnOffer && canRespond && (

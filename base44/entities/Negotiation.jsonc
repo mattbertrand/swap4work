@@ -1,0 +1,117 @@
+{
+  "name": "Negotiation",
+  "type": "object",
+  "properties": {
+    "item_id": {
+      "type": "string",
+      "description": "Reference to Item"
+    },
+    "item_title": {
+      "type": "string",
+      "description": "Item title (denormalized)"
+    },
+    "offerer_id": {
+      "type": "string",
+      "description": "Item owner user ID"
+    },
+    "offerer_name": {
+      "type": "string",
+      "description": "Item owner name"
+    },
+    "bidder_id": {
+      "type": "string",
+      "description": "Person interested in the item"
+    },
+    "bidder_name": {
+      "type": "string",
+      "description": "Bidder name"
+    },
+    "initial_offer_hours": {
+      "type": "number",
+      "description": "Initial hours offered by bidder"
+    },
+    "counter_offer_hours": {
+      "type": "number",
+      "description": "Counter-offer hours"
+    },
+    "agreed_hours": {
+      "type": "number",
+      "description": "Final agreed hours"
+    },
+    "work_type": {
+      "type": "string",
+      "description": "Type of work being offered"
+    },
+    "location": {
+      "type": "string",
+      "description": "Where work will be performed"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "When work should be completed"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes or requirements"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "accepted",
+        "declined",
+        "expired",
+        "converted"
+      ],
+      "default": "active",
+      "description": "Negotiation status"
+    },
+    "current_offer_by": {
+      "type": "string",
+      "description": "User ID who made the current offer"
+    },
+    "offer_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "offered_by": {
+            "type": "string"
+          },
+          "offered_by_name": {
+            "type": "string"
+          },
+          "hours": {
+            "type": "number"
+          },
+          "work_type": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "default": [],
+      "description": "History of all offers made"
+    },
+    "last_activity": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last message or offer timestamp"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Auto-expire if inactive (48h from last activity)"
+    }
+  },
+  "required": [
+    "item_id",
+    "offerer_id",
+    "bidder_id",
+    "initial_offer_hours"
+  ]
+}

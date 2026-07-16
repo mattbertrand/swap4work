@@ -1,0 +1,47 @@
+{
+  "name": "Rating",
+  "type": "object",
+  "properties": {
+    "agreement_id": {
+      "type": "string",
+      "description": "Reference to Agreement"
+    },
+    "from_user_id": {
+      "type": "string",
+      "description": "User giving the rating"
+    },
+    "to_user_id": {
+      "type": "string",
+      "description": "User being rated"
+    },
+    "from_user_name": {
+      "type": "string",
+      "description": "Name of rater"
+    },
+    "to_user_name": {
+      "type": "string",
+      "description": "Name of rated user"
+    },
+    "stars": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Star rating (1-5)"
+    },
+    "review": {
+      "type": "string",
+      "description": "Written review"
+    },
+    "published": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether review is publicly visible"
+    }
+  },
+  "required": [
+    "agreement_id",
+    "from_user_id",
+    "to_user_id",
+    "stars"
+  ]
+}

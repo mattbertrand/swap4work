@@ -1,0 +1,138 @@
+{
+  "name": "Item",
+  "type": "object",
+  "properties": {
+    "listing_type": {
+      "type": "string",
+      "enum": [
+        "item",
+        "service"
+      ],
+      "default": "item",
+      "description": "Whether this is a physical item or a service offering"
+    },
+    "accepts": {
+      "type": "string",
+      "enum": [
+        "item",
+        "service",
+        "both"
+      ],
+      "default": "item",
+      "description": "What the offerer accepts in exchange (items, services, or both)"
+    },
+    "title": {
+      "type": "string",
+      "description": "Item or service title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Electronics",
+        "Home Goods",
+        "Furniture",
+        "Appliances",
+        "Tools",
+        "Sports Equipment",
+        "Other",
+        "Home Repairs",
+        "Cleaning",
+        "Yard Work",
+        "Digital Services",
+        "Tutoring",
+        "Personal Assistance",
+        "Creative Services"
+      ],
+      "default": "Other",
+      "description": "Item or service category"
+    },
+    "photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of photo URLs (required for items, optional for services)"
+    },
+    "condition": {
+      "type": "string",
+      "enum": [
+        "New",
+        "Like New",
+        "Good",
+        "Fair",
+        "Poor"
+      ],
+      "description": "Item condition rating (only for items)"
+    },
+    "required_hours": {
+      "type": "number",
+      "description": "Number of work hours required (for items) or offered (for services)"
+    },
+    "offerer_id": {
+      "type": "string",
+      "description": "User ID of the offerer"
+    },
+    "offerer_name": {
+      "type": "string",
+      "description": "Name of the offerer (denormalized)"
+    },
+    "location": {
+      "type": "string",
+      "description": "Location"
+    },
+    "latitude": {
+      "type": "number",
+      "description": "Location latitude for distance calculations"
+    },
+    "longitude": {
+      "type": "number",
+      "description": "Location longitude for distance calculations"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "in_negotiation",
+        "locked",
+        "completed",
+        "cancelled"
+      ],
+      "default": "active",
+      "description": "Current listing status"
+    },
+    "is_reserved": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether reserved for an ongoing agreement"
+    },
+    "reserved_for_agreement_id": {
+      "type": "string",
+      "description": "Agreement ID that reserved this"
+    },
+    "suggested_tasks": {
+      "type": "string",
+      "description": "Suggested tasks (for items) or service details (for services)"
+    },
+    "offerer_terms": {
+      "type": "string",
+      "description": "Non-negotiable terms from offerer"
+    },
+    "estimated_value": {
+      "type": "number",
+      "description": "Estimated dollar value"
+    }
+  },
+  "required": [
+    "title",
+    "description",
+    "category",
+    "required_hours",
+    "offerer_id",
+    "listing_type",
+    "accepts"
+  ]
+}

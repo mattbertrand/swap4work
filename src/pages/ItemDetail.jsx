@@ -287,6 +287,7 @@ export default function ItemDetail() {
           offered_by_name: user.full_name,
           hours,
           work_type: work_type || "",
+          message: message || "",
           timestamp: new Date().toISOString()
         }],
         last_activity: new Date().toISOString(),

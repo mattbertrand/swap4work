@@ -1,0 +1,57 @@
+{
+  "name": "KarmaTransaction",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "User ID receiving karma change"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "User name (denormalized)"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "gain",
+        "loss"
+      ],
+      "description": "Type of transaction"
+    },
+    "reason": {
+      "type": "string",
+      "enum": [
+        "agreement_completed",
+        "partial_milestone_credit",
+        "mid_agreement_cancellation",
+        "dispute_violation",
+        "admin_adjustment",
+        "positive_review",
+        "negative_review"
+      ],
+      "description": "Reason for karma change"
+    },
+    "points": {
+      "type": "integer",
+      "description": "Number of karma points (positive or negative)"
+    },
+    "agreement_id": {
+      "type": "string",
+      "description": "Related agreement ID if applicable"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the transaction"
+    },
+    "admin_id": {
+      "type": "string",
+      "description": "Admin ID if manual adjustment"
+    }
+  },
+  "required": [
+    "user_id",
+    "type",
+    "reason",
+    "points"
+  ]
+}

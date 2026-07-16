@@ -1,0 +1,101 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "phone": {
+      "type": "string",
+      "description": "Phone number for verification"
+    },
+    "location": {
+      "type": "string",
+      "description": "City/zip code for local matching"
+    },
+    "latitude": {
+      "type": "number",
+      "description": "Location latitude for distance calculations"
+    },
+    "longitude": {
+      "type": "number",
+      "description": "Location longitude for distance calculations"
+    },
+    "bio": {
+      "type": "string",
+      "description": "Short bio about the user"
+    },
+    "skills": {
+      "type": "string",
+      "description": "Skills and interests (comma separated)"
+    },
+    "photo_url": {
+      "type": "string",
+      "description": "Profile photo URL"
+    },
+    "id_verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether user has verified their ID"
+    },
+    "phone_verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether user has verified their phone"
+    },
+    "rating": {
+      "type": "number",
+      "default": 0,
+      "description": "Average rating (0-5)"
+    },
+    "total_ratings": {
+      "type": "integer",
+      "default": 0,
+      "description": "Total number of ratings received"
+    },
+    "hours_completed": {
+      "type": "number",
+      "default": 0,
+      "description": "Total hours worked/received in completed agreements"
+    },
+    "completed_trades": {
+      "type": "integer",
+      "default": 0,
+      "description": "Total number of completed agreements"
+    },
+    "user_role": {
+      "type": "string",
+      "enum": [
+        "worker",
+        "offerer",
+        "both",
+        "admin"
+      ],
+      "default": "both",
+      "description": "Primary role in the platform"
+    },
+    "profile_completed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether user has completed their profile setup"
+    },
+    "karma_points": {
+      "type": "integer",
+      "default": 0,
+      "description": "Trust and reliability score"
+    },
+    "is_suspended": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether user is temporarily suspended"
+    },
+    "suspension_end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when suspension ends"
+    },
+    "cancellation_count": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of mid-agreement cancellations"
+    }
+  },
+  "required": []
+}

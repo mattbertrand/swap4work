@@ -1,0 +1,100 @@
+{
+  "name": "Dispute",
+  "type": "object",
+  "properties": {
+    "agreement_id": {
+      "type": "string",
+      "description": "Reference to Agreement"
+    },
+    "opened_by": {
+      "type": "string",
+      "description": "User ID who opened dispute"
+    },
+    "opened_by_name": {
+      "type": "string",
+      "description": "Name of user who opened dispute"
+    },
+    "reason": {
+      "type": "string",
+      "enum": [
+        "work_quality",
+        "hours_dispute",
+        "item_condition",
+        "no_show",
+        "owner_withdrew_item",
+        "worker_stopped_working",
+        "item_condition_changed",
+        "cancelled_without_consent",
+        "other"
+      ],
+      "description": "Reason for dispute"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the issue"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Photo/document evidence URLs"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "under_review",
+        "resolved",
+        "closed"
+      ],
+      "default": "open",
+      "description": "Dispute status"
+    },
+    "resolution": {
+      "type": "string",
+      "description": "Admin resolution notes"
+    },
+    "resolved_by": {
+      "type": "string",
+      "description": "Admin user ID who resolved"
+    },
+    "resolved_by_name": {
+      "type": "string",
+      "description": "Admin name who resolved"
+    },
+    "resolved_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date resolved"
+    },
+    "partial_credit_awarded": {
+      "type": "number",
+      "description": "Percentage of credit awarded to worker (0-100)"
+    },
+    "karma_adjustments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string"
+          },
+          "points": {
+            "type": "integer"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Karma point adjustments made during resolution"
+    }
+  },
+  "required": [
+    "agreement_id",
+    "opened_by",
+    "reason",
+    "description"
+  ]
+}

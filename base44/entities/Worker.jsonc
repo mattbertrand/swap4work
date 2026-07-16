@@ -1,0 +1,85 @@
+{
+  "name": "Worker",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID of the user this profile belongs to"
+    },
+    "full_name": {
+      "type": "string",
+      "description": "Full name of the worker"
+    },
+    "bio": {
+      "type": "string",
+      "description": "Short biography"
+    },
+    "skills": {
+      "type": "string",
+      "description": "Comma-separated list of skills"
+    },
+    "location": {
+      "type": "string",
+      "description": "City, State"
+    },
+    "latitude": {
+      "type": "number",
+      "description": "Latitude for distance calculation"
+    },
+    "longitude": {
+      "type": "number",
+      "description": "Longitude for distance calculation"
+    },
+    "photo_url": {
+      "type": "string",
+      "description": "URL to profile photo"
+    },
+    "email": {
+      "type": "string",
+      "description": "Contact email"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Contact phone"
+    },
+    "availability": {
+      "type": "string",
+      "description": "When the worker is available (e.g. Weekends, Mon-Fri)"
+    },
+    "is_visible": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the worker profile is visible in search"
+    },
+    "max_concurrent_offers": {
+      "type": "integer",
+      "default": 10,
+      "description": "Maximum number of active offers/negotiations allowed at once"
+    },
+    "rating": {
+      "type": "number",
+      "default": 0,
+      "description": "Average rating"
+    },
+    "total_ratings": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of ratings"
+    },
+    "completed_trades": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of completed trades"
+    },
+    "hours_completed": {
+      "type": "number",
+      "default": 0,
+      "description": "Total hours of work completed"
+    }
+  },
+  "required": [
+    "user_id",
+    "full_name",
+    "location"
+  ]
+}

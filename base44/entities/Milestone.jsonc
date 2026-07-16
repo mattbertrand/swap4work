@@ -1,0 +1,63 @@
+{
+  "name": "Milestone",
+  "type": "object",
+  "properties": {
+    "agreement_id": {
+      "type": "string",
+      "description": "Reference to Agreement"
+    },
+    "title": {
+      "type": "string",
+      "description": "Milestone title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description"
+    },
+    "hours": {
+      "type": "number",
+      "description": "Hours allocated for this milestone"
+    },
+    "order": {
+      "type": "integer",
+      "description": "Order in the sequence (1-5)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "in_progress",
+        "submitted",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending",
+      "description": "Milestone status"
+    },
+    "completed_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date completed by worker"
+    },
+    "approved_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date approved by offerer"
+    },
+    "is_approved": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether milestone has been approved"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes or feedback"
+    }
+  },
+  "required": [
+    "agreement_id",
+    "title",
+    "hours",
+    "order"
+  ]
+}

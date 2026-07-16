@@ -1,0 +1,73 @@
+{
+  "name": "Notification",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "User ID who receives this notification"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "new_negotiation",
+        "new_message",
+        "new_offer",
+        "counter_offer",
+        "offer_accepted",
+        "offer_declined",
+        "agreement_created",
+        "agreement_confirmed",
+        "work_completed",
+        "rating_received",
+        "negotiation_closed",
+        "item_available"
+      ],
+      "description": "Type of notification"
+    },
+    "title": {
+      "type": "string",
+      "description": "Notification title"
+    },
+    "message": {
+      "type": "string",
+      "description": "Notification message"
+    },
+    "related_id": {
+      "type": "string",
+      "description": "ID of related entity (negotiation, agreement, etc.)"
+    },
+    "related_type": {
+      "type": "string",
+      "enum": [
+        "negotiation",
+        "agreement",
+        "item",
+        "message"
+      ],
+      "description": "Type of related entity"
+    },
+    "link_url": {
+      "type": "string",
+      "description": "URL to navigate when notification is clicked"
+    },
+    "is_read": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether notification has been read"
+    },
+    "from_user_id": {
+      "type": "string",
+      "description": "User ID who triggered the notification"
+    },
+    "from_user_name": {
+      "type": "string",
+      "description": "Name of user who triggered the notification"
+    }
+  },
+  "required": [
+    "user_id",
+    "type",
+    "title",
+    "message"
+  ]
+}

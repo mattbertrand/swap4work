@@ -1,0 +1,42 @@
+{
+  "name": "ItemWaitlist",
+  "type": "object",
+  "properties": {
+    "item_id": {
+      "type": "string",
+      "description": "Reference to Item"
+    },
+    "item_title": {
+      "type": "string",
+      "description": "Item title (denormalized)"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "User who wants to be notified"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "User name (denormalized)"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "User email for notifications"
+    },
+    "notified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether user has been notified"
+    },
+    "notified_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When user was notified"
+    }
+  },
+  "required": [
+    "item_id",
+    "item_title",
+    "user_id",
+    "user_name"
+  ]
+}
