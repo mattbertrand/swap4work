@@ -837,41 +837,24 @@ export default function Negotiation() {
                   }
 
                   if (isOfferMessage) {
-                    console.log(`🎁 [MSG ${idx}] Detected OFFER message`);
-                    console.log(`   proposal_hours from message:`, msg.proposal_hours);
-                    console.log(`   offer_history:`, negotiation.offer_history);
-                    
-                    // Match by proposal_hours instead of timestamp
-                    const offer = negotiation.offer_history?.find(
-                      o => {
-                        const matchesUser = o.offered_by === msg.from_user_id;
-                        const matchesHours = o.hours === msg.proposal_hours;
-                        
-                        console.log(`  🔎 Checking offer:`, {
-                          offered_by: o.offered_by,
-                          msg_from: msg.from_user_id,
-                          matchesUser,
-                          offer_hours: o.hours,
-                          msg_hours: msg.proposal_hours,
-                          matchesHours
-                        });
-                        
-                        return matchesUser && matchesHours;
-                      }
+                    // Find the LAST matching offer (most recent) in case of duplicate hours
+                    const matchingOffers = (negotiation.offer_history || []).filter(
+                      o => o.offered_by === msg.from_user_id && o.hours === msg.proposal_hours
                     );
+                    const offer = matchingOffers[matchingOffers.length - 1];
+
+                    // Fallback: extract message from msg.text if not stored in offer_history
+                    const offerMessage = offer?.message || (() => {
+                      const parts = msg.text?.split('\n\n');
+                      return parts && parts.length > 1 ? parts.slice(1).join('\n\n') : null;
+                    })();
+                    const offerWithMessage = { ...offer, message: offerMessage };
 
                     if (offer) {
-                      console.log(`✅ [MSG ${idx}] Found matching offer, rendering OfferCard:`, {
-                        offeredBy: offer.offered_by_name,
-                        hours: offer.hours,
-                        isOwnOffer: isOwnMessage,
-                        canRespond: !isOwnMessage && negotiation.status === 'active'
-                      });
-
                       return (
                         <OfferCard
                           key={msg.id}
-                          offer={offer}
+                          offer={offerWithMessage}
                           isOwnOffer={isOwnMessage}
                           onAccept={handleAcceptOffer}
                           onCounter={() => {
