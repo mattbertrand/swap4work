@@ -16,6 +16,7 @@ import Notifications from './pages/Notifications';
 import Profile from './pages/Profile';
 import PublicProfile from './pages/PublicProfile';
 import TimeTracking from './pages/TimeTracking';
+import TradeDashboard from './pages/TradeDashboard';
 import BrowseServices from './pages/BrowseServices';
 import __Layout from './Layout.jsx';
 
@@ -39,6 +40,7 @@ export const PAGES = {
     "Profile": Profile,
     "PublicProfile": PublicProfile,
     "TimeTracking": TimeTracking,
+    "TradeDashboard": TradeDashboard,
     "BrowseServices": BrowseServices,
 }
 

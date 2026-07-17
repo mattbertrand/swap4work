@@ -34,6 +34,11 @@
       "default": "pending",
       "description": "Milestone status"
     },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Deadline for this milestone"
+    },
     "completed_date": {
       "type": "string",
       "format": "date",

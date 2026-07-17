@@ -11,7 +11,8 @@ import {
   Plus,
   LogOut,
   Bell,
-  Users } from
+  Users,
+  LayoutDashboard } from
 "lucide-react";
 import {
   Sidebar,
@@ -103,6 +104,11 @@ export default function Layout({ children, currentPageName }) {
     title: "My Agreements",
     url: createPageUrl("MyAgreements"),
     icon: Briefcase
+  },
+  {
+    title: "Trade Dashboard",
+    url: createPageUrl("TradeDashboard"),
+    icon: LayoutDashboard
   },
   {
     title: "Notifications",
