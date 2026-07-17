@@ -125,7 +125,7 @@ export default function Negotiation() {
     }
   });
 
-  const isInitialMessagesLoad = useRef(true);
+  const messagesContainerRef = useRef(null);
 
   // Scroll to top on mount
   useEffect(() => {
@@ -133,12 +133,13 @@ export default function Negotiation() {
   }, []);
 
   useEffect(() => {
-    // Skip auto-scroll on the very first load so page doesn't jump to bottom
-    if (isInitialMessagesLoad.current) {
-      isInitialMessagesLoad.current = false;
-      return;
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    // Only auto-scroll if user is already near the bottom
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 120;
+    if (isNearBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   useEffect(() => {
@@ -797,7 +798,7 @@ export default function Negotiation() {
               </Alert>
             )}
 
-            <div className="h-96 overflow-y-auto space-y-4 mb-4 bg-gray-50 rounded-lg p-4">
+            <div ref={messagesContainerRef} className="h-96 overflow-y-auto space-y-4 mb-4 bg-gray-50 rounded-lg p-4">
               {messages.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">
                   <p>No messages yet. Start the conversation!</p>

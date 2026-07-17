@@ -108,6 +108,23 @@ export default function AgreementDetail() {
         });
       }
 
+      // Update both users' stats in the User entity (source of truth for profile views)
+      const hoursToAdd = updatedAgreement.hours_logged || updatedAgreement.agreed_hours;
+      const offererUsers = await base44.entities.User.filter({ id: agreement.offerer_id });
+      if (offererUsers[0]) {
+        await base44.entities.User.update(agreement.offerer_id, {
+          hours_completed: (offererUsers[0].hours_completed || 0) + hoursToAdd,
+          completed_trades: (offererUsers[0].completed_trades || 0) + 1
+        });
+      }
+      const workerUsers = await base44.entities.User.filter({ id: agreement.worker_id });
+      if (workerUsers[0]) {
+        await base44.entities.User.update(agreement.worker_id, {
+          hours_completed: (workerUsers[0].hours_completed || 0) + hoursToAdd,
+          completed_trades: (workerUsers[0].completed_trades || 0) + 1
+        });
+      }
+
       // Notify the other party
       const otherUserId = isOfferer ? agreement.worker_id : agreement.offerer_id;
       await base44.entities.Notification.create({

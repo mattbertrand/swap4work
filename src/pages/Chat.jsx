@@ -71,8 +71,16 @@ export default function Chat() {
     }
   });
 
+  const messagesContainerRef = useRef(null);
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    // Only auto-scroll if user is already near the bottom
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 120;
+    if (isNearBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
 
   const addToHistory = (action, message) => {
@@ -384,7 +392,7 @@ export default function Chat() {
             )}
 
             {/* Messages */}
-            <div className="h-96 overflow-y-auto p-6 space-y-4">
+            <div ref={messagesContainerRef} className="h-96 overflow-y-auto p-6 space-y-4">
               {messages.map((msg) => {
                 const isOwnMessage = msg.from_user_id === user.id;
                 
