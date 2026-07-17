@@ -148,7 +148,7 @@ export default function MyListings() {
                 <div className="flex items-center gap-1 text-gray-500">
                   <Calendar className="w-4 h-4" />
                   <span className="text-xs">
-                    {formatDistanceToNow(new Date(item.created_date), { addSuffix: true })}
+                    {formatDistanceToNow(new Date(item.created_date?.endsWith('Z') ? item.created_date : item.created_date + 'Z'), { addSuffix: true })}
                   </span>
                 </div>
               </div>

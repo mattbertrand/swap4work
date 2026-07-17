@@ -34,10 +34,12 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
 const getCityState = (location) => {
   if (!location) return "Location not specified";
   const parts = location.split(',').map(p => p.trim());
-  const lastRaw = parts[parts.length - 1].replace(/\d{5}(-\d{4})?/g, '').trim();
-  if (parts.length === 1) return lastRaw || location;
-  const city = parts[parts.length - 2];
-  return lastRaw ? `${city}, ${lastRaw}` : city;
+  const cleanParts = parts.map(p => p.replace(/\d{5}(-\d{4})?/g, '').trim()).filter(p => p.length > 0);
+  if (cleanParts.length === 0) return location;
+  if (cleanParts.length === 1) return cleanParts[0];
+  const state = cleanParts[cleanParts.length - 1];
+  const city = cleanParts[cleanParts.length - 2];
+  return `${city}, ${state}`;
 };
 
 export default function ItemDetail() {
@@ -507,7 +509,7 @@ export default function ItemDetail() {
                   {/* Time posted */}
                   <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
                     <Calendar className="w-4 h-4" />
-                    <span>Posted {formatDistanceToNow(new Date(item.created_date), { addSuffix: true })}</span>
+                    <span>Posted {formatDistanceToNow(new Date(item.created_date?.endsWith('Z') ? item.created_date : item.created_date + 'Z'), { addSuffix: true })}</span>
                   </div>
                 </div>
 

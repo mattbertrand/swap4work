@@ -10,12 +10,12 @@ import { formatDistanceToNow, parseISO } from "date-fns";
 const getCityState = (location) => {
   if (!location) return "Location not specified";
   const parts = location.split(',').map(p => p.trim());
-  // Last part: strip ZIP, get state abbr
-  const lastRaw = parts[parts.length - 1].replace(/\d{5}(-\d{4})?/g, '').trim();
-  if (parts.length === 1) return lastRaw || location;
-  // City is always second-to-last (handles "Street, City, State ZIP" and "City, State ZIP")
-  const city = parts[parts.length - 2];
-  return lastRaw ? `${city}, ${lastRaw}` : city;
+  const cleanParts = parts.map(p => p.replace(/\d{5}(-\d{4})?/g, '').trim()).filter(p => p.length > 0);
+  if (cleanParts.length === 0) return location;
+  if (cleanParts.length === 1) return cleanParts[0];
+  const state = cleanParts[cleanParts.length - 1];
+  const city = cleanParts[cleanParts.length - 2];
+  return `${city}, ${state}`;
 };
 
 export default function ItemCard({ item, showDistance, userAgreements = [] }) {
