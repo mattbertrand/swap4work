@@ -1,5 +1,6 @@
 import AdminDashboard from './pages/AdminDashboard';
 import AdminDisputes from './pages/AdminDisputes';
+import AdminReports from './pages/AdminReports';
 import AgreementDetail from './pages/AgreementDetail';
 import Browse from './pages/Browse';
 import BrowseUsers from './pages/BrowseUsers';
@@ -24,6 +25,7 @@ import __Layout from './Layout.jsx';
 export const PAGES = {
     "AdminDashboard": AdminDashboard,
     "AdminDisputes": AdminDisputes,
+    "AdminReports": AdminReports,
     "AgreementDetail": AgreementDetail,
     "Browse": Browse,
     "BrowseUsers": BrowseUsers,

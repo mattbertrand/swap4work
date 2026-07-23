@@ -1,0 +1,91 @@
+{
+  "name": "Report",
+  "type": "object",
+  "properties": {
+    "reporter_id": {
+      "type": "string",
+      "description": "User ID who filed the report"
+    },
+    "reporter_name": {
+      "type": "string",
+      "description": "Reporter name (denormalized)"
+    },
+    "target_type": {
+      "type": "string",
+      "enum": [
+        "user",
+        "item",
+        "negotiation",
+        "message"
+      ],
+      "description": "What is being reported"
+    },
+    "target_id": {
+      "type": "string",
+      "description": "ID of the reported entity"
+    },
+    "target_title": {
+      "type": "string",
+      "description": "Display name/title of the target (denormalized)"
+    },
+    "reported_user_id": {
+      "type": "string",
+      "description": "User ID of the reported user (for user-level actions)"
+    },
+    "reported_user_name": {
+      "type": "string",
+      "description": "Reported user name (denormalized)"
+    },
+    "reason": {
+      "type": "string",
+      "enum": [
+        "scam_fraud",
+        "fake_listing",
+        "harassment",
+        "inappropriate_content",
+        "spam",
+        "safety_concern",
+        "other"
+      ],
+      "description": "Reason for the report"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional detailed description"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "under_review",
+        "resolved",
+        "ignored"
+      ],
+      "default": "open",
+      "description": "Report status"
+    },
+    "resolution": {
+      "type": "string",
+      "description": "Admin resolution notes"
+    },
+    "resolved_by": {
+      "type": "string",
+      "description": "Admin user ID who resolved"
+    },
+    "resolved_by_name": {
+      "type": "string",
+      "description": "Admin name"
+    },
+    "resolved_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When resolved"
+    }
+  },
+  "required": [
+    "reporter_id",
+    "target_type",
+    "target_id",
+    "reason"
+  ]
+}

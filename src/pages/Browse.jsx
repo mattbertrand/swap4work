@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -12,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import ItemCard from "../components/browse/ItemCard";
+import { useBlockedUsers } from "@/hooks/useBlockedUsers";
 
 // Calculate distance between two coordinates using Haversine formula
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -53,6 +53,8 @@ export default function Browse() {
     queryFn: () => base44.entities.Item.filter({ status: "active" }, sortBy),
   });
 
+  const { blockedUserIds } = useBlockedUsers(user?.id);
+
   // Fetch user's agreements for status indicators
   const { data: userAgreements = [] } = useQuery({
     queryKey: ['userAgreements', user?.id],
@@ -77,6 +79,9 @@ export default function Browse() {
   };
 
   const filteredItems = items.filter(item => {
+    // Hide items from blocked users
+    if (blockedUserIds.includes(item.offerer_id)) return false;
+
     // Search filter
     const matchesSearch = searchTerm === "" || 
                          item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||

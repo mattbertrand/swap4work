@@ -11,8 +11,9 @@ import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import {
   ArrowLeft, ArrowRight, Clock, MapPin, Star, CheckCircle2,
-  AlertCircle, MessageSquare, Eye, User, Crosshair, Calendar
+  AlertCircle, MessageSquare, Eye, User, Crosshair, Calendar, Flag
 } from "lucide-react";
+import ReportModal from "@/components/moderation/ReportModal";
 import AuthModal from "@/components/auth/AuthModal";
 import StartNegotiationModal from "@/components/negotiation/StartNegotiationModal";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
@@ -51,6 +52,7 @@ export default function ItemDetail() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [startNegModalOpen, setStartNegModalOpen] = useState(false);
   const [startNegLoading, setStartNegLoading] = useState(false);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
 
   const urlParams = new URLSearchParams(window.location.search);
   const itemId = urlParams.get('id');
@@ -682,6 +684,18 @@ export default function ItemDetail() {
                     </p>
                   </div>
                 )}
+
+                {!isOwner && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setReportModalOpen(true)}
+                    className="w-full text-gray-400 hover:text-red-600"
+                  >
+                    <Flag className="w-4 h-4 mr-2" />
+                    Report this listing
+                  </Button>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -694,6 +708,16 @@ export default function ItemDetail() {
         item={item}
         onConfirm={handleConfirmOffer}
         loading={startNegLoading}
+      />
+      <ReportModal
+        open={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        currentUser={user}
+        targetType="item"
+        targetId={item.id}
+        targetName={item.title}
+        reportedUserId={item.offerer_id}
+        reportedUserName={item.offerer_name}
       />
     </div>
   );

@@ -10,6 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ArrowLeft, Send, Clock, AlertTriangle, CheckCircle2, Package, MoreVertical, Ban, Flag, AlertCircle } from "lucide-react";
+import ReportModal from "@/components/moderation/ReportModal";
+import BlockUserDialog from "@/components/moderation/BlockUserDialog";
+import { useBlockedUsers } from "@/hooks/useBlockedUsers";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
@@ -26,6 +29,9 @@ export default function Negotiation() {
   const [showCounterModal, setShowCounterModal] = useState(false);
   const [hasConfirmed, setHasConfirmed] = useState(false);
   const [otherConfirmed, setOtherConfirmed] = useState(false);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportTarget, setReportTarget] = useState("user");
+  const [blockDialogOpen, setBlockDialogOpen] = useState(false);
 
   const urlParams = new URLSearchParams(window.location.search);
   const negotiationId = urlParams.get('id');
@@ -126,6 +132,8 @@ export default function Negotiation() {
   });
 
   const messagesContainerRef = useRef(null);
+
+  const { hasRelationship } = useBlockedUsers(user?.id);
 
   // Scroll to top on mount
   useEffect(() => {
@@ -620,6 +628,8 @@ export default function Negotiation() {
   const otherParty = useMemo(() => isOfferer ? negotiation?.bidder_name : negotiation?.offerer_name, [isOfferer, negotiation?.bidder_name, negotiation?.offerer_name]);
   const currentOfferHours = useMemo(() => negotiation?.counter_offer_hours || negotiation?.initial_offer_hours, [negotiation?.counter_offer_hours, negotiation?.initial_offer_hours]);
   const isNegotiationClosed = negotiation?.status === 'closed';
+  const otherUserId = isOfferer ? negotiation?.bidder_id : negotiation?.offerer_id;
+  const isBlocked = otherUserId ? hasRelationship(otherUserId) : false;
 
   if (negError || (!negLoading && !negotiation && negotiationId)) {
     return (
@@ -705,46 +715,51 @@ export default function Negotiation() {
                   {negotiation.status}
                 </Badge>
                 {/* Block & Report Button */}
-                {!isNegotiationClosed && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem 
-                        onClick={() => {
-                          if (confirm(`Are you sure you want to block ${otherParty}? This will end the negotiation.`)) {
-                            // TODO: Implement block functionality
-                            toast.info('Block feature coming soon');
-                          }
-                        }}
-                        className="text-orange-600"
-                      >
-                        <Ban className="w-4 h-4 mr-2" />
-                        Block User
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => {
-                          if (confirm(`Report ${otherParty} as spam?`)) {
-                            // TODO: Implement report functionality
-                            toast.info('Report feature coming soon');
-                          }
-                        }}
-                        className="text-red-600"
-                      >
-                        <Flag className="w-4 h-4 mr-2" />
-                        Report as Spam
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => { setReportTarget("user"); setReportModalOpen(true); }}
+                      className="text-red-600 cursor-pointer"
+                    >
+                      <Flag className="w-4 h-4 mr-2" />
+                      Report User
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => { setReportTarget("negotiation"); setReportModalOpen(true); }}
+                      className="text-red-600 cursor-pointer"
+                    >
+                      <Flag className="w-4 h-4 mr-2" />
+                      Report Conversation
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setBlockDialogOpen(true)}
+                      className="text-orange-600 cursor-pointer"
+                    >
+                      <Ban className="w-4 h-4 mr-2" />
+                      Block User
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </CardHeader>
 
           <CardContent className="p-6">
+            {/* Blocked User Alert */}
+            {isBlocked && (
+              <Alert className="mb-4 bg-gray-100 border-gray-300">
+                <Ban className="w-4 h-4 text-gray-600" />
+                <AlertDescription className="text-gray-800">
+                  <strong>This user has been blocked.</strong> Messaging and negotiation actions are disabled.
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Closed Negotiation Alert */}
             {isNegotiationClosed && (
               <Alert className="mb-4 bg-red-50 border-red-200">
@@ -896,7 +911,7 @@ export default function Negotiation() {
               <div ref={messagesEndRef} />
             </div>
 
-            {(negotiation.status === 'active' || negotiation.status === 'accepted') && !isNegotiationClosed && (
+            {(negotiation.status === 'active' || negotiation.status === 'accepted') && !isNegotiationClosed && !isBlocked && (
               <div className="flex gap-2">
                 <Input
                   placeholder="Type a message..."
@@ -972,6 +987,24 @@ export default function Negotiation() {
           </CardContent>
         </Card>
       </div>
+
+      <ReportModal
+        open={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        currentUser={user}
+        targetType={reportTarget}
+        targetId={reportTarget === "negotiation" ? negotiationId : otherUserId}
+        targetName={reportTarget === "negotiation" ? `Negotiation: ${negotiation?.item_title}` : otherParty}
+        reportedUserId={otherUserId}
+        reportedUserName={otherParty}
+      />
+      <BlockUserDialog
+        open={blockDialogOpen}
+        onClose={() => setBlockDialogOpen(false)}
+        currentUser={user}
+        blockedUserId={otherUserId}
+        blockedUserName={otherParty}
+      />
 
       <CounterOfferModal
         open={showCounterModal}

@@ -7,7 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Star, CheckCircle2, Clock, Package, LogOut, MapPin, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { Camera, Star, CheckCircle2, Clock, Package, LogOut, MapPin, Loader2, ChevronDown, ChevronUp, Ban, UserX } from "lucide-react";
+import { useBlockedUsers } from "@/hooks/useBlockedUsers";
 import { toast } from "sonner";
 
 const isValidPhone = (phone) => {
@@ -257,6 +258,22 @@ export default function Profile() {
     },
     enabled: !!user?.id
   });
+
+  const { blocked, invalidate: invalidateBlocked } = useBlockedUsers(user?.id);
+
+  const handleUnblock = async (blockedId, blockedName) => {
+    try {
+      const entries = await base44.entities.BlockedUser.filter({
+        blocker_id: user.id,
+        blocked_id: blockedId
+      });
+      await Promise.all(entries.map(e => base44.entities.BlockedUser.delete(e.id)));
+      toast.success(`Unblocked ${blockedName}`);
+      invalidateBlocked();
+    } catch (error) {
+      toast.error("Failed to unblock user");
+    }
+  };
 
   const [workerData, setWorkerData] = useState({
     is_visible: false,
@@ -707,6 +724,46 @@ export default function Profile() {
                     </div>
                   )}
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Blocked Users */}
+            <Card className="border-orange-100 shadow-lg">
+              <CardHeader className="border-b border-orange-100">
+                <CardTitle className="flex items-center gap-2">
+                  <Ban className="w-5 h-5 text-gray-500" />
+                  Blocked Users
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                {blocked.length === 0 ? (
+                  <div className="text-center py-6 text-gray-500">
+                    <UserX className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                    <p>You haven't blocked anyone.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {blocked.map((blockedUser) => (
+                      <div key={blockedUser.blocked_id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center">
+                            <span className="text-white font-semibold text-sm">
+                              {blockedUser.blocked_name?.[0]?.toUpperCase() || "?"}
+                            </span>
+                          </div>
+                          <span className="font-medium text-gray-900">{blockedUser.blocked_name}</span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleUnblock(blockedUser.blocked_id, blockedUser.blocked_name)}
+                        >
+                          Unblock
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
 

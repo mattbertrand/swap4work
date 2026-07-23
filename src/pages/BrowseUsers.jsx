@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { useBlockedUsers } from "@/hooks/useBlockedUsers";
 
 // Calculate distance between two coordinates
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -59,6 +60,8 @@ export default function BrowseUsers() {
     },
   });
 
+  const { blockedUserIds } = useBlockedUsers(user?.id);
+
   const handleSearch = () => {
     setSearchTerm(searchInput.trim().toLowerCase());
   };
@@ -70,6 +73,9 @@ export default function BrowseUsers() {
     
     // Hide own profile
     if (user && u.user_id === user.id) return false;
+
+    // Hide blocked users
+    if (blockedUserIds.includes(u.user_id)) return false;
 
     // Search filter
       if (searchTerm) {

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Users, Package, Briefcase, AlertTriangle, 
-  TrendingUp, CheckCircle2, Clock, Shield 
+  TrendingUp, CheckCircle2, Clock, Shield, Flag 
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -156,6 +156,25 @@ export default function AdminDashboard() {
                 </div>
                 <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
                   <AlertTriangle className="w-6 h-6 text-red-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-orange-100">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Moderation</p>
+                  <p className="text-sm text-gray-500">Review user reports</p>
+                  <Link to={createPageUrl("AdminReports")}>
+                    <Button size="sm" variant="outline" className="mt-2">
+                      View Reports
+                    </Button>
+                  </Link>
+                </div>
+                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                  <Flag className="w-6 h-6 text-orange-600" />
                 </div>
               </div>
             </CardContent>

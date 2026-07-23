@@ -10,7 +10,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Star, MapPin, CheckCircle2, Clock, Package, Briefcase, MessageSquare, Filter } from "lucide-react";
+import { ArrowLeft, Star, MapPin, CheckCircle2, Clock, Package, Briefcase, MessageSquare, Filter, MoreVertical, Flag, Ban } from "lucide-react";
+import ReportModal from "@/components/moderation/ReportModal";
+import BlockUserDialog from "@/components/moderation/BlockUserDialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -183,6 +186,8 @@ export default function PublicProfile() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [reviewSort, setReviewSort] = useState("newest");
   const [reviewFilter, setReviewFilter] = useState("all");
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [blockDialogOpen, setBlockDialogOpen] = useState(false);
 
   const filteredAndSortedRatings = React.useMemo(() => {
     let result = [...ratings];
@@ -388,14 +393,36 @@ export default function PublicProfile() {
                 )}
 
                 {!isOwnProfile && (
-                  <Button 
-                    className="w-full mt-6 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
-                    onClick={handleRequestService}
-                    disabled={isBusy}
-                  >
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    {isBusy ? "Worker Busy (Max Offers)" : "Request Service"}
-                  </Button>
+                  <>
+                    <Button 
+                      className="w-full mt-6 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
+                      onClick={handleRequestService}
+                      disabled={isBusy}
+                    >
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      {isBusy ? "Worker Busy (Max Offers)" : "Request Service"}
+                    </Button>
+                    <div className="flex justify-center mt-3">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-600">
+                            <MoreVertical className="w-4 h-4 mr-1" />
+                            More Options
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="center">
+                          <DropdownMenuItem onClick={() => setReportModalOpen(true)} className="text-red-600 cursor-pointer">
+                            <Flag className="w-4 h-4 mr-2" />
+                            Report User
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setBlockDialogOpen(true)} className="text-orange-600 cursor-pointer">
+                            <Ban className="w-4 h-4 mr-2" />
+                            Block User
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </>
                 )}
 
                 {isOwnProfile && (
@@ -545,6 +572,24 @@ export default function PublicProfile() {
       </div>
 
       <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} message="Create an account or log in to request services." />
+
+      <ReportModal
+        open={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        currentUser={currentUser}
+        targetType="user"
+        targetId={resolvedUserId || userProfile.id}
+        targetName={userProfile.full_name}
+        reportedUserId={resolvedUserId || userProfile.id}
+        reportedUserName={userProfile.full_name}
+      />
+      <BlockUserDialog
+        open={blockDialogOpen}
+        onClose={() => setBlockDialogOpen(false)}
+        currentUser={currentUser}
+        blockedUserId={resolvedUserId || userProfile.id}
+        blockedUserName={userProfile.full_name}
+      />
 
       <Dialog open={serviceModalOpen} onOpenChange={setServiceModalOpen}>
         <DialogContent>

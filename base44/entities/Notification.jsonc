@@ -20,7 +20,9 @@
         "work_completed",
         "rating_received",
         "negotiation_closed",
-        "item_available"
+        "item_available",
+        "moderation_resolved",
+        "moderation_warning"
       ],
       "description": "Type of notification"
     },

@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { useBlockedUsers } from "@/hooks/useBlockedUsers";
 
 // Calculate distance using Haversine
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -52,6 +53,8 @@ export default function BrowseServices() {
     queryFn: () => base44.entities.Item.filter({ status: "active", listing_type: "service" }, sortBy),
   });
 
+  const { blockedUserIds } = useBlockedUsers(user?.id);
+
   const handleSearch = () => {
     setSearchTerm(searchInput.trim());
   };
@@ -62,6 +65,9 @@ export default function BrowseServices() {
   };
 
   const filteredServices = services.filter(service => {
+    // Hide services from blocked users
+    if (blockedUserIds.includes(service.offerer_id)) return false;
+
     const matchesSearch = searchTerm === "" || 
                          service.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          service.description?.toLowerCase().includes(searchTerm.toLowerCase());

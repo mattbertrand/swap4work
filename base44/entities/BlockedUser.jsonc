@@ -1,0 +1,26 @@
+{
+  "name": "BlockedUser",
+  "type": "object",
+  "properties": {
+    "blocker_id": {
+      "type": "string",
+      "description": "User who initiated the block"
+    },
+    "blocked_id": {
+      "type": "string",
+      "description": "User who was blocked"
+    },
+    "blocked_name": {
+      "type": "string",
+      "description": "Blocked user name (denormalized)"
+    },
+    "blocked_photo_url": {
+      "type": "string",
+      "description": "Blocked user photo (denormalized)"
+    }
+  },
+  "required": [
+    "blocker_id",
+    "blocked_id"
+  ]
+}

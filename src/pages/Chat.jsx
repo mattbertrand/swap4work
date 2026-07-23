@@ -6,7 +6,11 @@ import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { ArrowLeft, Send, Paperclip, Clock, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, Clock, CheckCircle2, XCircle, AlertTriangle, Flag, Ban, MoreVertical } from "lucide-react";
+import ReportModal from "@/components/moderation/ReportModal";
+import BlockUserDialog from "@/components/moderation/BlockUserDialog";
+import { useBlockedUsers } from "@/hooks/useBlockedUsers";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import AgreementLockBanner from "../components/agreement/AgreementLockBanner";
@@ -21,6 +25,8 @@ export default function Chat() {
   const [proposedHours, setProposedHours] = useState("");
   const [showProposal, setShowProposal] = useState(false);
   const [showCancellationModal, setShowCancellationModal] = useState(false);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [blockDialogOpen, setBlockDialogOpen] = useState(false);
 
   const urlParams = new URLSearchParams(window.location.search);
   const agreementId = urlParams.get('agreementId');
@@ -70,6 +76,8 @@ export default function Chat() {
       queryClient.invalidateQueries(['agreement', agreementId]);
     }
   });
+
+  const { hasRelationship } = useBlockedUsers(user?.id);
 
   const messagesContainerRef = useRef(null);
 
@@ -313,18 +321,40 @@ export default function Chat() {
   const otherAgreed = isWorker ? agreement.offerer_agreed : agreement.worker_agreed;
   const bothAgreed = agreement.worker_agreed && agreement.offerer_agreed;
   const isLocked = agreement.is_locked || agreement.status === 'locked' || agreement.status === 'in_progress';
+  const otherUserId = isWorker ? agreement.offerer_id : agreement.worker_id;
+  const otherUserName = isWorker ? agreement.offerer_name : agreement.worker_name;
+  const isBlocked = otherUserId ? hasRelationship(otherUserId) : false;
 
   return (
     <div className="min-h-screen p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
-        <Button
-          variant="ghost"
-          onClick={() => navigate(-1)}
-          className="mb-6 hover:bg-orange-100"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
+        <div className="flex items-center justify-between mb-6">
+          <Button
+            variant="ghost"
+            onClick={() => navigate(-1)}
+            className="hover:bg-orange-100"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setReportModalOpen(true)} className="text-red-600 cursor-pointer">
+                <Flag className="w-4 h-4 mr-2" />
+                Report User
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setBlockDialogOpen(true)} className="text-orange-600 cursor-pointer">
+                <Ban className="w-4 h-4 mr-2" />
+                Block User
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
         <Card className="border-orange-100 shadow-xl">
           <CardHeader className="border-b border-orange-100 bg-gradient-to-r from-orange-50 to-amber-50">
@@ -351,6 +381,15 @@ export default function Chat() {
           </CardHeader>
 
           <CardContent className="p-0">
+            {/* Blocked User Banner */}
+            {isBlocked && (
+              <div className="bg-gray-100 border-b border-gray-300 p-4 text-center">
+                <Ban className="w-8 h-8 text-gray-500 mx-auto mb-2" />
+                <p className="text-gray-700 font-medium">This user has been blocked.</p>
+                <p className="text-gray-500 text-sm">Messaging is disabled. Unblock from your Profile settings to resume.</p>
+              </div>
+            )}
+
             {/* Agreement Lock Banner */}
             {isLocked && (
               <div className="p-4 border-b border-gray-200">
@@ -427,7 +466,12 @@ export default function Chat() {
 
             {/* Message Input */}
             <div className="border-t border-orange-100 p-4">
-              {agreement.status === 'disputed' ? (
+              {isBlocked ? (
+                <div className="text-center py-4">
+                  <Ban className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-600">This user has been blocked. Messaging is disabled.</p>
+                </div>
+              ) : agreement.status === 'disputed' ? (
                 <div className="text-center py-4">
                   <AlertTriangle className="w-8 h-8 text-orange-600 mx-auto mb-2" />
                   <p className="text-gray-600">This agreement is under dispute. Messaging is disabled.</p>
@@ -496,6 +540,24 @@ export default function Chat() {
           </CardContent>
         </Card>
       </div>
+
+      <ReportModal
+        open={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        currentUser={user}
+        targetType="message"
+        targetId={agreementId}
+        targetName={`Chat: ${agreement.item_title}`}
+        reportedUserId={otherUserId}
+        reportedUserName={otherUserName}
+      />
+      <BlockUserDialog
+        open={blockDialogOpen}
+        onClose={() => setBlockDialogOpen(false)}
+        currentUser={user}
+        blockedUserId={otherUserId}
+        blockedUserName={otherUserName}
+      />
 
       <CancellationModal
         open={showCancellationModal}

@@ -91,6 +91,11 @@
       "format": "date",
       "description": "Date when suspension ends"
     },
+    "is_banned": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether user is permanently banned"
+    },
     "cancellation_count": {
       "type": "integer",
       "default": 0,

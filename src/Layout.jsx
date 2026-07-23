@@ -12,7 +12,8 @@ import {
   LogOut,
   Bell,
   Users,
-  LayoutDashboard } from
+  LayoutDashboard,
+  Flag } from
 "lucide-react";
 import {
   Sidebar,
@@ -127,6 +128,11 @@ export default function Layout({ children, currentPageName }) {
       title: "Admin Dashboard",
       url: createPageUrl("AdminDashboard"),
       icon: Shield
+    });
+    navigationItems.push({
+      title: "Moderation",
+      url: createPageUrl("AdminReports"),
+      icon: Flag
     });
   }
 

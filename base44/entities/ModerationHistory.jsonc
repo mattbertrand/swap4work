@@ -1,0 +1,50 @@
+{
+  "name": "ModerationHistory",
+  "type": "object",
+  "properties": {
+    "report_id": {
+      "type": "string",
+      "description": "Reference to the Report"
+    },
+    "admin_id": {
+      "type": "string",
+      "description": "Admin user ID who took action"
+    },
+    "admin_name": {
+      "type": "string",
+      "description": "Admin name (denormalized)"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "ignored",
+        "warned",
+        "listing_hidden",
+        "suspended",
+        "banned"
+      ],
+      "description": "Moderation action taken"
+    },
+    "target_user_id": {
+      "type": "string",
+      "description": "User affected by the action"
+    },
+    "target_user_name": {
+      "type": "string",
+      "description": "Affected user name (denormalized)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Admin notes"
+    },
+    "previous_report_count": {
+      "type": "integer",
+      "description": "Number of previous reports for this user at time of action"
+    }
+  },
+  "required": [
+    "report_id",
+    "admin_id",
+    "action"
+  ]
+}
