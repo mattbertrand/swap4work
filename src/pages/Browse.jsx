@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Search, MapPin, Clock, Filter, Crosshair, X } from "lucide-react";
+import { Search, MapPin, Clock, Filter, Crosshair, X, Sparkles, XCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
@@ -35,6 +35,7 @@ export default function Browse() {
   const [maxDistance, setMaxDistance] = useState([50]);
   const [useLocation, setUseLocation] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
+  const [showSampleBanner, setShowSampleBanner] = useState(true);
 
   useEffect(() => {
     base44.auth.me()
@@ -134,6 +135,29 @@ export default function Browse() {
             Browse local items available in exchange for your skills and work hours. No money needed.
           </p>
         </div>
+
+        {/* Sample Data Banner */}
+        {showSampleBanner && (
+          <div className="mb-8 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-2xl p-4 flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-5 h-5 text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-blue-900 text-sm">
+                These are sample listings for demonstration purposes
+              </p>
+              <p className="text-blue-700 text-xs">
+                No real items are available yet — be the first to list something and start trading!
+              </p>
+            </div>
+            <button
+              onClick={() => setShowSampleBanner(false)}
+              className="text-blue-400 hover:text-blue-700 flex-shrink-0"
+            >
+              <XCircle className="w-5 h-5" />
+            </button>
+          </div>
+        )}
 
         {/* Filters */}
         <div className="mb-8 bg-white rounded-2xl shadow-md p-6 border border-orange-100">
