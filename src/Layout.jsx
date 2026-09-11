@@ -254,7 +254,7 @@ export default function Layout({ children, currentPageName }) {
             </div>
           </header>
 
-          <div className="flex-1 overflow-auto">
+          <div id="main-scroll-container" className="flex-1 overflow-auto">
             {!user && <GuestBanner />}
             {children}
           </div>
