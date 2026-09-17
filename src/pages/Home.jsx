@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { parseSkills } from "@/lib/skills";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -435,9 +436,9 @@ export default function Home() {
 
                     <div className="mb-4">
                       <div className="flex flex-wrap gap-1">
-                        {worker.skills?.split(',').slice(0, 3).map((skill, idx) => (
+                        {parseSkills(worker.skills).slice(0, 3).map((skill, idx) => (
                           <Badge key={idx} variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
-                            {skill.trim()}
+                            {skill}
                           </Badge>
                         ))}
                       </div>

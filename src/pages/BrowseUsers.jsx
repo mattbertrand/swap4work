@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { parseSkills } from "@/lib/skills";
 import { Search, MapPin, Star, Filter, Users, ArrowRight, X, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -272,16 +273,23 @@ export default function BrowseUsers() {
                     </p>
 
                     <div className="flex flex-wrap gap-1 mb-4">
-                      {worker.skills?.split(';;').slice(0, 3).map((skill, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                          {skill.trim()}
-                        </Badge>
-                      ))}
-                      {worker.skills?.split(';;').length > 3 && (
-                        <Badge variant="outline" className="text-xs text-gray-500">
-                          +{worker.skills.split(';;').length - 3} more
-                        </Badge>
-                      )}
+                      {(() => {
+                        const skills = parseSkills(worker.skills);
+                        return (
+                          <>
+                            {skills.slice(0, 3).map((skill, idx) => (
+                              <Badge key={idx} variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                {skill}
+                              </Badge>
+                            ))}
+                            {skills.length > 3 && (
+                              <Badge variant="outline" className="text-xs text-gray-500">
+                                +{skills.length - 3} more
+                              </Badge>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
 
                     <div className="pt-4 border-t border-gray-100 flex justify-between items-center">

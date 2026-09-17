@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Camera, Star, CheckCircle2, Clock, Package, LogOut, MapPin, Loader2, ChevronDown, ChevronUp, Ban, UserX } from "lucide-react";
 import { useBlockedUsers } from "@/hooks/useBlockedUsers";
+import { parseSkills } from "@/lib/skills";
 import { toast } from "sonner";
 
 const isValidPhone = (phone) => {
@@ -601,7 +602,7 @@ export default function Profile() {
                               <AccordionContent>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-2">
                                   {skills.map((skill) => {
-                                                    const currentSkills = (workerData.skills || formData.skills || "").split(';;').map(s => s.trim()).filter(Boolean);
+                                                    const currentSkills = parseSkills(workerData.skills || formData.skills);
                                     const isSelected = currentSkills.includes(skill);
                                     
                                     return (
@@ -637,9 +638,9 @@ export default function Profile() {
                         </Accordion>
                       ) : (
                         <div className="flex flex-wrap gap-2">
-                          {(formData.skills || "").split(';;').filter(Boolean).map((skill, i) => (
+                          {parseSkills(formData.skills).map((skill, i) => (
                             <Badge key={i} variant="secondary" className="bg-white border-gray-200">
-                              {skill.trim()}
+                              {skill}
                             </Badge>
                           ))}
                           {!formData.skills && <p className="text-sm text-gray-500 italic">No skills selected</p>}

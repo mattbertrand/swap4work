@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { parseSkills } from "@/lib/skills";
 import { toast } from "sonner";
 
 const SKILL_CATEGORIES = {
@@ -295,7 +296,7 @@ export default function CompleteProfile() {
                         <AccordionContent>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-2">
                             {skills.map((skill) => {
-                              const currentSkills = (formData.skills || "").split(';;').map(s => s.trim()).filter(Boolean);
+                              const currentSkills = parseSkills(formData.skills);
                               const isSelected = currentSkills.includes(skill);
                               return (
                                 <div key={skill} className="flex items-center space-x-2">
@@ -321,8 +322,8 @@ export default function CompleteProfile() {
                 </div>
                 {formData.skills && (
                   <div className="flex flex-wrap gap-1 mt-2">
-                    {formData.skills.split(';;').filter(Boolean).map((s, i) => (
-                      <Badge key={i} variant="secondary" className="text-xs">{s.trim()}</Badge>
+                    {parseSkills(formData.skills).map((s, i) => (
+                      <Badge key={i} variant="secondary" className="text-xs">{s}</Badge>
                     ))}
                   </div>
                 )}

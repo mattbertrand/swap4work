@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { parseSkills } from "@/lib/skills";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -454,10 +455,7 @@ export default function PublicProfile() {
                   <h3 className="font-semibold text-gray-900 mb-2">Skills & Interests</h3>
                   <div className="flex flex-wrap gap-2">
                     {(workerEntity?.skills || userProfile.skills) ? (
-                      (workerEntity?.skills || userProfile.skills)
-                        .split(';;')
-                        .map(s => s.trim())
-                        .filter(Boolean)
+                      parseSkills(workerEntity?.skills || userProfile.skills)
                         .map((skill, i) => (
                           <Badge key={i} variant="secondary" className="px-3 py-1 bg-gray-100 text-gray-700">
                             {skill}
