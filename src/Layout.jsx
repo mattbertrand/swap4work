@@ -308,29 +308,29 @@ export default function Layout({ children, currentPageName }) {
                   <h4 className="font-semibold text-gray-900 mb-4">Resources</h4>
                   <ul className="space-y-2">
                     <li>
-                      <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                      <Link to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("How It Works")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
                         How It Works
-                      </a>
+                      </Link>
                     </li>
                     <li>
-                      <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                      <Link to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Safety Guidelines")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
                         Safety Guidelines
-                      </a>
+                      </Link>
                     </li>
                     <li>
-                      <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                      <Link to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Community Rules")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
                         Community Rules
-                      </a>
+                      </Link>
                     </li>
                     <li>
-                      <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                      <Link to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("FAQ")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
                         FAQ
-                      </a>
+                      </Link>
                     </li>
                     <li>
-                      <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                      <Link to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Help Center")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
                         Help Center
-                      </a>
+                      </Link>
                     </li>
                   </ul>
                 </div>
@@ -344,19 +344,19 @@ export default function Layout({ children, currentPageName }) {
                       </Link>
                     </li>
                     <li>
-                      <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                      <Link to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Privacy Policy")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
                         Privacy Policy
-                      </a>
+                      </Link>
                     </li>
                     <li>
-                      <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                      <Link to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Cookie Policy")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
                         Cookie Policy
-                      </a>
+                      </Link>
                     </li>
                     <li>
-                      <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                      <Link to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Contact Us")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
                         Contact Us
-                      </a>
+                      </Link>
                     </li>
                   </ul>
                 </div>
@@ -368,15 +368,15 @@ export default function Layout({ children, currentPageName }) {
                     © {new Date().getFullYear()} Swap4Work. All rights reserved.
                   </p>
                   <div className="flex items-center gap-6">
-                    <a href="#" className="text-sm text-gray-500 hover:text-orange-600 transition-colors">
+                    <Link to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Follow us on Twitter")} className="text-sm text-gray-500 hover:text-orange-600 transition-colors">
                       Follow us on Twitter
-                    </a>
-                    <a href="#" className="text-sm text-gray-500 hover:text-orange-600 transition-colors">
+                    </Link>
+                    <Link to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Join our Community")} className="text-sm text-gray-500 hover:text-orange-600 transition-colors">
                       Join our Community
-                    </a>
-                    <a href="#" className="text-sm text-gray-500 hover:text-orange-600 transition-colors">
+                    </Link>
+                    <Link to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Report an Issue")} className="text-sm text-gray-500 hover:text-orange-600 transition-colors">
                       Report an Issue
-                    </a>
+                    </Link>
                   </div>
                 </div>
               </div>
