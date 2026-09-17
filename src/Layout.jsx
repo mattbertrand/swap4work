@@ -339,9 +339,9 @@ export default function Layout({ children, currentPageName }) {
                   <h4 className="font-semibold text-gray-900 mb-4">Legal</h4>
                   <ul className="space-y-2">
                     <li>
-                      <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
-                        Terms of Service
-                      </a>
+                      <Link to={createPageUrl("Terms")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                        Terms &amp; Conditions
+                      </Link>
                     </li>
                     <li>
                       <a href="#" className="text-sm text-gray-600 hover:text-orange-600 transition-colors">

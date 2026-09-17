@@ -11,6 +11,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Join from './pages/Join';
+import Terms from './pages/Terms';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -52,6 +53,7 @@ const AuthenticatedApp = () => {
           <Route key={path} path={`/${path}`} element={<Page />} />
         ))}
         <Route path="/join" element={<Join />} />
+        <Route path="/Terms" element={<Terms />} />
         <Route path="*" element={<PageNotFound />} />
       </Routes>
     </LayoutWrapper>

@@ -40,6 +40,8 @@ export default function CompleteProfile() {
   const [uploading, setUploading] = useState(false);
   const [zipError, setZipError] = useState("");
   const [locationFields, setLocationFields] = useState({ street: "", city: "", state: "", zip: "" });
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [existingTerms, setExistingTerms] = useState(null);
 
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [formData, setFormData] = useState({
@@ -57,7 +59,7 @@ export default function CompleteProfile() {
   const [selectedTimes, setSelectedTimes] = useState([]);
 
   useEffect(() => {
-    base44.auth.me().then(userData => {
+    base44.auth.me().then(async userData => {
       setUser(userData);
       setPhoneVerified(userData.phone_verified || false);
       setFormData({
@@ -77,6 +79,16 @@ export default function CompleteProfile() {
         const parts = userData.availability.split(' | ');
         if (parts[0]) setSelectedDays(parts[0].split(', ').filter(Boolean));
         if (parts[1]) setSelectedTimes(parts[1].split(', ').filter(Boolean));
+      }
+      // Check if the user has already accepted the terms
+      try {
+        const acceptances = await base44.entities.TermsAcceptance.filter({ user_id: userData.id });
+        if (acceptances.length > 0) {
+          setExistingTerms(acceptances[0]);
+          setTermsAccepted(true);
+        }
+      } catch (err) {
+        // Don't block profile completion if this lookup fails
       }
     }).catch(() => {
       base44.auth.redirectToLogin(window.location.pathname + window.location.search);
@@ -119,6 +131,10 @@ export default function CompleteProfile() {
       toast.error("Please enter a valid ZIP code");
       return;
     }
+    if (!termsAccepted) {
+      toast.error("Please review and accept the Terms & Conditions to continue");
+      return;
+    }
 
     const availabilityString = [
       selectedDays.join(', '),
@@ -134,6 +150,13 @@ export default function CompleteProfile() {
         phone_verified: phoneVerified,
         profile_completed: true
       });
+      if (!existingTerms) {
+        await base44.entities.TermsAcceptance.create({
+          user_id: user.id,
+          terms_version: "1.0",
+          accepted_at: new Date().toISOString()
+        });
+      }
       toast.success('Profile completed!');
       navigate(returnUrl);
     } catch (error) {
@@ -343,6 +366,31 @@ export default function CompleteProfile() {
                       ))}
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* Terms & Conditions */}
+              <div className="border border-orange-200 rounded-lg p-4 bg-orange-50/60">
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="terms-accept"
+                    checked={termsAccepted}
+                    onCheckedChange={setTermsAccepted}
+                    className="mt-0.5"
+                  />
+                  <label htmlFor="terms-accept" className="text-sm text-gray-700 leading-relaxed">
+                    I have read and agree to the{" "}
+                    <a
+                      href={createPageUrl("Terms")}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-orange-600 font-medium underline hover:text-orange-700"
+                    >
+                      Terms &amp; Conditions
+                    </a>{" "}
+                    and the community safety guidelines.{" "}
+                    <span className="text-red-500">*</span>
+                  </label>
                 </div>
               </div>
 

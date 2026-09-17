@@ -249,6 +249,15 @@ export default function Profile() {
     setUploading(false);
   };
 
+  const { data: termsAcceptance } = useQuery({
+    queryKey: ['termsAcceptance', user?.id],
+    queryFn: async () => {
+      const records = await base44.entities.TermsAcceptance.filter({ user_id: user.id });
+      return records[0] || null;
+    },
+    enabled: !!user?.id
+  });
+
   const { data: workerProfile } = useQuery({
     queryKey: ['myWorkerProfile', user?.id],
     queryFn: async () => {
@@ -443,6 +452,12 @@ export default function Profile() {
                     <Badge className="bg-green-100 text-green-700">
                       <CheckCircle2 className="w-3 h-3 mr-1" />
                       Phone Verified
+                    </Badge>
+                  )}
+                  {termsAcceptance && (
+                    <Badge className="bg-amber-100 text-amber-700">
+                      <CheckCircle2 className="w-3 h-3 mr-1" />
+                      Terms Accepted {format(new Date(termsAcceptance.accepted_at), 'MMM d, yyyy')}
                     </Badge>
                   )}
                 </div>
