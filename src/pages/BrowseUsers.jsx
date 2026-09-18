@@ -247,7 +247,6 @@ export default function BrowseUsers() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="font-bold text-lg text-gray-900 truncate">{worker.full_name}</h3>
-                          {/* worker.id_verified is not on Worker entity, but we can assume false or check later. Removed for now to avoid confusion or keep if it was there */}
                         </div>
                         <div className="flex items-center gap-2 mb-1">
                           {worker.location && (

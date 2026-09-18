@@ -328,13 +328,8 @@ export default function Layout({ children, currentPageName }) {
                       </Link>
                     </li>
                     <li>
-                      <Link to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("FAQ")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                      <Link to={createPageUrl("HowItWorks")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
                         FAQ
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Help Center")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
-                        Help Center
                       </Link>
                     </li>
                   </ul>
@@ -359,8 +354,8 @@ export default function Layout({ children, currentPageName }) {
                       </Link>
                     </li>
                     <li>
-                      <Link to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Contact Us")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
-                        Contact Us
+                      <Link to={createPageUrl("CommunityGuidelines")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                        Report a Problem
                       </Link>
                     </li>
                   </ul>
@@ -373,12 +368,6 @@ export default function Layout({ children, currentPageName }) {
                     © {new Date().getFullYear()} Swap4Work. All rights reserved.
                   </p>
                   <div className="flex items-center gap-6">
-                    <Link to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Follow us on Twitter")} className="text-sm text-gray-500 hover:text-orange-600 transition-colors">
-                      Follow us on Twitter
-                    </Link>
-                    <Link to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Join our Community")} className="text-sm text-gray-500 hover:text-orange-600 transition-colors">
-                      Join our Community
-                    </Link>
                     <Link to={createPageUrl("CommunityGuidelines")} className="text-sm text-gray-500 hover:text-orange-600 transition-colors">
                       Report an Issue
                     </Link>

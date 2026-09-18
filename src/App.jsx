@@ -12,7 +12,6 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Join from './pages/Join';
 import Terms from './pages/Terms';
-import ComingSoon from './pages/ComingSoon';
 import AdminUserManagement from './pages/AdminUserManagement';
 import HowItWorks from './pages/HowItWorks';
 import Privacy from './pages/Privacy';
@@ -59,7 +58,6 @@ const AuthenticatedApp = () => {
         ))}
         <Route path="/join" element={<Join />} />
         <Route path="/terms" element={<Terms />} />
-        <Route path="/comingsoon" element={<ComingSoon />} />
         <Route path="/adminusermanagement" element={<AdminUserManagement />} />
         <Route path="/howitworks" element={<HowItWorks />} />
         <Route path="/privacy" element={<Privacy />} />

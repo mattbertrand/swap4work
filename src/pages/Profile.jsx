@@ -422,11 +422,6 @@ export default function Profile() {
                       </span>
                     </div>
                   )}
-                  {user.id_verified && (
-                    <div className="absolute bottom-0 right-0 bg-green-500 rounded-full p-2 border-2 border-white">
-                      <CheckCircle2 className="w-5 h-5 text-white" />
-                    </div>
-                  )}
                   <label className="absolute bottom-0 left-0 bg-orange-600 hover:bg-orange-700 text-white p-2 rounded-full cursor-pointer shadow-lg">
                     <Camera className="w-5 h-5" />
                     <input
@@ -443,12 +438,6 @@ export default function Profile() {
                 <p className="text-gray-500 text-sm mb-4">{user.email}</p>
 
                 <div className="flex justify-center gap-2 mb-4">
-                  {user.id_verified && (
-                    <Badge className="bg-blue-100 text-blue-700">
-                      <CheckCircle2 className="w-3 h-3 mr-1" />
-                      ID Verified
-                    </Badge>
-                  )}
                   {user.phone_verified && (
                     <Badge className="bg-green-100 text-green-700">
                       <CheckCircle2 className="w-3 h-3 mr-1" />

@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Star, MapPin, CheckCircle2, Clock, Package, Briefcase, MessageSquare, Filter, MoreVertical, Flag, Ban } from "lucide-react";
+import { ArrowLeft, Star, MapPin, Clock, Package, Briefcase, MessageSquare, Filter, MoreVertical, Flag, Ban } from "lucide-react";
 import ReportModal from "@/components/moderation/ReportModal";
 import BlockUserDialog from "@/components/moderation/BlockUserDialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -351,11 +351,6 @@ export default function PublicProfile() {
                       </span>
                     </div>
                   )}
-                  {userProfile.id_verified && (
-                    <div className="absolute bottom-0 right-0 bg-green-500 rounded-full p-2 border-2 border-white">
-                      <CheckCircle2 className="w-5 h-5 text-white" />
-                    </div>
-                  )}
                 </div>
 
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">{userProfile.full_name}</h1>
@@ -369,9 +364,6 @@ export default function PublicProfile() {
                 </div>
 
                 <div className="flex justify-center gap-2 mb-6">
-                  {userProfile.id_verified && (
-                    <Badge variant="secondary" className="bg-blue-50 text-blue-700">ID Verified</Badge>
-                  )}
                   {userProfile.phone_verified && (
                     <Badge variant="secondary" className="bg-green-50 text-green-700">Phone Verified</Badge>
                   )}

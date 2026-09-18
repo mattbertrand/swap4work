@@ -233,9 +233,6 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {u.id_verified && (
-                          <Badge className="bg-blue-100 text-blue-700">Verified</Badge>
-                        )}
                         <Badge className={u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}>
                           {u.role}
                         </Badge>
