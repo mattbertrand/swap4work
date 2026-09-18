@@ -324,7 +324,7 @@ export default function Negotiation() {
         user_id: otherUserId,
         type: 'negotiation_closed',
         title: 'Negotiation closed',
-        message: `The seller has accepted another offer for ${negotiation.item_title}`,
+        message: `The item owner has accepted another offer for ${negotiation.item_title}`,
         related_id: neg.id,
         related_type: 'negotiation',
         link_url: createPageUrl(`Browse`), // FIXED: Navigate to Browse instead of ItemDetail
@@ -352,7 +352,7 @@ export default function Negotiation() {
         related_type: 'item',
         link_url: createPageUrl(`ItemDetail?id=${negotiation.item_id}`),
         from_user_id: user.id,
-        from_user_name: 'WorkSwap'
+        from_user_name: 'Swap4Work'
       });
       await base44.entities.ItemWaitlist.update(waitlistEntry.id, {
         notified: true,
@@ -413,7 +413,7 @@ export default function Negotiation() {
         related_type: 'item',
         link_url: createPageUrl(`ItemDetail?id=${negotiation.item_id}`),
         from_user_id: user.id,
-        from_user_name: 'WorkSwap'
+        from_user_name: 'Swap4Work'
       });
     }));
 
@@ -534,7 +534,7 @@ export default function Negotiation() {
           related_type: 'item',
           link_url: createPageUrl(`ItemDetail?id=${negotiation.item_id}`),
           from_user_id: user.id,
-          from_user_name: 'WorkSwap'
+          from_user_name: 'Swap4Work'
         });
 
         await base44.entities.ItemWaitlist.update(waitlistEntry.id, {
@@ -765,7 +765,7 @@ export default function Negotiation() {
               <Alert className="mb-4 bg-red-50 border-red-200">
                 <AlertCircle className="w-4 h-4 text-red-600" />
                 <AlertDescription className="text-red-900">
-                  <strong>This negotiation was closed.</strong> The seller accepted another offer for this item.
+                  <strong>This negotiation was closed.</strong> The item owner accepted another offer for this item.
                 </AlertDescription>
               </Alert>
             )}

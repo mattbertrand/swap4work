@@ -13,6 +13,18 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { useBlockedUsers } from "@/hooks/useBlockedUsers";
 
+// Helper to extract only city and state (never street) from location string
+const getCityState = (location) => {
+  if (!location) return "Location not specified";
+  const parts = location.split(',').map(p => p.trim());
+  const cleanParts = parts.map(p => p.replace(/\d{5}(-\d{4})?/g, '').trim()).filter(p => p.length > 0);
+  if (cleanParts.length === 0) return location;
+  if (cleanParts.length === 1) return cleanParts[0];
+  const state = cleanParts[cleanParts.length - 1];
+  const city = cleanParts[cleanParts.length - 2];
+  return `${city}, ${state}`;
+};
+
 // Calculate distance using Haversine
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 3959;
@@ -358,7 +370,7 @@ export default function BrowseServices() {
 
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500">Accepts:</span>
+                        <span className="text-gray-500">Wants in exchange:</span>
                         <Badge variant="outline" className={
                           service.accepts === "item" ? "border-orange-300 text-orange-700" :
                           service.accepts === "service" ? "border-blue-300 text-blue-700" :
@@ -371,7 +383,7 @@ export default function BrowseServices() {
                       <div className="flex items-center gap-1 text-sm text-gray-500">
                         <MapPin className="w-4 h-4" />
                         <span className="truncate">
-                          {service.distance ? `${service.distance} mi away` : service.location}
+                          {service.distance ? `${service.distance} mi away` : getCityState(service.location)}
                         </span>
                       </div>
                     </div>

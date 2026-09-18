@@ -23,20 +23,20 @@ export default function GuestBanner() {
         {/* Left: headline + perks */}
         <div className="flex-1 text-center md:text-left">
           <div className="inline-block bg-white/20 text-white text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-3">
-            🎉 100% Free — No credit card needed
+            🎉 Free to join
           </div>
           <h2 className="text-2xl md:text-3xl font-extrabold leading-tight mb-2">
-            Join Swap4Work and trade skills for items
+            Join Swap4Work and make your first swap
           </h2>
           <p className="text-orange-100 text-sm md:text-base max-w-xl">
-            Sign up in seconds to list items, find work, negotiate deals, and connect with your local community — all without spending a dime.
+            Sign up in seconds to list items, offer your skills, and exchange with people nearby.
           </p>
 
           {/* Perks row */}
           <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-4 text-sm font-medium">
             <div className="flex items-center gap-1.5">
               <Zap className="w-4 h-4 text-yellow-300" />
-              <span>Instant access to listings</span>
+              <span>Browse items near you</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Star className="w-4 h-4 text-yellow-300" />
@@ -44,7 +44,7 @@ export default function GuestBanner() {
             </div>
             <div className="flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-yellow-300" />
-              <span>Safe & verified community</span>
+              <span>Reporting &amp; blocking built in</span>
             </div>
           </div>
         </div>

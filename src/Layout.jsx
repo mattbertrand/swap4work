@@ -276,7 +276,7 @@ export default function Layout({ children, currentPageName }) {
                     
                   </div>
                   <p className="text-sm text-gray-600 mb-4">
-                    A local marketplace to trade work and time for physical items — no money required.
+                    A local marketplace where items are exchanged for skills and time nearby — the exchange is work, not payments.
                   </p>
                   <p className="text-xs text-gray-500">
                     Building stronger communities through skill exchange.

@@ -1,5 +1,7 @@
 import React, { useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import { Briefcase, Search, HandshakeIcon, CheckCircle2, ArrowRight, Star } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -24,7 +26,7 @@ export default function Join() {
     {
       icon: HandshakeIcon,
       title: "Offer Your Skills",
-      desc: "Propose your time and skills in exchange — no money involved.",
+      desc: "Propose your time and skills in exchange for items you want.",
     },
     {
       icon: CheckCircle2,
@@ -69,8 +71,8 @@ export default function Join() {
               Community-Powered Exchange
             </div>
             <h1 className="text-3xl font-extrabold text-gray-900 leading-tight mb-4">
-              Trade skills for things<br />you need —<br />
-              <span className="text-orange-500">no money required</span>
+              Trade what you have<br />for what you need —<br />
+              <span className="text-orange-500">no payments between members</span>
             </h1>
             <p className="text-gray-600 text-base mb-8 max-w-xs mx-auto leading-relaxed">
               Help someone for a few hours and get what you want in return.
@@ -122,7 +124,7 @@ export default function Join() {
 
         {/* Examples */}
         <section className="px-6 py-10 bg-gray-50">
-          <h2 className="text-xl font-bold text-gray-900 text-center mb-6">Real Exchanges</h2>
+          <h2 className="text-xl font-bold text-gray-900 text-center mb-6">Example Exchanges</h2>
           <div className="flex flex-col gap-3 max-w-sm mx-auto">
             {examples.map((ex, i) => (
               <motion.div
@@ -151,9 +153,10 @@ export default function Join() {
             <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-7 h-7 text-green-600" />
             </div>
-            <h2 className="text-lg font-bold text-gray-900 mb-2">Safe & Fair</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-2">Fair &amp; Transparent</h2>
             <p className="text-gray-500 text-sm leading-relaxed">
-              Secure agreements, verified users, and a fair exchange system built to protect everyone involved.
+              Written agreements, reviews from completed exchanges, and easy
+              reporting and blocking — built to protect everyone involved.
             </p>
           </div>
         </section>
@@ -190,9 +193,14 @@ export default function Join() {
           />
         </div>
         <div className="flex items-center justify-center gap-4 text-xs text-gray-400">
-          <a href="#" className="hover:text-gray-600 transition-colors">Terms of Service</a>
+          <Link to={createPageUrl("Terms")} className="hover:text-gray-600 transition-colors">Terms of Service</Link>
           <span>·</span>
-          <a href="#" className="hover:text-gray-600 transition-colors">Privacy Policy</a>
+          <Link
+            to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Privacy Policy")}
+            className="hover:text-gray-600 transition-colors"
+          >
+            Privacy Policy
+          </Link>
         </div>
       </footer>
     </div>

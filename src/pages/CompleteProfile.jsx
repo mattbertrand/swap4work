@@ -183,7 +183,7 @@ export default function CompleteProfile() {
             <CheckCircle2 className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Complete Your Profile</h1>
-          <p className="text-gray-600">Let's set up your profile to get started on WorkSwap</p>
+          <p className="text-gray-600">Let's set up your profile to get started on Swap4Work</p>
         </div>
 
         <Card className="border-orange-100 shadow-xl">
