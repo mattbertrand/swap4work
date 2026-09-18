@@ -313,7 +313,7 @@ export default function Layout({ children, currentPageName }) {
                   <h4 className="font-semibold text-gray-900 mb-4">Resources</h4>
                   <ul className="space-y-2">
                     <li>
-                      <Link to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("How It Works")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                      <Link to={createPageUrl("HowItWorks")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
                         How It Works
                       </Link>
                     </li>

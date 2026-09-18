@@ -14,6 +14,7 @@ import Join from './pages/Join';
 import Terms from './pages/Terms';
 import ComingSoon from './pages/ComingSoon';
 import AdminUserManagement from './pages/AdminUserManagement';
+import HowItWorks from './pages/HowItWorks';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -58,6 +59,7 @@ const AuthenticatedApp = () => {
         <Route path="/terms" element={<Terms />} />
         <Route path="/comingsoon" element={<ComingSoon />} />
         <Route path="/adminusermanagement" element={<AdminUserManagement />} />
+        <Route path="/howitworks" element={<HowItWorks />} />
         <Route path="*" element={<PageNotFound />} />
       </Routes>
     </LayoutWrapper>
