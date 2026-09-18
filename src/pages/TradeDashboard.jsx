@@ -13,9 +13,10 @@ import { format, differenceInDays } from "date-fns";
 export default function TradeDashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => setUser(null));
+    base44.auth.me().then(setUser).catch(() => setUser(null)).finally(() => setAuthChecked(true));
   }, []);
 
   const { data: agreements = [], isLoading } = useQuery({
@@ -65,10 +66,32 @@ export default function TradeDashboard() {
     return days >= 0 && days <= 7;
   }).length;
 
-  if (!user || isLoading) {
+  if (!authChecked || (user && isLoading)) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="p-4 md:p-8 max-w-6xl mx-auto">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Trade Dashboard</h1>
+        <p className="text-gray-600 mb-8">Track your active trades, progress, and upcoming deadlines.</p>
+        <Card className="border-orange-100 shadow-md">
+          <CardContent className="p-12 text-center">
+            <Briefcase className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-700 font-medium mb-2">Sign in to see your trades</p>
+            <p className="text-gray-500 text-sm mb-6">Your active agreements, hours, and milestones live here once you're signed in.</p>
+            <Button
+              onClick={() => base44.auth.redirectToLogin()}
+              className="bg-gradient-to-r from-orange-500 to-amber-600"
+            >
+              Sign In
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
