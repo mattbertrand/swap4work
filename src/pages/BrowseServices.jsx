@@ -65,6 +65,9 @@ export default function BrowseServices() {
   };
 
   const filteredServices = services.filter(service => {
+    // Hide services hidden by moderation
+    if (service.is_hidden) return false;
+
     // Hide services from blocked users
     if (blockedUserIds.includes(service.offerer_id)) return false;
 

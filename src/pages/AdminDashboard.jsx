@@ -167,11 +167,18 @@ export default function AdminDashboard() {
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Moderation</p>
                   <p className="text-sm text-gray-500">Review user reports</p>
-                  <Link to={createPageUrl("AdminReports")}>
-                    <Button size="sm" variant="outline" className="mt-2">
-                      View Reports
-                    </Button>
-                  </Link>
+                  <div className="flex gap-2 mt-2">
+                    <Link to={createPageUrl("AdminReports")}>
+                      <Button size="sm" variant="outline">
+                        View Reports
+                      </Button>
+                    </Link>
+                    <Link to={createPageUrl("AdminUserManagement")}>
+                      <Button size="sm" variant="outline">
+                        Manage Users
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
                 <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
                   <Flag className="w-6 h-6 text-orange-600" />
@@ -326,7 +333,12 @@ export default function AdminDashboard() {
                             Karma: {u.karma_points || 0} | Cancellations: {u.cancellation_count || 0}
                           </p>
                         </div>
-                        <Badge className="bg-red-100 text-red-700">Suspended</Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-red-100 text-red-700">Suspended</Badge>
+                          <Link to={createPageUrl("AdminUserManagement")}>
+                            <Button size="sm" variant="outline">Manage</Button>
+                          </Link>
+                        </div>
                       </div>
                     ))}
                   </div>

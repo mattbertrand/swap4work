@@ -134,6 +134,11 @@ export default function Layout({ children, currentPageName }) {
       url: createPageUrl("AdminReports"),
       icon: Flag
     });
+    navigationItems.push({
+      title: "User Management",
+      url: createPageUrl("AdminUserManagement"),
+      icon: Shield
+    });
   }
 
   if (loading) {

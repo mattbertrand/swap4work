@@ -113,6 +113,11 @@
       "type": "string",
       "description": "Agreement ID that reserved this"
     },
+    "is_hidden": {
+      "type": "boolean",
+      "default": false,
+      "description": "Hidden by moderation (e.g. suspended or banned user)"
+    },
     "suggested_tasks": {
       "type": "string",
       "description": "Suggested tasks (for items) or service details (for services)"

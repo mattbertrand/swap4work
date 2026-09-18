@@ -80,6 +80,9 @@ export default function Browse() {
   };
 
   const filteredItems = items.filter(item => {
+    // Hide items hidden by moderation
+    if (item.is_hidden) return false;
+
     // Hide items from blocked users
     if (blockedUserIds.includes(item.offerer_id)) return false;
 

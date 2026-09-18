@@ -229,7 +229,7 @@ export default function Home() {
               <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Package className="w-8 h-8 text-orange-600" />
               </div>
-              <div className="text-3xl font-bold text-gray-900">{allActiveItems.length}+</div>
+              <div className="text-3xl font-bold text-gray-900">{allActiveItems.filter(i => !i.is_hidden).length}+</div>
               <div className="text-gray-600">Active Items</div>
             </div>
             <div className="text-center">
@@ -281,7 +281,7 @@ export default function Home() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredItems.map((item) => (
+              {featuredItems.filter(item => !item.is_hidden).map((item) => (
                 <Link key={item.id} to={createPageUrl(`ItemDetail?id=${item.id}`)}>
                   <Card className="group overflow-hidden hover:shadow-2xl transition-all duration-300 cursor-pointer border-orange-100 bg-white h-full">
                     <div className="relative h-48 overflow-hidden bg-gray-100">

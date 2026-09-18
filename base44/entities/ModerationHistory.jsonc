@@ -21,7 +21,8 @@
         "warned",
         "listing_hidden",
         "suspended",
-        "banned"
+        "banned",
+        "unsuspended"
       ],
       "description": "Moderation action taken"
     },

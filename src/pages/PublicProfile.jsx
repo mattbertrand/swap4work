@@ -106,6 +106,16 @@ export default function PublicProfile() {
     enabled: !!(userId || workerId)
   });
 
+  // Tombstone check: was this member removed from the community?
+  const { data: isDeletedUser } = useQuery({
+    queryKey: ['deletedUserTombstone', userId],
+    queryFn: async () => {
+      const tombstones = await base44.entities.DeletedUser.filter({ user_id: userId });
+      return tombstones.length > 0;
+    },
+    enabled: !!userId && !userProfile,
+  });
+
   // Resolved userId: prefer URL param, fallback to worker's user_id from profile
   const resolvedUserId = userId || userProfile?.id;
 
@@ -294,7 +304,14 @@ export default function PublicProfile() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-bold text-gray-900 mb-2">User not found</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">
+            {isDeletedUser ? "Member removed" : "User not found"}
+          </h2>
+          {isDeletedUser && (
+            <p className="text-gray-500 mb-4">
+              This member was removed from the community and their data has been deleted.
+            </p>
+          )}
           <Button onClick={() => navigate(-1)}>Go Back</Button>
         </div>
       </div>

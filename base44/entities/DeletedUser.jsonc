@@ -1,0 +1,31 @@
+{
+  "name": "DeletedUser",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID of the removed user"
+    },
+    "deleted_by": {
+      "type": "string",
+      "description": "Admin user ID who performed the deletion"
+    },
+    "deleted_by_name": {
+      "type": "string",
+      "description": "Admin name (denormalized)"
+    },
+    "deleted_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the deletion was performed"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Reason for the deletion"
+    }
+  },
+  "required": [
+    "user_id",
+    "deleted_date"
+  ]
+}
