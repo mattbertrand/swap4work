@@ -103,7 +103,7 @@ const SECTIONS = [
   {
     title: "14. Governing Law & Contact",
     body: [
-      "These Terms are governed by the laws of the State of California, without regard to conflict-of-law rules. If any provision of these Terms is found unenforceable, the remaining provisions stay in effect. Questions about these Terms can be sent to us through the platform's Contact page."
+      "These Terms are governed by the laws of the State of California, without regard to conflict-of-law rules. If any provision of these Terms is found unenforceable, the remaining provisions stay in effect. Questions about these Terms can be sent to the moderation team through the platform's in-app reporting tools."
     ]
   }
 ];

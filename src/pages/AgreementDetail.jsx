@@ -184,6 +184,12 @@ export default function AgreementDetail() {
         });
       }
 
+      // Keep the rated member's listings in sync with their updated reputation
+      await base44.entities.Item.updateMany(
+        { offerer_id: otherUserId },
+        { $set: { offerer_rating: avgRating, offerer_total_ratings: allRatings.length } }
+      );
+
       // Award karma based on rating
       let karmaPoints = 0;
       if (stars === 5) karmaPoints = 10;

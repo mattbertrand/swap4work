@@ -5,6 +5,7 @@ import { MapPin, Clock, CheckCircle2, AlertCircle, Package, Calendar, ArrowRight
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { formatDistanceToNow, parseISO } from "date-fns";
+import OwnerReputation from "@/components/browse/OwnerReputation";
 
 // Helper to extract only city and state (never street) from location string
 const getCityState = (location) => {
@@ -133,10 +134,13 @@ export default function ItemCard({ item, showDistance, userAgreements = [] }) {
             )}
           </div>
 
-          <div className="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between">
-            <span className="text-xs text-gray-400">
-              {item.offerer_name}
-            </span>
+          <div className="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <span className="text-xs text-gray-600 font-medium block truncate">
+                {item.offerer_name}
+              </span>
+              <OwnerReputation rating={item.offerer_rating} totalRatings={item.offerer_total_ratings} />
+            </div>
             <span className="text-sm font-semibold text-orange-600 flex items-center gap-1 transition-all">
               View Listing
               <ArrowRight className="w-4 h-4" />

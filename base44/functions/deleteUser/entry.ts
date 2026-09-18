@@ -180,6 +180,11 @@ export default async function(req) {
       if (affectedWorkers[0]) {
         await db.Worker.update(affectedWorkers[0].id, { rating: rounded, total_ratings: remaining.length });
       }
+      try {
+        await db.Item.updateMany({ offerer_id: affectedId }, { $set: { offerer_rating: rounded, offerer_total_ratings: remaining.length } });
+      } catch (e) {
+        // affected member may have no listings
+      }
     }
 
     // 8. Remaining own records

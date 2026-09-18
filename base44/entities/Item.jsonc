@@ -80,6 +80,16 @@
       "type": "string",
       "description": "Name of the offerer (denormalized)"
     },
+    "offerer_rating": {
+      "type": "number",
+      "default": 0,
+      "description": "Owner's average rating (denormalized from Rating records)"
+    },
+    "offerer_total_ratings": {
+      "type": "integer",
+      "default": 0,
+      "description": "Owner's total number of ratings received (denormalized)"
+    },
     "location": {
       "type": "string",
       "description": "Location"

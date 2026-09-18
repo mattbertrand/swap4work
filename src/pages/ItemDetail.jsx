@@ -16,6 +16,7 @@ import {
 import ReportModal from "@/components/moderation/ReportModal";
 import AuthModal from "@/components/auth/AuthModal";
 import StartNegotiationModal from "@/components/negotiation/StartNegotiationModal";
+import OwnerReputation from "@/components/browse/OwnerReputation";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 // Calculate distance between two coordinates
@@ -625,6 +626,9 @@ export default function ItemDetail() {
                               {item.offerer_name}
                             </p>
                             <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-orange-600 opacity-0 group-hover:opacity-100 transition-all" />
+                          </div>
+                          <div className="mt-0.5">
+                            <OwnerReputation rating={item.offerer_rating} totalRatings={item.offerer_total_ratings} />
                           </div>
                           <p className="text-xs text-gray-500">View other items from this user</p>
                         </div>

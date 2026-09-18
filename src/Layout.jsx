@@ -318,12 +318,12 @@ export default function Layout({ children, currentPageName }) {
                       </Link>
                     </li>
                     <li>
-                      <Link to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Safety Guidelines")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                      <Link to={createPageUrl("CommunityGuidelines")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
                         Safety Guidelines
                       </Link>
                     </li>
                     <li>
-                      <Link to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Community Rules")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                      <Link to={createPageUrl("CommunityGuidelines")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
                         Community Rules
                       </Link>
                     </li>
@@ -349,12 +349,12 @@ export default function Layout({ children, currentPageName }) {
                       </Link>
                     </li>
                     <li>
-                      <Link to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Privacy Policy")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                      <Link to={createPageUrl("Privacy")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
                         Privacy Policy
                       </Link>
                     </li>
                     <li>
-                      <Link to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Cookie Policy")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
+                      <Link to={createPageUrl("Privacy")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
                         Cookie Policy
                       </Link>
                     </li>
@@ -379,7 +379,7 @@ export default function Layout({ children, currentPageName }) {
                     <Link to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Join our Community")} className="text-sm text-gray-500 hover:text-orange-600 transition-colors">
                       Join our Community
                     </Link>
-                    <Link to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Report an Issue")} className="text-sm text-gray-500 hover:text-orange-600 transition-colors">
+                    <Link to={createPageUrl("CommunityGuidelines")} className="text-sm text-gray-500 hover:text-orange-600 transition-colors">
                       Report an Issue
                     </Link>
                   </div>

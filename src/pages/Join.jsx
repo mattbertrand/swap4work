@@ -196,7 +196,7 @@ export default function Join() {
           <Link to={createPageUrl("Terms")} className="hover:text-gray-600 transition-colors">Terms of Service</Link>
           <span>·</span>
           <Link
-            to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Privacy Policy")}
+            to={createPageUrl("Privacy")}
             className="hover:text-gray-600 transition-colors"
           >
             Privacy Policy

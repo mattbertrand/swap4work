@@ -15,6 +15,8 @@ import Terms from './pages/Terms';
 import ComingSoon from './pages/ComingSoon';
 import AdminUserManagement from './pages/AdminUserManagement';
 import HowItWorks from './pages/HowItWorks';
+import Privacy from './pages/Privacy';
+import CommunityGuidelines from './pages/CommunityGuidelines';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -60,6 +62,8 @@ const AuthenticatedApp = () => {
         <Route path="/comingsoon" element={<ComingSoon />} />
         <Route path="/adminusermanagement" element={<AdminUserManagement />} />
         <Route path="/howitworks" element={<HowItWorks />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/communityguidelines" element={<CommunityGuidelines />} />
         <Route path="*" element={<PageNotFound />} />
       </Routes>
     </LayoutWrapper>

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { useBlockedUsers } from "@/hooks/useBlockedUsers";
+import OwnerReputation from "@/components/browse/OwnerReputation";
 
 // Helper to extract only city and state (never street) from location string
 const getCityState = (location) => {
@@ -385,6 +386,13 @@ export default function BrowseServices() {
                         <span className="truncate">
                           {service.distance ? `${service.distance} mi away` : getCityState(service.location)}
                         </span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 pt-2 mt-2 border-t border-gray-100">
+                        <span className="text-xs text-gray-600 font-medium truncate">
+                          {service.offerer_name}
+                        </span>
+                        <OwnerReputation rating={service.offerer_rating} totalRatings={service.offerer_total_ratings} />
                       </div>
                     </div>
                   </CardContent>

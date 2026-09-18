@@ -152,6 +152,8 @@ export default function CreateItem() {
         longitude: coords.longitude,
         offerer_id: user.id,
         offerer_name: user.full_name,
+        offerer_rating: user.rating || 0,
+        offerer_total_ratings: user.total_ratings || 0,
         status: "active"
       });
       navigate(createPageUrl("MyListings"));

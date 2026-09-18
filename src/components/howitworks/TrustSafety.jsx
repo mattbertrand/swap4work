@@ -137,21 +137,21 @@ export default function TrustSafety() {
                 </Link>
                 {", "}
                 <Link
-                  to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Safety Guidelines")}
+                  to={createPageUrl("CommunityGuidelines")}
                   className="text-orange-600 underline hover:text-orange-700"
                 >
                   Safety Guidelines
                 </Link>
                 {", "}
                 <Link
-                  to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Community Rules")}
+                  to={createPageUrl("CommunityGuidelines")}
                   className="text-orange-600 underline hover:text-orange-700"
                 >
                   Community Rules
                 </Link>
                 {", and "}
                 <Link
-                  to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Privacy Policy")}
+                  to={createPageUrl("Privacy")}
                   className="text-orange-600 underline hover:text-orange-700"
                 >
                   Privacy Policy
