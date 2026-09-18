@@ -38,6 +38,8 @@ export default function TrackingSection() {
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">Tracking the Work</h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
             Every agreement has a Work Progress page where both sides can see exactly where the exchange stands.
+            In Sarah and Alex's exchange: Alex logs his 3 hours on Saturday morning, marks the work complete,
+            and then they confirm the handover of the bicycle.
           </p>
         </div>
 

@@ -4,7 +4,7 @@ import { createPageUrl } from "@/utils";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Camera, Search, MessageSquare, FileCheck, CheckCircle2, Package, ShieldCheck } from "lucide-react";
+import { Camera, Search, MessageSquare, FileCheck, CheckCircle2, Package, ShieldCheck, Star } from "lucide-react";
 
 const steps = [
   {
@@ -17,7 +17,7 @@ const steps = [
       "An honest description with any defects",
       "The item's condition and approximate value",
       "The type of service you're looking for",
-      "Your general area — never your exact home address",
+      "Your general area — exact home addresses are never shown publicly",
     ],
     cta: { label: "Post an Item", url: createPageUrl("CreateItem") },
   },
@@ -30,6 +30,7 @@ const steps = [
       "Filter by distance from your area",
       "Sort by newest additions",
       "Find items where a service you can offer is wanted",
+      "Review the listing carefully before starting a negotiation",
       "Only approximate areas are shown — exact locations stay private",
     ],
     cta: { label: "Browse Items", url: createPageUrl("Browse") },
@@ -56,21 +57,31 @@ const steps = [
       SERVICE: "3 hours of yard work",
       SCHEDULE: "Saturday morning",
     },
-    note: "Review the Agreement carefully before accepting — make sure the item, the work, the hours, and the timing all match what you discussed.",
+    note: "This is exactly what Sarah and Alex agreed on. Review the Agreement carefully before accepting — make sure the item, the work, the hours, and the timing all match what you discussed.",
   },
   {
     icon: CheckCircle2,
-    title: "Complete the Exchange",
+    title: "Complete the Service & Exchange",
     text: "Follow through on the agreed terms, then close things out.",
     bullets: [
       "Complete the agreed service",
-      "Log and confirm the work",
-      "Exchange the item",
+      "Log and confirm the work on the Work Progress page",
+      "Exchange the item — both parties confirm the handover",
       "Mark the agreement complete",
-      "Leave a review",
       "Communicate through Swap4Work whenever possible",
     ],
     cta: { label: "Start Browsing", url: createPageUrl("Browse") },
+  },
+  {
+    icon: Star,
+    title: "Leave a Review",
+    text: "After a completed exchange, both users can review each other.",
+    bullets: [
+      "Rate each other 1–5 stars",
+      "Write a short review of how the exchange went",
+      "Reviews appear on public profiles",
+      "Completed trades and hours build each member's reputation",
+    ],
   },
 ];
 
@@ -81,7 +92,7 @@ export default function ProcessSteps() {
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">The Basic Process</h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            From posting to completed exchange — five steps.
+            From posting to completed exchange — six steps.
           </p>
         </div>
 

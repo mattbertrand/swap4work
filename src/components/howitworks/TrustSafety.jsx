@@ -134,15 +134,29 @@ export default function TrustSafety() {
                 Read our{" "}
                 <Link to={createPageUrl("Terms")} className="text-orange-600 underline hover:text-orange-700">
                   Terms of Service
-                </Link>{" "}
-                and{" "}
+                </Link>
+                {", "}
+                <Link
+                  to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Safety Guidelines")}
+                  className="text-orange-600 underline hover:text-orange-700"
+                >
+                  Safety Guidelines
+                </Link>
+                {", "}
+                <Link
+                  to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Community Rules")}
+                  className="text-orange-600 underline hover:text-orange-700"
+                >
+                  Community Rules
+                </Link>
+                {", and "}
                 <Link
                   to={createPageUrl("ComingSoon") + "?page=" + encodeURIComponent("Privacy Policy")}
                   className="text-orange-600 underline hover:text-orange-700"
                 >
                   Privacy Policy
-                </Link>{" "}
-                for the full rules of the community.
+                </Link>
+                .
               </p>
             </CardContent>
           </Card>

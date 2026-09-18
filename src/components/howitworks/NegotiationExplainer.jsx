@@ -18,7 +18,7 @@ const basics = [
   {
     icon: Users,
     title: "Multiple Negotiators",
-    text: "An item can have up to 3 active negotiations at a time. If the limit is reached, new interested users can join a waitlist and are notified when a spot opens.",
+    text: "An item can have up to 3 active negotiations at a time — Sarah's bicycle could have one negotiation from Alex and two from other members at once. If the limit is reached, new interested users can join a waitlist and are notified when a spot opens.",
   },
 ];
 

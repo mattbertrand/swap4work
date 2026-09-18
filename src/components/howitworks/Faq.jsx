@@ -10,32 +10,60 @@ import { HelpCircle } from "lucide-react";
 
 const faqs = [
   {
-    q: "Does Swap4Work use money?",
-    a: "No. Exchanges on Swap4Work are based on work and time — you trade an item for a service, and no money changes hands through the platform. Listings can include an optional estimated value to help you gauge a fair amount of work, but no payments are ever processed here.",
+    q: "What exactly is Swap4Work?",
+    a: "Swap4Work is a local marketplace where people exchange physical items for services and time. Instead of a monetary payment, the item owner receives an agreed amount of work from someone nearby — and the worker receives the item.",
+  },
+  {
+    q: "Is money exchanged?",
+    a: "The exchange itself is based on items and services, not a payment between members. Listings can show an optional estimated value to help you gauge a fair amount of work, but Swap4Work never processes payments between members. Costs like transportation or materials are between you and the other party to discuss.",
   },
   {
     q: "What can I offer in exchange for an item?",
-    a: "A service you can genuinely provide — yard work, moving help, tutoring, repairs, coaching, and so on. You propose the service and the number of hours in your offer, and the item owner can accept, decline, or counter. All services must comply with our Terms of Service and applicable laws.",
+    a: "A service you can genuinely provide — yard work, moving help, tutoring, repairs, coaching, and so on. You propose the service and the number of hours in your offer. All services must comply with our Terms of Service and applicable laws.",
   },
   {
-    q: "Can I negotiate the amount of work?",
-    a: "Yes. That's what the negotiation is for. You and the other person exchange offers and counteroffers — adjusting the hours, the type of work, and the timing — until you land on terms you're both happy with.",
+    q: "What can I list?",
+    a: "Any item you own and can hand over locally: electronics, furniture, tools, sports gear, and more. You can also list a service you offer on the Browse Services page. Everything must be accurately described and comply with our Terms of Service.",
+  },
+  {
+    q: "How do I start a negotiation?",
+    a: "Open an item's page and choose \"Start Negotiation\". You'll need an account with a completed profile, and you must be within 50 miles of the item — Swap4Work verifies this when you make your first offer. You then propose the service you can offer and the hours.",
+  },
+  {
+    q: "Can I make a counteroffer?",
+    a: "Yes. Inside any active negotiation, use the \"Counter Offer\" button to propose new hours, a different type of work, and an optional message. Offers go back and forth until you either agree or one side declines.",
   },
   {
     q: "What happens if we can't agree?",
     a: "That's fine — either side can politely decline and the negotiation simply ends. No agreement is created, and the item stays available. Negotiations also expire automatically after 48 hours of inactivity.",
   },
   {
-    q: "Can multiple people negotiate for the same item?",
-    a: "Yes — an item can have up to 3 active negotiations at once. If the limit is reached, you can join the item's waitlist, and you'll be notified as soon as a spot opens (when a negotiation is declined, closed, or expires).",
-  },
-  {
     q: "What happens after someone accepts my offer?",
     a: "An Agreement draft appears right inside the negotiation. Each person confirms it, and once both have confirmed, the agreement locks, the item is reserved, and you both move to the Work Progress page to schedule and log the work.",
   },
   {
+    q: "What is an Agreement?",
+    a: "An Agreement is the confirmed plan for the exchange. While a negotiation is the discussion phase, an Agreement means both sides have accepted the terms — the item, the service, the hours, and the timing — and are moving forward.",
+  },
+  {
+    q: "Can multiple people negotiate for the same item?",
+    a: "Yes — an item can have up to 3 active negotiations at once. If the limit is reached, you can join the item's waitlist, and you'll be notified as soon as a spot opens (when a negotiation is declined, closed, or expires).",
+  },
+  {
+    q: "What happens if an item is no longer available?",
+    a: "When both people confirm an Agreement, the item is reserved and locked. Other negotiations on it are closed automatically and those users are notified. If the agreement is later cancelled, waitlisted users are notified that the item may become available again.",
+  },
+  {
+    q: "How is service time tracked?",
+    a: "Every agreement has a Work Progress page. Either party can run a shared work timer, and the worker logs hours manually (up to 12 hours per day) with a date and description. A progress bar tracks logged hours against the agreed total, and agreements can include up to 5 milestones with their own hours and due dates.",
+  },
+  {
     q: "Can I cancel an agreement?",
     a: "Before work starts, either party can cancel from the negotiation. Once an agreement is locked, cancellation needs the other party's consent — you send a mutual cancellation request with a reason, and cancelling mid-agreement without mutual consent can affect your karma. If there's a genuine disagreement, you can open a formal dispute instead.",
+  },
+  {
+    q: "What happens if the other person doesn't complete the agreed work?",
+    a: "Start by communicating through the negotiation — misunderstandings are usually fixable. If not, you can open a formal dispute from the agreement (for example, \"worker stopped working\" or \"no show\"), which the moderation team reviews. You can also report the user directly. Cancellations and upheld disputes affect a member's karma.",
   },
   {
     q: "How do reviews work?",
@@ -43,7 +71,11 @@ const faqs = [
   },
   {
     q: "How does location work?",
-    a: "Swap4Work only ever shows your approximate area (city and state) — never your street address. Distances are shown in miles, you can filter browse results by distance, and you need to be within 50 miles of an item to start negotiating for it.",
+    a: "Swap4Work is built for local exchanges. Distances are shown in miles, you can filter browse results by distance, and you need to be within 50 miles of an item to start negotiating for it.",
+  },
+  {
+    q: "Is my exact address visible?",
+    a: "No. Listings and profiles show only your approximate area (city and state) — street addresses and ZIP codes are never displayed. Share specific meeting details privately with the other party only once you're comfortable.",
   },
   {
     q: "How do I report someone?",
@@ -54,12 +86,8 @@ const faqs = [
     a: "Yes. You can block a user from their profile or from inside a negotiation. Blocked users disappear from your browse results and can't negotiate or message you, and you can unblock them anytime from your Profile settings.",
   },
   {
-    q: "What happens if someone doesn't complete the agreed work?",
-    a: "Start by communicating through the negotiation — misunderstandings are usually fixable. If not, you can open a formal dispute from the agreement (for example, \"worker stopped working\" or \"no show\"), which the moderation team reviews. You can also report the user directly. Cancellations and upheld disputes affect a member's karma.",
-  },
-  {
-    q: "Is Swap4Work available everywhere?",
-    a: "Swap4Work is built for local communities — you need to be within 50 miles of an item to negotiate for it, so it works wherever enough people near you have joined. The community is young, so listings may be sparse in your area at first; posting your own item is the best way to get things started.",
+    q: "What areas does Swap4Work support?",
+    a: "Swap4Work works anywhere a local community forms — you need to be within 50 miles of an item to negotiate for it. The community is young, so listings may be sparse in your area at first; posting your own item is the best way to get things started.",
   },
   {
     q: "How do I get started?",

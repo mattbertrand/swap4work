@@ -135,7 +135,7 @@ export default function Browse() {
             Trade Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-amber-600">Time</span> for Items
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Browse local items available in exchange for your skills and work hours. No money needed.
+            Browse local items available in exchange for your skills and work hours.
           </p>
         </div>
 
@@ -147,10 +147,10 @@ export default function Browse() {
             </div>
             <div className="flex-1">
               <p className="font-semibold text-blue-900 text-sm">
-                These are sample listings for demonstration purposes
+                Explore example exchanges
               </p>
               <p className="text-blue-700 text-xs">
-                No real items are available yet — be the first to list something and start trading!
+                These sample listings show how exchanges look — yours could be the first real one!
               </p>
             </div>
             <button

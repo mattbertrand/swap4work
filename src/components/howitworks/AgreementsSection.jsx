@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { MessageSquare, FileCheck, ShieldCheck } from "lucide-react";
 
+
 const checklist = [
   "Exactly which item is being exchanged",
   "Exactly what service will be provided",
@@ -80,6 +81,42 @@ export default function AgreementsSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.4 }}
+        >
+          <Card className="border-orange-100 mb-6">
+            <CardContent className="p-6 md:p-8">
+              <h3 className="text-lg font-bold text-gray-900 mb-1">An example Agreement</h3>
+              <p className="text-sm text-gray-500 mb-4">
+                What Sarah and Alex confirmed after negotiating on the bicycle listing:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  ["ITEM", "Used Bicycle"],
+                  ["SERVICE", "Yard work"],
+                  ["TIME", "3 hours"],
+                  ["WHEN", "Saturday morning"],
+                ].map(([label, value]) => (
+                  <div key={label} className="rounded-xl border border-orange-100 bg-orange-50 px-4 py-3">
+                    <p className="text-[11px] uppercase tracking-wide text-gray-500 font-semibold mb-0.5">{label}</p>
+                    <p className="font-bold text-gray-900">{value}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 flex items-center gap-2">
+                <span className="text-[11px] uppercase tracking-wide text-gray-500 font-semibold">STATUS:</span>
+                <span className="inline-flex items-center gap-1 text-sm font-semibold text-green-700">
+                  <FileCheck className="w-4 h-4" />
+                  Accepted
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.4, delay: 0.08 }}
         >
           <Card className="border-orange-100">
             <CardContent className="p-6 md:p-8">
