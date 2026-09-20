@@ -34,7 +34,11 @@ const TIME_SLOTS = ["Morning (6am–12pm)","Afternoon (12pm–5pm)","Evening (5p
 export default function CompleteProfile() {
   const navigate = useNavigate();
   const urlParams = new URLSearchParams(window.location.search);
-  const returnUrl = urlParams.get('returnUrl') || createPageUrl("Home");
+  // Only allow relative paths to prevent open redirect
+  const rawReturnUrl = urlParams.get('returnUrl') || createPageUrl("Home");
+  const returnUrl = rawReturnUrl.startsWith('/') && !rawReturnUrl.startsWith('//') && !rawReturnUrl.includes('\\')
+    ? rawReturnUrl
+    : createPageUrl("Home");
   
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
