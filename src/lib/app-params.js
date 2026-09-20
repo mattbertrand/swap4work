@@ -2,6 +2,13 @@ const isNode = typeof window === 'undefined';
 const windowObj = isNode ? { localStorage: new Map() } : window;
 const storage = windowObj.localStorage;
 
+// Security: never allow a client-supplied API origin. Clear any stale
+// base44_server_url previously persisted from a ?server_url= query param,
+// which could have exfiltrated the access token to an attacker's server.
+if (!isNode && typeof window.localStorage.removeItem === 'function') {
+	window.localStorage.removeItem('base44_server_url');
+}
+
 const toSnakeCase = (str) => {
 	return str.replace(/([A-Z])/g, '_$1').toLowerCase();
 }
@@ -37,7 +44,10 @@ const getAppParamValue = (paramName, { defaultValue = undefined, removeFromUrl =
 const getAppParams = () => {
 	return {
 		appId: getAppParamValue("app_id", { defaultValue: import.meta.env.VITE_BASE44_APP_ID }),
-		serverUrl: getAppParamValue("server_url", { defaultValue: import.meta.env.VITE_BASE44_BACKEND_URL }),
+		// serverUrl is build-time only — deliberately NOT read from the URL
+		// query string or localStorage, so no link can redirect API traffic
+		// (and the bearer token) to an attacker-controlled origin.
+		serverUrl: import.meta.env.VITE_BASE44_BACKEND_URL || '',
 		token: getAppParamValue("access_token", { removeFromUrl: true }),
 		fromUrl: getAppParamValue("from_url", { defaultValue: window.location.href }),
 		functionsVersion: getAppParamValue("functions_version"),
