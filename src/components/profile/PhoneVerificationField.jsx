@@ -16,7 +16,6 @@ const isValidPhone = (phone) => {
 
 export default function PhoneVerificationField({ value, onChange, isVerified, onVerified, onUnverified, userEmail, disabled = false }) {
   const [code, setCode] = useState("");
-  const [sentCode, setSentCode] = useState(null);
   const [codeSent, setCodeSent] = useState(false);
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -33,7 +32,6 @@ export default function PhoneVerificationField({ value, onChange, isVerified, on
     // Reset verification whenever phone number changes
     if (isVerified && onUnverified) onUnverified();
     setCodeSent(false);
-    setSentCode(null);
     setCode("");
   };
 
@@ -43,38 +41,37 @@ export default function PhoneVerificationField({ value, onChange, isVerified, on
       return;
     }
     setSending(true);
-    const generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
-    setSentCode(generatedCode);
     try {
-      await base44.integrations.Core.SendEmail({
-        to: userEmail,
-        subject: "Your Swap4Work Phone Verification Code",
-        body: `Your phone verification code is: ${generatedCode}\n\nEnter this code to verify your phone number (${value}).\n\nThis code expires in 10 minutes.`
-      });
-      setCodeSent(true);
-      toast.success("Verification code sent to your email!");
+      const res = await base44.functions.invoke('sendPhoneVerificationCode', { phone: value });
+      if (res.data?.sent) {
+        setCodeSent(true);
+        toast.success("Verification code sent to your email!");
+      } else {
+        throw new Error(res.data?.error || 'Failed to send code');
+      }
     } catch (err) {
-      toast.error("Failed to send verification code. Please try again.");
-      setSentCode(null);
+      toast.error(err.response?.data?.error || "Failed to send verification code. Please try again.");
     }
     setSending(false);
   };
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     if (!code) return;
     setVerifying(true);
-    setTimeout(() => {
-      if (code.trim() === sentCode) {
+    try {
+      const res = await base44.functions.invoke('verifyPhoneVerificationCode', { phone: value, code });
+      if (res.data?.verified) {
         onVerified();
         toast.success("Phone number verified!");
         setCodeSent(false);
         setCode("");
-        setSentCode(null);
       } else {
-        toast.error("Incorrect code. Please try again.");
+        toast.error("Incorrect or expired code. Please try again.");
       }
-      setVerifying(false);
-    }, 400);
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Incorrect or expired code. Please try again.");
+    }
+    setVerifying(false);
   };
 
   return (

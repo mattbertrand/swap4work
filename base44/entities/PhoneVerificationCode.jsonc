@@ -1,0 +1,34 @@
+{
+  "name": "PhoneVerificationCode",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "User ID the code was sent to"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Phone number being verified"
+    },
+    "code": {
+      "type": "string",
+      "description": "6-digit verification code"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the code expires"
+    },
+    "used": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the code has been used"
+    }
+  },
+  "required": [
+    "user_id",
+    "phone",
+    "code",
+    "expires_at"
+  ]
+}
