@@ -16,7 +16,8 @@ import { isValidPhone, normalizePhoneToE164 } from "@/lib/phone";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import UnsavedChangesDialog from "@/components/forms/UnsavedChangesDialog";
 import PhoneVerificationField from "@/components/profile/PhoneVerificationField";
-import LocationFields, { parseLocationString } from "@/components/location/LocationFields";
+import LocationFields, { parseLocationString, buildLocationString } from "@/components/location/LocationFields";
+import { verifyLocationOnline } from "@/lib/locationValidation";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -83,6 +84,7 @@ export default function Profile() {
   const [selectedTimes, setSelectedTimes] = useState([]);
   const [editSnapshot, setEditSnapshot] = useState(null);
   const [locationErrors, setLocationErrors] = useState({});
+  const [verifyingLocation, setVerifyingLocation] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(userData => {
@@ -231,12 +233,12 @@ export default function Profile() {
           ...data,
           // Sync basic info — store only the canonical public "City, ST"
           full_name: formData.full_name,
-          location: formatPublicLocation(formData.location) || "",
-          latitude: formData.latitude,
-          longitude: formData.longitude,
+          location: formatPublicLocation(data.location || formData.location) || "",
+          latitude: data.latitude ?? formData.latitude,
+          longitude: data.longitude ?? formData.longitude,
           photo_url: user.photo_url,
           email: user.email,
-          phone: formData.phone ? (normalizePhoneToE164(formData.phone) || formData.phone) : ""
+          phone: data.phone ?? (formData.phone ? (normalizePhoneToE164(formData.phone) || formData.phone) : "")
         });
       }
     },
@@ -268,17 +270,47 @@ export default function Profile() {
     }
     setLocationErrors({});
 
+    // --- Geographic verification of the manually entered location (OpenStreetMap) ---
+    if (verifyingLocation) return;
+    setVerifyingLocation(true);
+    const geo = await verifyLocationOnline(locationFields);
+    setVerifyingLocation(false);
+
+    let finalLocationFields = locationFields;
+    if (geo.status === "invalid") {
+      setLocationErrors({ [geo.field]: geo.message });
+      toast.error(geo.message);
+      return;
+    }
+    if (geo.status === "valid") {
+      // Accept the canonical spelling ("petaluma" → "Petaluma") and show it to the user
+      if (geo.city && geo.city !== locationFields.city) {
+        finalLocationFields = { ...locationFields, city: geo.city };
+        setLocationFields(finalLocationFields);
+        toast.success(`Location verified — saved as ${geo.city}, ${locationFields.state}`);
+      }
+    } else {
+      // Validation service unreachable: fall back to the format checks above so
+      // a temporary outage never permanently blocks a legitimate save.
+      toast.warning("We couldn't verify your location online right now. It was checked for format only — please double-check the city.");
+    }
+    const locationString = buildLocationString(finalLocationFields);
+    setFormData(prev => ({ ...prev, location: locationString }));
+
     // --- Phone validation & normalization (E.164) ---
     if (formData.phone && !isValidPhone(formData.phone)) {
       toast.error("Please enter a valid phone number.");
       return;
     }
     const normalizedPhone = formData.phone ? (normalizePhoneToE164(formData.phone) || formData.phone) : "";
-    const profileComplete = !!(formData.location && normalizedPhone && locationFields.city && locationFields.state && locationFields.zip);
+    const profileComplete = !!(locationString && normalizedPhone && locationFields.city && locationFields.state && locationFields.zip);
     const availabilityString = [selectedDays.join(', '), selectedTimes.join(', ')].filter(Boolean).join(' | ');
 
     await updateProfileMutation.mutateAsync({
       ...formData,
+      location: locationString,
+      latitude: formData.latitude ?? (geo.status === "valid" ? geo.latitude : null),
+      longitude: formData.longitude ?? (geo.status === "valid" ? geo.longitude : null),
       phone: normalizedPhone,
       availability: availabilityString,
       phone_verified: phoneVerified,
@@ -296,9 +328,9 @@ export default function Profile() {
         ...workerData,
         availability: availabilityString,
         full_name: formData.full_name,
-        location: formatPublicLocation(formData.location) || "",
-        latitude: formData.latitude,
-        longitude: formData.longitude,
+        location: locationString,
+        latitude: formData.latitude ?? (geo.status === "valid" ? geo.latitude : null),
+        longitude: formData.longitude ?? (geo.status === "valid" ? geo.longitude : null),
         photo_url: user.photo_url,
         phone: normalizedPhone
       });
@@ -453,8 +485,8 @@ export default function Profile() {
                     </Button>
                   ) : (
                     <div className="flex gap-2">
-                      <Button onClick={handleSave} className="bg-orange-600 hover:bg-orange-700">
-                        Save Changes
+                      <Button onClick={handleSave} disabled={verifyingLocation} className="bg-orange-600 hover:bg-orange-700">
+                        {verifyingLocation ? "Verifying location..." : "Save Changes"}
                       </Button>
                       <Button onClick={() => setIsEditing(false)} variant="outline">
                         Cancel

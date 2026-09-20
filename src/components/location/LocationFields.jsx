@@ -26,15 +26,6 @@ export default function LocationFields({ value = {}, onChange, disabled = false,
   const stateError = errors.state || "";
   const reqMark = <span className="text-red-500">*</span>;
 
-  const buildLocationString = (fields) => {
-    const parts = [];
-    if (fields.street) parts.push(fields.street);
-    if (fields.city) parts.push(fields.city);
-    const stateZip = [fields.state, fields.zip].filter(Boolean).join(" ");
-    if (stateZip) parts.push(stateZip);
-    return parts.join(", ");
-  };
-
   const handleChange = (field, val) => {
     const updated = { street, city, state, zip, [field]: val };
     onChange(updated, buildLocationString(updated), null);
@@ -165,6 +156,16 @@ export default function LocationFields({ value = {}, onChange, disabled = false,
       </div>
     </div>
   );
+}
+
+/** Build the full internal location string from structured fields. */
+export function buildLocationString(fields = {}) {
+  const parts = [];
+  if (fields.street) parts.push(fields.street);
+  if (fields.city) parts.push(fields.city);
+  const stateZip = [fields.state, fields.zip].filter(Boolean).join(" ");
+  if (stateZip) parts.push(stateZip);
+  return parts.join(", ");
 }
 
 /** Helper: parse a location string back into fields (never treats an invalid city as a city) */

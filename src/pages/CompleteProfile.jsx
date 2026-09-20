@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Camera, Loader2, CheckCircle2 } from "lucide-react";
 import PhoneVerificationField from "@/components/profile/PhoneVerificationField";
-import LocationFields, { parseLocationString } from "@/components/location/LocationFields";
+import LocationFields, { parseLocationString, buildLocationString } from "@/components/location/LocationFields";
+import { verifyLocationOnline } from "@/lib/locationValidation";
 import { isValidPhone, normalizePhoneToE164 } from "@/lib/phone";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import UnsavedChangesDialog from "@/components/forms/UnsavedChangesDialog";
@@ -53,6 +54,7 @@ export default function CompleteProfile() {
   const [existingTerms, setExistingTerms] = useState(null);
   const [initialSnapshot, setInitialSnapshot] = useState(null);
   const [locationErrors, setLocationErrors] = useState({});
+  const [verifyingLocation, setVerifyingLocation] = useState(false);
 
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [formData, setFormData] = useState({
@@ -170,6 +172,34 @@ export default function CompleteProfile() {
       return;
     }
     setLocationErrors({});
+
+    // --- Geographic verification of the manually entered location (OpenStreetMap) ---
+    if (verifyingLocation) return;
+    setVerifyingLocation(true);
+    const geo = await verifyLocationOnline(locationFields);
+    setVerifyingLocation(false);
+
+    let finalLocationFields = locationFields;
+    if (geo.status === "invalid") {
+      setLocationErrors({ [geo.field]: geo.message });
+      toast.error(geo.message);
+      return;
+    }
+    if (geo.status === "valid") {
+      // Accept the canonical spelling ("petaluma" → "Petaluma") and show it to the user
+      if (geo.city && geo.city !== locationFields.city) {
+        finalLocationFields = { ...locationFields, city: geo.city };
+        setLocationFields(finalLocationFields);
+        toast.success(`Location verified — saved as ${geo.city}, ${locationFields.state}`);
+      }
+    } else {
+      // Validation service unreachable: fall back to the format checks above so
+      // a temporary outage never permanently blocks a legitimate save.
+      toast.warning("We couldn't verify your location online right now. It was checked for format only — please double-check the city.");
+    }
+    const locationString = buildLocationString(finalLocationFields);
+    setFormData(prev => ({ ...prev, location: locationString }));
+
     if (!termsAccepted) {
       toast.error("Please review and accept the Terms & Conditions to continue");
       return;
@@ -185,6 +215,9 @@ export default function CompleteProfile() {
       console.log('💾 Saving profile:', formData);
       await base44.auth.updateMe({
         ...formData,
+        location: locationString,
+        latitude: formData.latitude ?? (geo.status === "valid" ? geo.latitude : null),
+        longitude: formData.longitude ?? (geo.status === "valid" ? geo.longitude : null),
         phone: normalizePhoneToE164(formData.phone) || formData.phone,
         availability: availabilityString,
         phone_verified: phoneVerified,
@@ -291,7 +324,10 @@ export default function CompleteProfile() {
                     setFormData(prev => ({
                       ...prev,
                       location: locationStr,
-                      ...(coords ? { latitude: coords.latitude, longitude: coords.longitude } : {})
+                      // Manual edits clear coordinates (same as Profile) so a
+                      // stale "Locate Me" location is never saved with a new city
+                      latitude: coords ? coords.latitude : null,
+                      longitude: coords ? coords.longitude : null
                     }));
                   }}
                 />
@@ -442,13 +478,13 @@ export default function CompleteProfile() {
 
               <Button
                 type="submit"
-                disabled={loading || uploading}
+                disabled={loading || uploading || verifyingLocation}
                 className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"
               >
-                {loading ? (
+                {loading || verifyingLocation ? (
                   <>
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Saving...
+                    {loading ? "Saving..." : "Verifying location..."}
                   </>
                 ) : (
                   <>
