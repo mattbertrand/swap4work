@@ -27,10 +27,15 @@ export default async function(req) {
       return Response.json({ error: 'Too many codes requested. Please try again later.' }, { status: 429 });
     }
 
-    // Cryptographically secure 6-digit code (crypto.randomInt style, uniform without modulo bias)
+    // Cryptographically secure 6-digit code with rejection sampling so the
+    // distribution is exactly uniform (no modulo bias)
     const buf = new Uint32Array(1);
-    crypto.getRandomValues(buf);
-    const code = (100000 + (buf[0] % 900000)).toString();
+    let raw = 0;
+    do {
+      crypto.getRandomValues(buf);
+      raw = buf[0];
+    } while (raw >= 4294800000); // largest multiple of 900000 below 2^32
+    const code = (100000 + (raw % 900000)).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
     await base44.asServiceRole.entities.PhoneVerificationCode.create({

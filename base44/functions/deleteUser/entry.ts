@@ -11,8 +11,11 @@ export default async function(req) {
 
     const body = await req.json();
     const userId = body.user_id;
-    const mode = body.mode || 'preview';
+    // Strict mode validation: only explicit 'preview' or 'execute' are accepted,
+    // so an unexpected value can never fall through to deletion.
+    const mode = body.mode === 'execute' ? 'execute' : body.mode === 'preview' ? 'preview' : null;
     const reason = body.reason || '';
+    if (!mode) return Response.json({ error: 'mode must be "preview" or "execute"' }, { status: 400 });
     if (!userId) return Response.json({ error: 'user_id is required' }, { status: 400 });
     if (userId === admin.id) return Response.json({ error: 'You cannot delete your own account' }, { status: 400 });
 
