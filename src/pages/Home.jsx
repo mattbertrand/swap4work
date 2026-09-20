@@ -7,6 +7,7 @@ import NearbyWorkers from "@/components/home/NearbyWorkers";
 import TrustSection from "@/components/home/TrustSection";
 import HowItWorksPreview from "@/components/home/HowItWorksPreview";
 import HomeCta from "@/components/home/HomeCta";
+import SocialFollow from "@/components/home/SocialFollow";
 
 export default function Home() {
   useEffect(() => {
@@ -23,6 +24,7 @@ export default function Home() {
       <TrustSection />
       <HowItWorksPreview />
       <HomeCta />
+      <SocialFollow />
     </div>
   );
 }
