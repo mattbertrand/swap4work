@@ -27,7 +27,8 @@ export default function SocialFollow() {
             <Button
               size="lg"
               variant="outline"
-              className="border-2 border-orange-200 text-orange-700 hover:bg-orange-50 text-lg px-8 py-6 h-auto w-full sm:w-auto"
+              // className="border-2 border-orange-200 text-orange-700 hover:bg-orange-50 text-lg px-8 py-6 h-auto w-full sm:w-auto"
+              className="bg-[#1877F2] hover:bg-[#1877F2]/90 text-white px-8 py-6 h-auto w-full sm:w-auto"
             >
               <Instagram className="w-5 h-5 mr-2" />
               Follow us on Instagram
