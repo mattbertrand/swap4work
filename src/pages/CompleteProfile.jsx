@@ -10,6 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Camera, Loader2, CheckCircle2 } from "lucide-react";
 import PhoneVerificationField from "@/components/profile/PhoneVerificationField";
 import LocationFields, { parseLocationString } from "@/components/location/LocationFields";
+import { isValidPhone, normalizePhoneToE164 } from "@/lib/phone";
+import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
+import UnsavedChangesDialog from "@/components/forms/UnsavedChangesDialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -48,6 +51,8 @@ export default function CompleteProfile() {
   const [locationFields, setLocationFields] = useState({ street: "", city: "", state: "", zip: "" });
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [existingTerms, setExistingTerms] = useState(null);
+  const [initialSnapshot, setInitialSnapshot] = useState(null);
+  const [locationErrors, setLocationErrors] = useState({});
 
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [formData, setFormData] = useState({
@@ -68,7 +73,11 @@ export default function CompleteProfile() {
     base44.auth.me().then(async userData => {
       setUser(userData);
       setPhoneVerified(userData.phone_verified || false);
-      setFormData({
+      const parsedLoc = parseLocationString(userData.location || "");
+      const availabilityParts = userData.availability ? userData.availability.split(' | ') : [];
+      const days = availabilityParts[0] ? availabilityParts[0].split(', ').filter(Boolean) : [];
+      const times = availabilityParts[1] ? availabilityParts[1].split(', ').filter(Boolean) : [];
+      const formValues = {
         phone: userData.phone || "",
         location: userData.location || "",
         bio: userData.bio || "",
@@ -78,28 +87,48 @@ export default function CompleteProfile() {
         user_role: userData.user_role || "both",
         latitude: userData.latitude || null,
         longitude: userData.longitude || null
-      });
-      setLocationFields(parseLocationString(userData.location || ""));
-      // Parse availability back into days/times if it exists
-      if (userData.availability) {
-        const parts = userData.availability.split(' | ');
-        if (parts[0]) setSelectedDays(parts[0].split(', ').filter(Boolean));
-        if (parts[1]) setSelectedTimes(parts[1].split(', ').filter(Boolean));
-      }
+      };
+      setFormData(formValues);
+      setLocationFields(parsedLoc);
+      setSelectedDays(days);
+      setSelectedTimes(times);
       // Check if the user has already accepted the terms
+      let hasAccepted = false;
       try {
         const acceptances = await base44.entities.TermsAcceptance.filter({ user_id: userData.id });
         if (acceptances.length > 0) {
           setExistingTerms(acceptances[0]);
           setTermsAccepted(true);
+          hasAccepted = true;
         }
       } catch (err) {
         // Don't block profile completion if this lookup fails
       }
+      // Snapshot the loaded state for unsaved-changes detection
+      setInitialSnapshot(JSON.stringify({
+        ...formValues,
+        locationFields: parsedLoc,
+        selectedDays: [...days].sort(),
+        selectedTimes: [...times].sort(),
+        phoneVerified: userData.phone_verified || false,
+        termsAccepted: hasAccepted
+      }));
     }).catch(() => {
       base44.auth.redirectToLogin(window.location.pathname + window.location.search);
     });
   }, []);
+
+  // --- Unsaved changes protection ---
+  const captureCompleteState = () => JSON.stringify({
+    ...formData,
+    locationFields,
+    selectedDays: [...selectedDays].sort(),
+    selectedTimes: [...selectedTimes].sort(),
+    phoneVerified,
+    termsAccepted
+  });
+  const isDirty = !!user && !!initialSnapshot && captureCompleteState() !== initialSnapshot;
+  const { blocker, markClean } = useUnsavedChanges(isDirty);
 
   const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
@@ -124,23 +153,23 @@ export default function CompleteProfile() {
       toast.error("Please fill in your phone number");
       return;
     }
-    const isValidPhone = (p) => /^\+?[1-9]\d{6,14}$/.test(p.replace(/[\s\-().]/g, ""));
     if (!isValidPhone(formData.phone)) {
-      toast.error("Please enter a valid phone number (e.g. +1 555-555-5555)");
+      toast.error("Please enter a valid phone number.");
       return;
     }
-    if (!locationFields.city || !locationFields.state || !locationFields.zip) {
-      toast.error("Please fill in city, state, and ZIP code");
+    // --- Required location validation (City, ZIP, State; street optional) ---
+    const locErrors = {};
+    if (!locationFields.city) locErrors.city = "City is required";
+    else if (!isValidCityName(locationFields.city)) locErrors.city = "Enter a valid city name";
+    if (!locationFields.state) locErrors.state = "State is required";
+    if (!locationFields.zip) locErrors.zip = "ZIP code is required";
+    else if (!/^\d{5}(-\d{4})?$/.test(locationFields.zip)) locErrors.zip = "Enter a valid 5-digit ZIP code";
+    if (Object.keys(locErrors).length > 0) {
+      setLocationErrors(locErrors);
+      toast.error("Please complete your location — city, state, and ZIP code are required.");
       return;
     }
-    if (!isValidCityName(locationFields.city)) {
-      toast.error("Please enter a valid city name");
-      return;
-    }
-    if (zipError) {
-      toast.error("Please enter a valid ZIP code");
-      return;
-    }
+    setLocationErrors({});
     if (!termsAccepted) {
       toast.error("Please review and accept the Terms & Conditions to continue");
       return;
@@ -156,6 +185,7 @@ export default function CompleteProfile() {
       console.log('💾 Saving profile:', formData);
       await base44.auth.updateMe({
         ...formData,
+        phone: normalizePhoneToE164(formData.phone) || formData.phone,
         availability: availabilityString,
         phone_verified: phoneVerified,
         profile_completed: true
@@ -168,6 +198,7 @@ export default function CompleteProfile() {
         });
       }
       toast.success('Profile completed!');
+      markClean();
       navigate(returnUrl);
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -252,9 +283,10 @@ export default function CompleteProfile() {
                 <p className="text-xs text-gray-500 mb-2">Used to connect you with nearby community members</p>
                 <LocationFields
                   value={locationFields}
-                  errors={{ zip: zipError }}
+                  errors={{ ...locationErrors, zip: locationErrors.zip || zipError }}
                   onChange={(fields, locationStr, coords) => {
                     setLocationFields(fields);
+                    setLocationErrors({});
                     setZipError(fields.zip && !/^\d{5}(-\d{4})?$/.test(fields.zip) ? "Enter a valid 5-digit ZIP code" : "");
                     setFormData(prev => ({
                       ...prev,
@@ -429,6 +461,8 @@ export default function CompleteProfile() {
           </CardContent>
         </Card>
       </div>
+
+      <UnsavedChangesDialog blocker={blocker} />
     </div>
   );
 }

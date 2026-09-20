@@ -12,11 +12,9 @@ import { useBlockedUsers } from "@/hooks/useBlockedUsers";
 import { parseSkills } from "@/lib/skills";
 import { formatPublicLocation, isValidCityName } from "@/lib/location";
 import { toast } from "sonner";
-
-const isValidPhone = (phone) => {
-  const cleaned = phone.replace(/[\s\-().]/g, "");
-  return /^\+?[1-9]\d{6,14}$/.test(cleaned);
-};
+import { isValidPhone, normalizePhoneToE164 } from "@/lib/phone";
+import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
+import UnsavedChangesDialog from "@/components/forms/UnsavedChangesDialog";
 import PhoneVerificationField from "@/components/profile/PhoneVerificationField";
 import LocationFields, { parseLocationString } from "@/components/location/LocationFields";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -83,6 +81,8 @@ export default function Profile() {
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [selectedDays, setSelectedDays] = useState([]);
   const [selectedTimes, setSelectedTimes] = useState([]);
+  const [editSnapshot, setEditSnapshot] = useState(null);
+  const [locationErrors, setLocationErrors] = useState({});
 
   useEffect(() => {
     base44.auth.me().then(userData => {
@@ -236,7 +236,7 @@ export default function Profile() {
           longitude: formData.longitude,
           photo_url: user.photo_url,
           email: user.email,
-          phone: formData.phone
+          phone: formData.phone ? (normalizePhoneToE164(formData.phone) || formData.phone) : ""
         });
       }
     },
@@ -245,17 +245,41 @@ export default function Profile() {
     }
   });
 
+  // --- Unsaved changes protection (Edit Profile) ---
+  // Snapshot is taken when editing starts; dirty = current form differs from it.
+  const captureEditState = () => JSON.stringify({
+    formData, locationFields, workerData, selectedDays, selectedTimes, phoneVerified
+  });
+  const isDirty = isEditing && !!editSnapshot && captureEditState() !== editSnapshot;
+  const { blocker } = useUnsavedChanges(isDirty);
+
   const handleSave = async () => {
-    if (zipError) return;
-    if (formData.phone && !isValidPhone(formData.phone)) {
-      toast.error("Please enter a valid phone number before saving.");
+    // --- Required location validation (City, ZIP, State; street optional) ---
+    const locErrors = {};
+    if (!locationFields.city) locErrors.city = "City is required";
+    else if (!isValidCityName(locationFields.city)) locErrors.city = "Enter a valid city name";
+    if (!locationFields.state) locErrors.state = "State is required";
+    if (!locationFields.zip) locErrors.zip = "ZIP code is required";
+    else if (!/^\d{5}(-\d{4})?$/.test(locationFields.zip)) locErrors.zip = "Enter a valid 5-digit ZIP code";
+    if (Object.keys(locErrors).length > 0) {
+      setLocationErrors(locErrors);
+      toast.error("Please complete your location — city, state, and ZIP code are required.");
       return;
     }
-    const profileComplete = !!(formData.location && formData.phone && isValidCityName(locationFields.city) && locationFields.state && locationFields.zip);
+    setLocationErrors({});
+
+    // --- Phone validation & normalization (E.164) ---
+    if (formData.phone && !isValidPhone(formData.phone)) {
+      toast.error("Please enter a valid phone number.");
+      return;
+    }
+    const normalizedPhone = formData.phone ? (normalizePhoneToE164(formData.phone) || formData.phone) : "";
+    const profileComplete = !!(formData.location && normalizedPhone && locationFields.city && locationFields.state && locationFields.zip);
     const availabilityString = [selectedDays.join(', '), selectedTimes.join(', ')].filter(Boolean).join(' | ');
 
     await updateProfileMutation.mutateAsync({
       ...formData,
+      phone: normalizedPhone,
       availability: availabilityString,
       phone_verified: phoneVerified,
       profile_completed: profileComplete
@@ -276,7 +300,7 @@ export default function Profile() {
         latitude: formData.latitude,
         longitude: formData.longitude,
         photo_url: user.photo_url,
-        phone: formData.phone
+        phone: normalizedPhone
       });
     }
   };
@@ -350,7 +374,7 @@ export default function Profile() {
                   {user.phone_verified && (
                     <Badge className="bg-green-100 text-green-700">
                       <CheckCircle2 className="w-3 h-3 mr-1" />
-                      Phone Verified
+                      Phone number saved
                     </Badge>
                   )}
                   {termsAcceptance && (
@@ -417,7 +441,14 @@ export default function Profile() {
                 <div className="flex justify-between items-center">
                   <CardTitle>Profile Details</CardTitle>
                   {!isEditing ? (
-                    <Button onClick={() => setIsEditing(true)} variant="outline">
+                    <Button
+                      onClick={() => {
+                        setIsEditing(true);
+                        setLocationErrors({});
+                        setEditSnapshot(captureEditState());
+                      }}
+                      variant="outline"
+                    >
                       Edit Profile
                     </Button>
                   ) : (
@@ -463,9 +494,10 @@ export default function Profile() {
                       <LocationFields
                         value={locationFields}
                         disabled={!isEditing}
-                        errors={{ zip: zipError }}
+                        errors={{ ...locationErrors, zip: locationErrors.zip || zipError }}
                         onChange={(fields, locationStr, coords) => {
                           setLocationFields(fields);
+                          setLocationErrors({});
                           const hasZip = fields.zip && !/^\d{5}(-\d{4})?$/.test(fields.zip);
                           setZipError(hasZip ? "Enter a valid 5-digit ZIP code" : "");
                           setFormData(prev => ({
@@ -730,6 +762,8 @@ export default function Profile() {
           </div>
         </div>
       </div>
+
+      <UnsavedChangesDialog blocker={blocker} />
     </div>
   );
 }

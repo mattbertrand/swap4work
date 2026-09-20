@@ -360,11 +360,7 @@ export default function PublicProfile() {
                   {formatPublicLocation(userProfile.location) || "Location unavailable"}
                 </div>
 
-                <div className="flex justify-center gap-2 mb-6">
-                  {userProfile.phone_verified && (
-                    <Badge variant="secondary" className="bg-green-50 text-green-700">Phone Verified</Badge>
-                  )}
-                </div>
+
 
                 {/* Star rating summary */}
                 {ratings.length > 0 && (

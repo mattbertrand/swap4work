@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Upload, X, ArrowLeft, Loader2, MapPin, Package, Briefcase } from "lucide-react";
 import LocationFields, { parseLocationString } from "@/components/location/LocationFields";
 import { normalizeCityName, isValidCityName } from "@/lib/location";
+import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
+import UnsavedChangesDialog from "@/components/forms/UnsavedChangesDialog";
 import AuthModal from "@/components/auth/AuthModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -97,6 +99,19 @@ export default function CreateItem() {
     }, 900);
   }, [locString]);
 
+  // --- Unsaved changes protection ---
+  // Snapshot taken after the form (and profile location prefill) loads.
+  // Coordinates are excluded: they are derived, not user-entered.
+  const [initialSnapshot, setInitialSnapshot] = useState(null);
+  const captureCreateState = () => JSON.stringify({ listingType, formData, locFields });
+  useEffect(() => {
+    if (user && initialSnapshot === null) {
+      setInitialSnapshot(captureCreateState());
+    }
+  }, [user]);
+  const isDirty = !!initialSnapshot && captureCreateState() !== initialSnapshot;
+  const { blocker, markClean } = useUnsavedChanges(isDirty);
+
   const handleLocationChange = (fields, locationString) => {
     setLocFields(fields);
     setLocString(locationString);
@@ -161,6 +176,7 @@ export default function CreateItem() {
         offerer_total_ratings: user.total_ratings || 0,
         status: "active"
       });
+      markClean();
       navigate(createPageUrl("MyListings"));
     } catch {
       alert("Failed to create listing. Please try again.");
@@ -391,7 +407,7 @@ export default function CreateItem() {
                   Location <span className="text-red-500">*</span>
                   <span className="text-xs font-normal text-gray-500 ml-2">(Only your town & state will be shown publicly)</span>
                 </Label>
-                <LocationFields value={locFields} onChange={handleLocationChange} />
+                <LocationFields value={locFields} onChange={handleLocationChange} required={{ city: true, state: true, zip: false }} />
                 <div className="mt-2">
                   {coords.latitude && coords.longitude ? (
                     <p className="text-xs text-green-600 flex items-center gap-1"><MapPin className="w-3 h-3" /> Location verified</p>
@@ -439,7 +455,7 @@ export default function CreateItem() {
               </div>
 
               <div className="flex gap-4 pt-4">
-                <Button type="button" variant="outline" onClick={() => navigate(-1)} className="flex-1">
+                <Button type="button" variant="outline" onClick={() => { markClean(); navigate(-1); }} className="flex-1">
                   Cancel
                 </Button>
                 <Button
@@ -454,6 +470,8 @@ export default function CreateItem() {
           </CardContent>
         </Card>
       </div>
+
+      <UnsavedChangesDialog blocker={blocker} />
     </div>
   );
 }

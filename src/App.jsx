@@ -6,7 +6,7 @@ import VisualEditAgent from '@/lib/VisualEditAgent'
 import NavigationTracker from '@/lib/NavigationTracker'
 import ScrollRestoration from '@/lib/ScrollRestoration'
 import { pagesConfig } from './pages.config'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -51,6 +51,8 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <LayoutWrapper currentPageName={mainPageKey}>
+      <NavigationTracker />
+      <ScrollRestoration />
       <Routes>
         <Route path="/" element={<MainPage />} />
         {Object.entries(Pages).map(([path, Page]) => (
@@ -69,16 +71,18 @@ const AuthenticatedApp = () => {
 };
 
 
+// Data router (single catch-all route) — required for the useBlocker-based
+// unsaved-changes protection; the inner <Routes> still handle page matching.
+const router = createBrowserRouter([
+  { path: "*", element: <AuthenticatedApp /> }
+]);
+
 function App() {
 
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <NavigationTracker />
-          <ScrollRestoration />
-          <AuthenticatedApp />
-        </Router>
+        <RouterProvider router={router} />
         <Toaster />
         <VisualEditAgent />
       </QueryClientProvider>

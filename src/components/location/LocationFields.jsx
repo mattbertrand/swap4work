@@ -17,12 +17,14 @@ import { US_STATES, STATE_NAMES, normalizeState, isValidCityName } from "@/lib/l
  *   disabled: bool
  *   errors: { zip?: string, city?: string }
  */
-export default function LocationFields({ value = {}, onChange, disabled = false, errors = {} }) {
+export default function LocationFields({ value = {}, onChange, disabled = false, errors = {}, required = { city: true, state: true, zip: true } }) {
   const { street = "", city = "", state = "", zip = "" } = value;
   const [locating, setLocating] = useState(false);
 
   const zipError = errors.zip || (zip && !/^\d{5}(-\d{4})?$/.test(zip) ? "Enter a valid 5-digit ZIP code" : "");
   const cityError = errors.city || (city && !isValidCityName(city) ? "Enter a valid city name" : "");
+  const stateError = errors.state || "";
+  const reqMark = <span className="text-red-500">*</span>;
 
   const buildLocationString = (fields) => {
     const parts = [];
@@ -122,7 +124,7 @@ export default function LocationFields({ value = {}, onChange, disabled = false,
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <Label htmlFor="loc-city">City</Label>
+          <Label htmlFor="loc-city">City {required.city && reqMark}</Label>
           <Input
             id="loc-city"
             value={city}
@@ -134,7 +136,7 @@ export default function LocationFields({ value = {}, onChange, disabled = false,
           {cityError && <p className="text-xs text-red-500 mt-1">{cityError}</p>}
         </div>
         <div>
-          <Label htmlFor="loc-zip">ZIP Code</Label>
+          <Label htmlFor="loc-zip">ZIP Code {required.zip && reqMark}</Label>
           <Input
             id="loc-zip"
             value={zip}
@@ -148,7 +150,7 @@ export default function LocationFields({ value = {}, onChange, disabled = false,
         </div>
       </div>
       <div>
-        <Label htmlFor="loc-state">State</Label>
+        <Label htmlFor="loc-state">State {required.state && reqMark}</Label>
         <Select value={state} onValueChange={(val) => handleChange("state", val)} disabled={disabled}>
           <SelectTrigger id="loc-state" className="mt-1">
             <SelectValue placeholder="Select state..." />
@@ -159,6 +161,7 @@ export default function LocationFields({ value = {}, onChange, disabled = false,
             ))}
           </SelectContent>
         </Select>
+        {stateError && <p className="text-xs text-red-500 mt-1">{stateError}</p>}
       </div>
     </div>
   );

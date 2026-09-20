@@ -1,9 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
-
-const isValidPhone = (phone) => {
-  const cleaned = String(phone || '').replace(/[\s\-().]/g, "");
-  return /^\+?[1-9]\d{6,14}$/.test(cleaned);
-};
+import { normalizePhoneE164 } from '../../shared/phone.ts';
 
 export default async function(req) {
   try {
@@ -12,8 +8,9 @@ export default async function(req) {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
-    const phone = String(body.phone || '').trim();
-    if (!isValidPhone(phone)) {
+    // Normalize to E.164 and reject implausible numbers (libphonenumber)
+    const phone = normalizePhoneE164(String(body.phone || ''));
+    if (!phone) {
       return Response.json({ error: 'Invalid phone number' }, { status: 400 });
     }
 
@@ -46,10 +43,12 @@ export default async function(req) {
       used: false
     });
 
+    // The code is emailed to the user's account email: it confirms the
+    // account owner saved this number — it does NOT verify phone ownership.
     await base44.asServiceRole.integrations.Core.SendEmail({
       to: user.email,
-      subject: "Your Swap4Work Phone Verification Code",
-      body: `Your phone verification code is: ${code}\n\nEnter this code to verify your phone number (${phone}).\n\nThis code expires in 10 minutes.`
+      subject: "Your Swap4Work confirmation code",
+      body: `Your Swap4Work confirmation code is: ${code}\n\nEnter this code to confirm the phone number saved on your profile (${phone}).\n\nNote: this code confirms your account by email — it does not verify that this phone number belongs to you.\n\nThis code expires in 10 minutes.`
     });
 
     return Response.json({ sent: true, expires_at: expiresAt });

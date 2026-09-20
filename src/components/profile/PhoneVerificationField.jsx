@@ -4,65 +4,77 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Loader2, Phone } from "lucide-react";
+import { Loader2, MailCheck, Phone } from "lucide-react";
 import { toast } from "sonner";
+import { isValidPhone, normalizePhoneToE164 } from "@/lib/phone";
 
-// Validates international phone numbers in E.164-ish format or common patterns
-const isValidPhone = (phone) => {
-  const cleaned = phone.replace(/[\s\-().]/g, "");
-  // Must have 7–15 digits, optionally starting with +
-  return /^\+?[1-9]\d{6,14}$/.test(cleaned);
-};
-
+/**
+ * Phone number entry with the current email-based confirmation flow.
+ *
+ * IMPORTANT: the confirmation code is emailed to the user's ACCOUNT email —
+ * it confirms the user controls their account, NOT that they own the phone
+ * number. The UI must never claim the phone number itself is "verified".
+ */
 export default function PhoneVerificationField({ value, onChange, isVerified, onVerified, onUnverified, userEmail, disabled = false }) {
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [phoneError, setPhoneError] = useState("");
+  const [phoneValid, setPhoneValid] = useState(false);
 
   const handlePhoneChange = (e) => {
     const val = e.target.value;
     onChange(val);
-    if (val && !isValidPhone(val)) {
-      setPhoneError("Enter a valid phone number (e.g. +1 555-555-5555 or +44 7911 123456)");
-    } else {
-      setPhoneError("");
-    }
-    // Reset verification whenever phone number changes
+    const valid = isValidPhone(val);
+    setPhoneValid(valid);
+    setPhoneError(val && !valid ? "Please enter a valid phone number." : "");
+    // Any change to the number invalidates the previous confirmation
     if (isVerified && onUnverified) onUnverified();
     setCodeSent(false);
     setCode("");
   };
 
+  // Normalize to E.164 once the user leaves the field
+  const handleBlur = () => {
+    if (value && isValidPhone(value)) {
+      const e164 = normalizePhoneToE164(value);
+      if (e164 && e164 !== value) onChange(e164);
+    }
+  };
+
   const handleSendCode = async () => {
-    if (!isValidPhone(value)) {
-      setPhoneError("Enter a valid phone number before sending a code");
+    const e164 = normalizePhoneToE164(value);
+    if (!e164) {
+      setPhoneValid(false);
+      setPhoneError("Please enter a valid phone number.");
       return;
     }
+    if (e164 !== value) onChange(e164); // store the normalized form
     setSending(true);
     try {
-      const res = await base44.functions.invoke('sendPhoneVerificationCode', { phone: value });
+      const res = await base44.functions.invoke('sendPhoneVerificationCode', { phone: e164 });
       if (res.data?.sent) {
         setCodeSent(true);
-        toast.success("Verification code sent to your email!");
+        toast.success("Confirmation code sent to your account email.");
       } else {
         throw new Error(res.data?.error || 'Failed to send code');
       }
     } catch (err) {
-      toast.error(err.response?.data?.error || "Failed to send verification code. Please try again.");
+      toast.error(err.response?.data?.error || "Failed to send confirmation code. Please try again.");
     }
     setSending(false);
   };
 
   const handleVerify = async () => {
-    if (!code) return;
+    const e164 = normalizePhoneToE164(value);
+    if (!e164 || !code) return;
     setVerifying(true);
     try {
-      const res = await base44.functions.invoke('verifyPhoneVerificationCode', { phone: value, code });
-      if (res.data?.verified) {
+      const res = await base44.functions.invoke('verifyPhoneVerificationCode', { phone: e164, code });
+      if (res.data?.confirmed) {
         onVerified();
-        toast.success("Phone number verified!");
+        toast.success("Phone number confirmed via your account email.");
         setCodeSent(false);
         setCode("");
       } else {
@@ -82,8 +94,8 @@ export default function PhoneVerificationField({ value, onChange, isVerified, on
         </Label>
         {isVerified && (
           <Badge className="bg-green-100 text-green-700 border-green-200">
-            <CheckCircle2 className="w-3 h-3 mr-1" />
-            Verified
+            <MailCheck className="w-3 h-3 mr-1" />
+            Confirmed via account email
           </Badge>
         )}
       </div>
@@ -94,6 +106,7 @@ export default function PhoneVerificationField({ value, onChange, isVerified, on
           type="tel"
           value={value}
           onChange={handlePhoneChange}
+          onBlur={handleBlur}
           placeholder="+1 555-555-5555 or +44 7911 123456"
           disabled={disabled}
           className={`flex-1 ${phoneError ? "border-red-400 focus-visible:ring-red-400" : ""}`}
@@ -106,27 +119,31 @@ export default function PhoneVerificationField({ value, onChange, isVerified, on
             disabled={sending || !value || !!phoneError}
             className="whitespace-nowrap"
           >
-            {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : codeSent ? "Resend Code" : "Verify"}
+            {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : codeSent ? "Resend Code" : "Send Code"}
           </Button>
         )}
       </div>
 
-      {phoneError && (
+      {phoneError ? (
         <p className="text-xs text-red-500 flex items-center gap-1">
           <Phone className="w-3 h-3" /> {phoneError}
         </p>
-      )}
+      ) : phoneValid ? (
+        <p className="text-xs text-green-600">Phone number looks valid.</p>
+      ) : null}
 
       {!isVerified && (
         <p className="text-xs text-gray-500">
-          {isVerified ? "" : "International format supported (e.g. +1 555-0123, +44 7911 123456)"}
+          International format supported (e.g. +1 555-0123, +44 7911 123456). Confirmation codes are
+          emailed to your account email — not by SMS.
         </p>
       )}
 
       {codeSent && !isVerified && (
         <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
           <p className="text-sm text-blue-800">
-            A 6-digit code was sent to <strong>{userEmail}</strong>. Enter it below to verify your phone number.
+            A 6-digit code was emailed to <strong>{userEmail}</strong>. Enter it below to confirm this
+            phone number. This confirms your account by email; it does not verify phone ownership.
           </p>
           <div className="flex gap-2">
             <Input

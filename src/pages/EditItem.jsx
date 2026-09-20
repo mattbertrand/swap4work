@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, X, ArrowLeft, Loader2, MapPin } from "lucide-react";
+import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
+import UnsavedChangesDialog from "@/components/forms/UnsavedChangesDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function EditItem() {
@@ -209,9 +211,25 @@ export default function EditItem() {
     }));
   };
 
+  // --- Unsaved changes protection ---
+  // Coordinates are excluded: they are geocoded, not user-entered.
+  const [initialSnapshot, setInitialSnapshot] = useState(null);
+  const captureEditItemState = () => {
+    const { latitude, longitude, ...rest } = formData;
+    return JSON.stringify(rest);
+  };
+  useEffect(() => {
+    if (item && user && initialSnapshot === null) {
+      setInitialSnapshot(captureEditItemState());
+    }
+  }, [item, user]);
+  const isDirty = !!initialSnapshot && captureEditItemState() !== initialSnapshot;
+  const { blocker, markClean } = useUnsavedChanges(isDirty);
+
   const updateItemMutation = useMutation({
     mutationFn: (data) => base44.entities.Item.update(itemId, data),
     onSuccess: () => {
+      markClean();
       queryClient.invalidateQueries(['item', itemId]);
       queryClient.invalidateQueries(['myItems']);
       navigate(createPageUrl("MyListings"));
@@ -476,7 +494,7 @@ export default function EditItem() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => navigate(createPageUrl("MyListings"))}
+                  onClick={() => { markClean(); navigate(createPageUrl("MyListings")); }}
                   className="flex-1"
                 >
                   Cancel
@@ -500,6 +518,8 @@ export default function EditItem() {
           </CardContent>
         </Card>
       </div>
+
+      <UnsavedChangesDialog blocker={blocker} />
     </div>
   );
 }

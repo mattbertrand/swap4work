@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { normalizePhoneE164 } from '../../shared/phone.ts';
 
 export default async function(req) {
   try {
@@ -7,7 +8,7 @@ export default async function(req) {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
-    const phone = String(body.phone || '').trim();
+    const phone = normalizePhoneE164(String(body.phone || ''));
     const code = String(body.code || '').replace(/\D/g, '');
     if (!phone || code.length !== 6) {
       return Response.json({ error: 'Invalid request' }, { status: 400 });
@@ -25,7 +26,7 @@ export default async function(req) {
     const latest = active[0];
 
     if (!latest) {
-      return Response.json({ verified: false, error: 'Incorrect or expired code' }, { status: 400 });
+      return Response.json({ confirmed: false, error: 'Incorrect or expired code' }, { status: 400 });
     }
 
     // Brute-force protection: invalidate the code after 5 failed attempts
@@ -35,11 +36,11 @@ export default async function(req) {
         failed_attempts: failedAttempts,
         ...(failedAttempts >= 5 ? { used: true } : {})
       });
-      return Response.json({ verified: false, error: 'Incorrect or expired code' }, { status: 400 });
+      return Response.json({ confirmed: false, error: 'Incorrect or expired code' }, { status: 400 });
     }
 
     await base44.asServiceRole.entities.PhoneVerificationCode.update(latest.id, { used: true });
-    return Response.json({ verified: true });
+    return Response.json({ confirmed: true });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
