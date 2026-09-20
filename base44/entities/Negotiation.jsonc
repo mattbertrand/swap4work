@@ -118,5 +118,67 @@
     "offerer_id",
     "bidder_id",
     "initial_offer_hours"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "data.offerer_id": "{{user.id}}"
+        },
+        {
+          "data.bidder_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "data.offerer_id": "{{user.id}}"
+        },
+        {
+          "data.bidder_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.offerer_id": "{{user.id}}"
+        },
+        {
+          "data.bidder_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.offerer_id": "{{user.id}}"
+        },
+        {
+          "data.bidder_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
 }
