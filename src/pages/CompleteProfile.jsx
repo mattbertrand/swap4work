@@ -15,6 +15,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { parseSkills } from "@/lib/skills";
+import { isValidCityName } from "@/lib/location";
 import { toast } from "sonner";
 
 const SKILL_CATEGORIES = {
@@ -130,6 +131,10 @@ export default function CompleteProfile() {
     }
     if (!locationFields.city || !locationFields.state || !locationFields.zip) {
       toast.error("Please fill in city, state, and ZIP code");
+      return;
+    }
+    if (!isValidCityName(locationFields.city)) {
+      toast.error("Please enter a valid city name");
       return;
     }
     if (zipError) {
@@ -248,10 +253,14 @@ export default function CompleteProfile() {
                 <LocationFields
                   value={locationFields}
                   errors={{ zip: zipError }}
-                  onChange={(fields, locationStr) => {
+                  onChange={(fields, locationStr, coords) => {
                     setLocationFields(fields);
                     setZipError(fields.zip && !/^\d{5}(-\d{4})?$/.test(fields.zip) ? "Enter a valid 5-digit ZIP code" : "");
-                    setFormData(prev => ({ ...prev, location: locationStr }));
+                    setFormData(prev => ({
+                      ...prev,
+                      location: locationStr,
+                      ...(coords ? { latitude: coords.latitude, longitude: coords.longitude } : {})
+                    }));
                   }}
                 />
               </div>

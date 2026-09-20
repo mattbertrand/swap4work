@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { parseSkills } from "@/lib/skills";
+import { formatPublicLocation } from "@/lib/location";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,16 +21,6 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
     Math.sin(dLon/2) * Math.sin(dLon/2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   return R * c;
-};
-
-// Get approximate location (city/state) — never an exact address
-const getApproximateLocation = (fullLocation) => {
-  if (!fullLocation) return null;
-  const parts = fullLocation.split(',').map(p => p.trim());
-  if (parts.length >= 2) {
-    return parts.slice(-2).join(', ');
-  }
-  return fullLocation;
 };
 
 export default function NearbyWorkers() {
@@ -187,14 +178,14 @@ export default function NearbyWorkers() {
                       </div>
                     </div>
 
-                    {(worker.distance || worker.location) && (
+                    {(worker.distance || formatPublicLocation(worker.location)) && (
                       <div className="mt-3 pt-3 border-t border-gray-200">
                         <div className="flex items-center justify-center gap-1 text-sm text-gray-600">
                           <MapPin className="w-4 h-4 text-orange-600" />
                           <span className="font-medium">
                             {worker.distance
                               ? `${worker.distance} miles away`
-                              : getApproximateLocation(worker.location)}
+                              : formatPublicLocation(worker.location)}
                           </span>
                         </div>
                       </div>

@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, X, ArrowLeft, Loader2, MapPin, Package, Briefcase } from "lucide-react";
 import LocationFields, { parseLocationString } from "@/components/location/LocationFields";
+import { normalizeCityName, isValidCityName } from "@/lib/location";
 import AuthModal from "@/components/auth/AuthModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -131,14 +132,18 @@ export default function CreateItem() {
       alert("Please enter at least a city and state for your location");
       return;
     }
+    if (!isValidCityName(locFields.city)) {
+      alert("Please enter a valid city name for your location");
+      return;
+    }
 
     if (!coords.latitude || !coords.longitude) {
       alert("Could not verify your location coordinates. Please check your address and try again.");
       return;
     }
 
-    // Build the public-safe location string (city + state only, no street)
-    const publicLocation = [locFields.city, locFields.state, locFields.zip].filter(Boolean).join(", ");
+    // Build the public-safe location string: canonical "City, ST" only — no street, no ZIP
+    const publicLocation = [normalizeCityName(locFields.city), locFields.state].filter(Boolean).join(", ");
 
     setLoading(true);
     try {

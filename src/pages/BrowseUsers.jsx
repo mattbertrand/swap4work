@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { parseSkills } from "@/lib/skills";
+import { formatPublicLocation } from "@/lib/location";
 import { Search, MapPin, Star, Filter, Users, ArrowRight, X, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -24,16 +25,6 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
     Math.sin(dLon/2) * Math.sin(dLon/2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   return R * c;
-};
-
-// Get approximate location (city/state) from exact coordinates
-const getApproximateLocation = (fullLocation) => {
-  if (!fullLocation) return null;
-  const parts = fullLocation.split(',').map(p => p.trim());
-  if (parts.length >= 2) {
-    return parts.slice(-2).join(', ');
-  }
-  return fullLocation;
 };
 
 export default function BrowseUsers() {
@@ -249,10 +240,10 @@ export default function BrowseUsers() {
                           <h3 className="font-bold text-lg text-gray-900 truncate">{worker.full_name}</h3>
                         </div>
                         <div className="flex items-center gap-2 mb-1">
-                          {worker.location && (
+                          {formatPublicLocation(worker.location) && (
                             <span className="flex items-center gap-1 truncate text-sm text-gray-600">
                               <MapPin className="w-3 h-3" />
-                              {getApproximateLocation(worker.location)}
+                              {formatPublicLocation(worker.location)}
                             </span>
                           )}
                         </div>

@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Camera, Star, CheckCircle2, Clock, Package, LogOut, MapPin, Loader2, ChevronDown, ChevronUp, Ban, UserX } from "lucide-react";
 import { useBlockedUsers } from "@/hooks/useBlockedUsers";
 import { parseSkills } from "@/lib/skills";
+import { formatPublicLocation, isValidCityName } from "@/lib/location";
 import { toast } from "sonner";
 
 const isValidPhone = (phone) => {
@@ -66,7 +67,6 @@ export default function Profile() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [gettingLocation, setGettingLocation] = useState(false);
   const [formData, setFormData] = useState({
     full_name: "",
     phone: "",
@@ -142,98 +142,7 @@ export default function Profile() {
     }
   });
 
-  const getCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser");
-      return;
-    }
 
-    setGettingLocation(true);
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-
-        try {
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
-          );
-          const data = await response.json();
-          const location = `${data.address.city || data.address.town || data.address.village || ''}, ${data.address.state || ''} ${data.address.postcode || ''}`.trim();
-
-          setFormData(prev => ({
-            ...prev,
-            location: location,
-            latitude,
-            longitude
-          }));
-        } catch (error) {
-          console.error("Error getting address:", error);
-          setFormData(prev => ({
-            ...prev,
-            latitude,
-            longitude
-          }));
-          alert("Could not determine address from coordinates, but location data is saved.");
-        }
-        setGettingLocation(false);
-      },
-      (error) => {
-        console.error("Error getting location:", error);
-        alert("Unable to get your current location. Please enter it manually.");
-        setGettingLocation(false);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
-      }
-    );
-  };
-
-  let geocodeTimeout;
-  const geocodeLocation = async (locationString) => {
-    if (!locationString || locationString.length < 5) return;
-
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationString)}&limit=1`
-      );
-      const data = await response.json();
-
-      if (data && data.length > 0) {
-        setFormData(prev => ({
-          ...prev,
-          latitude: parseFloat(data[0].lat),
-          longitude: parseFloat(data[0].lon)
-        }));
-      } else {
-        setFormData(prev => ({
-          ...prev,
-          latitude: null,
-          longitude: null
-        }));
-      }
-    } catch (error) {
-      console.error("Error geocoding location:", error);
-      setFormData(prev => ({
-        ...prev,
-        latitude: null,
-        longitude: null
-      }));
-    }
-  };
-
-  const handleLocationChange = (e) => {
-    const newLocation = e.target.value;
-    setFormData(prev => ({...prev, location: newLocation}));
-
-    clearTimeout(geocodeTimeout);
-    if (newLocation.length > 5) {
-      geocodeTimeout = setTimeout(() => geocodeLocation(newLocation), 1000);
-    } else {
-      setFormData(prev => ({...prev, latitude: null, longitude: null}));
-    }
-  };
 
   const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
@@ -320,9 +229,9 @@ export default function Profile() {
         return base44.entities.Worker.create({
           user_id: user.id,
           ...data,
-          // Sync basic info
+          // Sync basic info — store only the canonical public "City, ST"
           full_name: formData.full_name,
-          location: formData.location,
+          location: formatPublicLocation(formData.location) || "",
           latitude: formData.latitude,
           longitude: formData.longitude,
           photo_url: user.photo_url,
@@ -342,7 +251,7 @@ export default function Profile() {
       toast.error("Please enter a valid phone number before saving.");
       return;
     }
-    const profileComplete = !!(formData.location && formData.phone && locationFields.city && locationFields.state && locationFields.zip);
+    const profileComplete = !!(formData.location && formData.phone && isValidCityName(locationFields.city) && locationFields.state && locationFields.zip);
     const availabilityString = [selectedDays.join(', '), selectedTimes.join(', ')].filter(Boolean).join(' | ');
 
     await updateProfileMutation.mutateAsync({
@@ -363,7 +272,7 @@ export default function Profile() {
         ...workerData,
         availability: availabilityString,
         full_name: formData.full_name,
-        location: formData.location,
+        location: formatPublicLocation(formData.location) || "",
         latitude: formData.latitude,
         longitude: formData.longitude,
         photo_url: user.photo_url,
@@ -555,11 +464,16 @@ export default function Profile() {
                         value={locationFields}
                         disabled={!isEditing}
                         errors={{ zip: zipError }}
-                        onChange={(fields, locationStr) => {
+                        onChange={(fields, locationStr, coords) => {
                           setLocationFields(fields);
                           const hasZip = fields.zip && !/^\d{5}(-\d{4})?$/.test(fields.zip);
                           setZipError(hasZip ? "Enter a valid 5-digit ZIP code" : "");
-                          setFormData(prev => ({ ...prev, location: locationStr, latitude: null, longitude: null }));
+                          setFormData(prev => ({
+                            ...prev,
+                            location: locationStr,
+                            latitude: coords ? coords.latitude : null,
+                            longitude: coords ? coords.longitude : null
+                          }));
                         }}
                       />
                     </div>

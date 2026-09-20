@@ -6,18 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import OwnerReputation from "@/components/browse/OwnerReputation";
-
-// Helper to extract only city and state (never street) from location string
-const getCityState = (location) => {
-  if (!location) return "Location not specified";
-  const parts = location.split(',').map(p => p.trim());
-  const cleanParts = parts.map(p => p.replace(/\d{5}(-\d{4})?/g, '').trim()).filter(p => p.length > 0);
-  if (cleanParts.length === 0) return location;
-  if (cleanParts.length === 1) return cleanParts[0];
-  const state = cleanParts[cleanParts.length - 1];
-  const city = cleanParts[cleanParts.length - 2];
-  return `${city}, ${state}`;
-};
+import { formatPublicLocation } from "@/lib/location";
 
 export default function ItemCard({ item, showDistance, userAgreements = [] }) {
   // Find agreement related to this item
@@ -122,7 +111,7 @@ export default function ItemCard({ item, showDistance, userAgreements = [] }) {
           <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
             <div className="flex items-center gap-1 min-w-0">
               <MapPin className="w-4 h-4 flex-shrink-0" />
-              <span className="truncate">{getCityState(item.location)}</span>
+              <span className="truncate">{formatPublicLocation(item.location) || "Location not specified"}</span>
             </div>
             {item.created_date && (
               <div className="flex items-center gap-1 flex-shrink-0">

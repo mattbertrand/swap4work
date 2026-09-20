@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { parseSkills } from "@/lib/skills";
+import { formatPublicLocation } from "@/lib/location";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -356,11 +357,7 @@ export default function PublicProfile() {
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">{userProfile.full_name}</h1>
                 <div className="flex justify-center items-center gap-1 text-gray-500 mb-4 text-sm">
                   <MapPin className="w-3 h-3" />
-                  {(() => {
-                    const parts = (userProfile.location || "").split(',').map(p => p.trim());
-                    if (parts.length >= 2) return parts.slice(-2).join(', ');
-                    return userProfile.location;
-                  })()}
+                  {formatPublicLocation(userProfile.location) || "Location unavailable"}
                 </div>
 
                 <div className="flex justify-center gap-2 mb-6">

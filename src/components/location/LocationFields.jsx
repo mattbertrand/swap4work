@@ -4,52 +4,38 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, Loader2 } from "lucide-react";
-
-const US_STATES = [
-  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
-  "HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
-  "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
-  "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
-  "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","DC"
-];
-
-const STATE_NAMES = {
-  AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",
-  CO:"Colorado",CT:"Connecticut",DE:"Delaware",FL:"Florida",GA:"Georgia",
-  HI:"Hawaii",ID:"Idaho",IL:"Illinois",IN:"Indiana",IA:"Iowa",
-  KS:"Kansas",KY:"Kentucky",LA:"Louisiana",ME:"Maine",MD:"Maryland",
-  MA:"Massachusetts",MI:"Michigan",MN:"Minnesota",MS:"Mississippi",MO:"Missouri",
-  MT:"Montana",NE:"Nebraska",NV:"Nevada",NH:"New Hampshire",NJ:"New Jersey",
-  NM:"New Mexico",NY:"New York",NC:"North Carolina",ND:"North Dakota",OH:"Ohio",
-  OK:"Oklahoma",OR:"Oregon",PA:"Pennsylvania",RI:"Rhode Island",SC:"South Carolina",
-  SD:"South Dakota",TN:"Tennessee",TX:"Texas",UT:"Utah",VT:"Vermont",
-  VA:"Virginia",WA:"Washington",WV:"West Virginia",WI:"Wisconsin",WY:"Wyoming",DC:"Washington DC"
-};
+import { toast } from "sonner";
+import { US_STATES, STATE_NAMES, normalizeState, isValidCityName } from "@/lib/location";
 
 /**
  * Structured location fields: street, city, state, zip.
- * 
+ *
  * Props:
  *   value: { street, city, state, zip }
- *   onChange: (fields, locationString) => void
+ *   onChange: (fields, locationString, coords) => void
+ *     coords is { latitude, longitude } when set by "Locate Me", null on manual edits.
  *   disabled: bool
- *   errors: { zip?: string }
+ *   errors: { zip?: string, city?: string }
  */
 export default function LocationFields({ value = {}, onChange, disabled = false, errors = {} }) {
   const { street = "", city = "", state = "", zip = "" } = value;
   const [locating, setLocating] = useState(false);
 
   const zipError = errors.zip || (zip && !/^\d{5}(-\d{4})?$/.test(zip) ? "Enter a valid 5-digit ZIP code" : "");
+  const cityError = errors.city || (city && !isValidCityName(city) ? "Enter a valid city name" : "");
+
+  const buildLocationString = (fields) => {
+    const parts = [];
+    if (fields.street) parts.push(fields.street);
+    if (fields.city) parts.push(fields.city);
+    const stateZip = [fields.state, fields.zip].filter(Boolean).join(" ");
+    if (stateZip) parts.push(stateZip);
+    return parts.join(", ");
+  };
 
   const handleChange = (field, val) => {
     const updated = { street, city, state, zip, [field]: val };
-    const parts = [];
-    if (updated.street) parts.push(updated.street);
-    if (updated.city) parts.push(updated.city);
-    const stateZip = [updated.state, updated.zip].filter(Boolean).join(" ");
-    if (stateZip) parts.push(stateZip);
-    const locationString = parts.join(", ");
-    onChange(updated, locationString);
+    onChange(updated, buildLocationString(updated), null);
   };
 
   const handleLocateMe = () => {
@@ -59,29 +45,49 @@ export default function LocationFields({ value = {}, onChange, disabled = false,
       async (position) => {
         try {
           const { latitude, longitude } = position.coords;
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
-          );
-          const data = await response.json();
-          const addr = data.address || {};
-          const detectedCity = addr.city || addr.town || addr.village || addr.hamlet || "";
-          const detectedZip = addr.postcode ? addr.postcode.slice(0, 5) : "";
-          const detectedStateAbbr = Object.entries(STATE_NAMES).find(
-            ([abbr, name]) => name.toLowerCase() === (addr.state || "").toLowerCase()
-          )?.[0] || "";
-          const updated = { street: street, city: detectedCity, state: detectedStateAbbr, zip: detectedZip };
-          const parts = [];
-          if (updated.street) parts.push(updated.street);
-          if (updated.city) parts.push(updated.city);
-          const stateZip = [updated.state, updated.zip].filter(Boolean).join(" ");
-          if (stateZip) parts.push(stateZip);
-          onChange(updated, parts.join(", "));
-        } catch (e) {
-          console.error("Reverse geocode failed", e);
+          let detectedCity = "";
+          let detectedZip = "";
+          let detectedState = "";
+          try {
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+            );
+            const data = await response.json();
+            const addr = data.address || {};
+            detectedCity = addr.city || addr.town || addr.village || addr.hamlet || "";
+            detectedZip = addr.postcode ? addr.postcode.slice(0, 5) : "";
+            detectedState = normalizeState(addr.state) || "";
+          } catch (e) {
+            console.error("Reverse geocode failed", e);
+          }
+
+          // The street address is manually entered information — Locate Me
+          // never overwrites or erases it. City/state/ZIP/coordinates are
+          // only updated with what geolocation reliably determined.
+          const updated = {
+            street,
+            city: detectedCity || city,
+            state: detectedState || state,
+            zip: detectedZip || zip,
+          };
+          onChange(updated, buildLocationString(updated), { latitude, longitude });
+
+          if (detectedCity && detectedState) {
+            toast.success(
+              `Location detected: ${detectedCity}, ${detectedState}` +
+                (street ? " — your street address was kept as entered" : "")
+            );
+          } else {
+            toast.error("We found your coordinates, but couldn't determine your city. Please check the location fields.");
+          }
+        } finally {
+          setLocating(false);
         }
-        setLocating(false);
       },
-      () => setLocating(false),
+      () => {
+        setLocating(false);
+        toast.error("Unable to get your current location. Please enter it manually.");
+      },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
@@ -123,8 +129,9 @@ export default function LocationFields({ value = {}, onChange, disabled = false,
             onChange={(e) => handleChange("city", e.target.value)}
             placeholder="San Francisco"
             disabled={disabled}
-            className="mt-1"
+            className={`mt-1 ${cityError ? "border-red-400 focus-visible:ring-red-400" : ""}`}
           />
+          {cityError && <p className="text-xs text-red-500 mt-1">{cityError}</p>}
         </div>
         <div>
           <Label htmlFor="loc-zip">ZIP Code</Label>
@@ -157,7 +164,7 @@ export default function LocationFields({ value = {}, onChange, disabled = false,
   );
 }
 
-/** Helper: parse a location string back into fields */
+/** Helper: parse a location string back into fields (never treats an invalid city as a city) */
 export function parseLocationString(locationStr) {
   if (!locationStr) return { street: "", city: "", state: "", zip: "" };
   const zipMatch = locationStr.match(/(\d{5}(-\d{4})?)$/);
@@ -165,9 +172,14 @@ export function parseLocationString(locationStr) {
   const withoutZip = zip ? locationStr.slice(0, locationStr.lastIndexOf(zip)).replace(/,?\s*$/, "") : locationStr;
   const parts = withoutZip.split(",").map(p => p.trim());
   const lastPart = parts[parts.length - 1] || "";
-  const stateAbbr = US_STATES.find(s => s === lastPart.toUpperCase()) ? lastPart.toUpperCase() : "";
+  const stateAbbr = normalizeState(lastPart);
   const withoutState = stateAbbr ? parts.slice(0, -1) : parts;
-  const city = withoutState[withoutState.length - 1] || "";
-  const street = withoutState.slice(0, -1).join(", ");
-  return { street, city, state: stateAbbr, zip };
+  let city = withoutState[withoutState.length - 1] || "";
+  let street = withoutState.slice(0, -1).join(", ");
+  if (city && !isValidCityName(city)) {
+    // Not a real city (e.g. a street line with no city) — keep it as street, don't guess
+    street = [street, city].filter(Boolean).join(", ");
+    city = "";
+  }
+  return { street, city, state: stateAbbr || "", zip };
 }
