@@ -20,12 +20,25 @@ export default async function(req) {
     }, '-created_date', 10);
 
     const now = new Date();
-    const match = codes.find(c => c.code === code && new Date(c.expires_at) > now);
-    if (!match) {
+    const active = codes.filter(c => new Date(c.expires_at) > now)
+      .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+    const latest = active[0];
+
+    if (!latest) {
       return Response.json({ verified: false, error: 'Incorrect or expired code' }, { status: 400 });
     }
 
-    await base44.asServiceRole.entities.PhoneVerificationCode.update(match.id, { used: true });
+    // Brute-force protection: invalidate the code after 5 failed attempts
+    if (latest.code !== code) {
+      const failedAttempts = (latest.failed_attempts || 0) + 1;
+      await base44.asServiceRole.entities.PhoneVerificationCode.update(latest.id, {
+        failed_attempts: failedAttempts,
+        ...(failedAttempts >= 5 ? { used: true } : {})
+      });
+      return Response.json({ verified: false, error: 'Incorrect or expired code' }, { status: 400 });
+    }
+
+    await base44.asServiceRole.entities.PhoneVerificationCode.update(latest.id, { used: true });
     return Response.json({ verified: true });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

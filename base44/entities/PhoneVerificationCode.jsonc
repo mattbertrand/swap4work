@@ -22,7 +22,12 @@
     "used": {
       "type": "boolean",
       "default": false,
-      "description": "Whether the code has been used"
+      "description": "Whether the code has been used or invalidated"
+    },
+    "failed_attempts": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of incorrect verification attempts on this code"
     }
   },
   "required": [
@@ -30,27 +35,5 @@
     "phone",
     "code",
     "expires_at"
-  ],
-  "rls": {
-    "create": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "read": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "update": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
-    }
-  }
+  ]
 }

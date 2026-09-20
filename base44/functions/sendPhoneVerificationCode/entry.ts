@@ -27,7 +27,10 @@ export default async function(req) {
       return Response.json({ error: 'Too many codes requested. Please try again later.' }, { status: 429 });
     }
 
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    // Cryptographically secure 6-digit code (crypto.randomInt style, uniform without modulo bias)
+    const buf = new Uint32Array(1);
+    crypto.getRandomValues(buf);
+    const code = (100000 + (buf[0] % 900000)).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
     await base44.asServiceRole.entities.PhoneVerificationCode.create({
