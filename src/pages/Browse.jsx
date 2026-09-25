@@ -51,7 +51,7 @@ export default function Browse() {
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ['items', sortBy],
-    queryFn: () => base44.entities.Item.filter({ status: "active" }, sortBy),
+    queryFn: () => base44.entities.Item.filter({ status: "active", listing_type: "item" }, sortBy),
   });
 
   const { blockedUserIds } = useBlockedUsers(user?.id);

@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import HomeHero from "@/components/home/HomeHero";
 import TwoJourneys from "@/components/home/TwoJourneys";
 import FeaturedItems from "@/components/home/FeaturedItems";
+import FeaturedServices from "@/components/home/FeaturedServices";
 import WhatCouldYouTrade from "@/components/home/WhatCouldYouTrade";
 import NearbyWorkers from "@/components/home/NearbyWorkers";
 import TrustSection from "@/components/home/TrustSection";
@@ -19,6 +20,7 @@ export default function Home() {
       <HomeHero />
       <TwoJourneys />
       <FeaturedItems />
+      <FeaturedServices />
       <WhatCouldYouTrade />
       <NearbyWorkers />
       <TrustSection />

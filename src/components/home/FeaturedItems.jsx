@@ -10,7 +10,7 @@ import { Package, ArrowRight } from "lucide-react";
 export default function FeaturedItems() {
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["featuredItems"],
-    queryFn: () => base44.entities.Item.filter({ status: "active" }, "-created_date", 6),
+    queryFn: () => base44.entities.Item.filter({ status: "active", listing_type: "item" }, "-created_date", 6),
   });
 
   const visible = items.filter((i) => !i.is_hidden);
@@ -22,7 +22,7 @@ export default function FeaturedItems() {
           <div className="text-center md:text-left">
             <h2 className="text-3xl font-bold text-gray-900 mb-2">Explore Exchanges</h2>
             <p className="text-gray-600">
-              Every listing shows the work its owner is looking for in return.
+              Every item listing shows the work its owner is looking for in return.
             </p>
           </div>
           <Link to={createPageUrl("Browse")} className="hidden md:block">
