@@ -86,16 +86,14 @@ export default function MyAgreements() {
 
       const otherUserId = user.id === negotiation.bidder_id ? negotiation.offerer_id : negotiation.bidder_id;
       
-      await base44.entities.Notification.create({
+      await base44.functions.invoke('sendNotification', {
         user_id: otherUserId,
         type: 'agreement_created',
         title: 'Negotiation cancelled',
         message: `${user.full_name} cancelled the negotiation for ${negotiation.item_title}`,
         related_id: negotiation.item_id,
         related_type: 'item',
-        link_url: createPageUrl(`Browse`),
-        from_user_id: user.id,
-        from_user_name: user.full_name
+        link_url: createPageUrl(`Browse`)
       });
     },
     onSuccess: () => {
@@ -114,16 +112,14 @@ export default function MyAgreements() {
 
       const otherUserId = user.id === agreement.worker_id ? agreement.offerer_id : agreement.worker_id;
       
-      await base44.entities.Notification.create({
+      await base44.functions.invoke('sendNotification', {
         user_id: otherUserId,
         type: 'agreement_created',
         title: 'Agreement cancelled',
         message: `${user.full_name} cancelled the agreement for ${agreement.item_title}`,
         related_id: agreement.item_id,
         related_type: 'item',
-        link_url: createPageUrl(`Browse`),
-        from_user_id: user.id,
-        from_user_name: user.full_name
+        link_url: createPageUrl(`Browse`)
       });
     },
     onSuccess: () => {

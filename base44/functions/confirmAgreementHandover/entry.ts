@@ -59,9 +59,14 @@ export default async function(req) {
       completion_date: new Date().toISOString()
     });
 
-    // Hours credited are derived from logged time entries only
+    // Hours credited are derived from logged time entries only, with
+    // server-side clamps: each entry is capped at 12h and the total can never
+    // exceed the agreed hours, so forged TimeLog records cannot inflate
+    // public statistics.
     const logs = await db.TimeLog.filter({ agreement_id: agreementId });
-    const hoursToAdd = logs.reduce((sum, l) => sum + (l.hours || 0), 0);
+    const loggedHours = logs.reduce(
+      (sum, l) => sum + Math.min(Math.max(Number(l.hours) || 0, 0), 12), 0);
+    const hoursToAdd = Math.min(loggedHours, agreement.agreed_hours || 0);
     for (const memberId of [agreement.offerer_id, agreement.worker_id]) {
       const workerRows = await db.Worker.filter({ user_id: memberId });
       if (workerRows[0]) {

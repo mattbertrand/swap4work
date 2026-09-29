@@ -30,130 +30,34 @@ export default function AdminDisputes() {
   });
 
   const resolveDisputeMutation = useMutation({
-    mutationFn: ({ disputeId, data }) => base44.entities.Dispute.update(disputeId, data),
+    // All privileged resolution writes (dispute record, karma, user
+    // suspension, agreement/item state) happen server-side in the
+    // admin-only resolveDispute backend function.
+    mutationFn: ({ disputeId, action, resolution, partialCredit }) =>
+      base44.functions.invoke('resolveDispute', {
+        dispute_id: disputeId,
+        action,
+        resolution,
+        partial_credit: partialCredit ? parseFloat(partialCredit) : null
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries(['disputes']);
+      queryClient.invalidateQueries(['agreements']);
       setSelectedDispute(null);
     }
-  });
-
-  const createKarmaTransactionMutation = useMutation({
-    mutationFn: (data) => base44.entities.KarmaTransaction.create(data)
-  });
-
-  const updateUserMutation = useMutation({
-    mutationFn: ({ userId, data }) => base44.entities.User.update(userId, data)
-  });
-
-  const updateAgreementMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Agreement.update(id, data)
   });
 
   const openDisputes = disputes.filter(d => d.status === 'open');
   const underReviewDisputes = disputes.filter(d => d.status === 'under_review');
   const resolvedDisputes = disputes.filter(d => d.status === 'resolved' || d.status === 'closed');
 
-  const handleResolveDispute = async (action) => {
+  const handleResolveDispute = (action) => {
     if (!selectedDispute) return;
-
-    const agreement = agreements.find(a => a.id === selectedDispute.agreement_id);
-    if (!agreement) return;
-
-    const user = await base44.auth.me();
-    let disputeUpdate = {
-      status: 'resolved',
-      resolved_by: user.id,
-      resolved_by_name: user.full_name,
-      resolved_date: new Date().toISOString(),
-      resolution,
-      karma_adjustments: []
-    };
-
-    if (action === 'award_partial') {
-      const credit = parseFloat(partialCredit);
-      if (credit > 0 && credit <= 100) {
-        disputeUpdate.partial_credit_awarded = credit;
-        
-        // Award karma to worker
-        const karmaPoints = Math.floor((credit / 100) * 10);
-        await createKarmaTransactionMutation.mutateAsync({
-          user_id: agreement.worker_id,
-          user_name: agreement.worker_name,
-          type: "gain",
-          reason: "partial_milestone_credit",
-          points: karmaPoints,
-          agreement_id: agreement.id,
-          description: `Admin awarded ${credit}% partial credit in dispute resolution`
-        });
-
-        const workers = await base44.entities.User.filter({ id: agreement.worker_id });
-        if (workers[0]) {
-          await updateUserMutation.mutateAsync({
-            userId: agreement.worker_id,
-            data: { karma_points: (workers[0].karma_points || 0) + karmaPoints }
-          });
-        }
-
-        disputeUpdate.karma_adjustments.push({
-          user_id: agreement.worker_id,
-          points: karmaPoints,
-          reason: 'Partial credit awarded'
-        });
-      }
-    } else if (action === 'strike_offerer') {
-      // Penalize offerer
-      await createKarmaTransactionMutation.mutateAsync({
-        user_id: agreement.offerer_id,
-        user_name: agreement.offerer_name,
-        type: "loss",
-        reason: "dispute_violation",
-        points: -20,
-        agreement_id: agreement.id,
-        description: "Admin penalty for dispute violation"
-      });
-
-      const offerers = await base44.entities.User.filter({ id: agreement.offerer_id });
-      if (offerers[0]) {
-        const newKarma = (offerers[0].karma_points || 0) - 20;
-        const updateData = {
-          karma_points: newKarma,
-          cancellation_count: (offerers[0].cancellation_count || 0) + 1
-        };
-        
-        if (newKarma < 0) {
-          updateData.is_suspended = true;
-          updateData.suspension_end_date = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-        }
-        
-        await updateUserMutation.mutateAsync({
-          userId: agreement.offerer_id,
-          data: updateData
-        });
-      }
-
-      disputeUpdate.karma_adjustments.push({
-        user_id: agreement.offerer_id,
-        points: -20,
-        reason: 'Dispute violation strike'
-      });
-    } else if (action === 'approve_mutual') {
-      // No penalties, just close
-      await updateAgreementMutation.mutateAsync({
-        id: agreement.id,
-        data: { status: 'cancelled_mutual' }
-      });
-
-      // Unreserve item
-      await base44.entities.Item.update(agreement.item_id, {
-        is_reserved: false,
-        reserved_for_agreement_id: null,
-        status: 'active'
-      });
-    }
-
-    await resolveDisputeMutation.mutateAsync({
+    resolveDisputeMutation.mutate({
       disputeId: selectedDispute.id,
-      data: disputeUpdate
+      action,
+      resolution,
+      partialCredit
     });
   };
 

@@ -153,16 +153,14 @@ export default function TimeTracking() {
     });
 
     // Notify the offerer
-    await base44.entities.Notification.create({
+    await base44.functions.invoke('sendNotification', {
       user_id: agreement.offerer_id,
       type: 'work_completed',
       title: 'Work completed!',
       message: `${user.full_name} has completed the work for ${agreement.item_title}. Please review and confirm handover.`,
       related_id: agreementId,
       related_type: 'agreement',
-      link_url: createPageUrl(`AgreementDetail?id=${agreementId}`),
-      from_user_id: user.id,
-      from_user_name: user.full_name
+      link_url: createPageUrl(`AgreementDetail?id=${agreementId}`)
     });
 
     queryClient.invalidateQueries(['agreement', agreementId]);

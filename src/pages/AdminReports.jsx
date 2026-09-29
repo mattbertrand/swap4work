@@ -68,82 +68,13 @@ export default function AdminReports() {
     if (!user) return;
     setActingOn(report.id);
     try {
-      const now = new Date().toISOString();
-      const previousCount = getPreviousCount(report);
-      const resolutionText = {
-        ignored: "Report ignored - no action needed",
-        warned: "User warned about their behavior",
-        listing_hidden: "Listing hidden from public view",
-        suspended: "User account suspended for 7 days",
-        banned: "User account permanently banned",
-      }[action];
-
-      // 1. Update the report
-      await base44.entities.Report.update(report.id, {
-        status: action === "ignored" ? "ignored" : "resolved",
-        resolution: resolutionText,
-        resolved_by: user.id,
-        resolved_by_name: user.full_name,
-        resolved_date: now,
-      });
-
-      // 2. Create moderation history entry
-      await base44.entities.ModerationHistory.create({
+      // All privileged moderation writes (report resolution, moderation
+      // history, warnings, suspension/ban) happen server-side in the
+      // admin-only resolveReport backend function.
+      await base44.functions.invoke("resolveReport", {
         report_id: report.id,
-        admin_id: user.id,
-        admin_name: user.full_name,
         action,
-        target_user_id: report.reported_user_id || "",
-        target_user_name: report.reported_user_name || "",
-        notes: resolutionText,
-        previous_report_count: previousCount,
       });
-
-      // 3. Perform the actual moderation action
-      if (action === "warned" && report.reported_user_id) {
-        await base44.entities.Notification.create({
-          user_id: report.reported_user_id,
-          type: "moderation_warning",
-          title: "Warning from Swap4Work",
-          message: `You have received a warning regarding: ${resolutionText}. Please review our community guidelines. Repeated violations may result in account suspension.`,
-        });
-      }
-
-      if (action === "listing_hidden" && report.target_type === "item") {
-        await base44.entities.Item.update(report.target_id, {
-          status: "cancelled",
-        });
-      }
-
-      if (action === "suspended" && report.reported_user_id) {
-        const suspendEndDate = new Date(
-          Date.now() + 7 * 24 * 60 * 60 * 1000
-        ).toISOString();
-        await base44.entities.User.update(report.reported_user_id, {
-          is_suspended: true,
-          suspension_end_date: suspendEndDate.split("T")[0],
-        });
-      }
-
-      if (action === "banned" && report.reported_user_id) {
-        await base44.entities.User.update(report.reported_user_id, {
-          is_banned: true,
-          is_suspended: true,
-        });
-      }
-
-      // 4. Notify the reporter that moderation is complete
-      if (report.reporter_id) {
-        await base44.entities.Notification.create({
-          user_id: report.reporter_id,
-          type: "moderation_resolved",
-          title: "Your report has been reviewed",
-          message: `Thank you for your report. Our team has reviewed it and taken action: ${resolutionText}.`,
-          related_id: report.id,
-          related_type: "message",
-        });
-      }
-
       toast.success(`Report ${ACTION_LABELS[action]} ${report.reported_user_name || ""}`.trim());
       queryClient.invalidateQueries(["allReports"]);
     } catch (error) {

@@ -311,16 +311,14 @@ export default function ItemDetail() {
         proposal_hours: hours
       });
 
-      await base44.entities.Notification.create({
+      await base44.functions.invoke('sendNotification', {
         user_id: item.offerer_id,
         type: 'new_negotiation',
         title: 'New negotiation started',
         message: `${user.full_name} wants to trade work for your ${item.title}`,
         related_id: negotiation.id,
         related_type: 'negotiation',
-        link_url: createPageUrl(`Negotiation?id=${negotiation.id}`),
-        from_user_id: user.id,
-        from_user_name: user.full_name
+        link_url: createPageUrl(`Negotiation?id=${negotiation.id}`)
       });
 
       setStartNegModalOpen(false);

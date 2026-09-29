@@ -122,10 +122,9 @@ export default function Negotiation() {
 
   const createNotificationMutation = useMutation({
     mutationFn: async (data) => {
-      console.log('🔔 Creating notification:', data);
-      const result = await base44.entities.Notification.create(data);
-      console.log('✅ Notification created:', result);
-      return result;
+      // Sender identity is set server-side by the sendNotification function
+      const res = await base44.functions.invoke('sendNotification', data);
+      return res.data;
     },
     onError: (error) => {
       console.error('❌ Error creating notification:', error);
@@ -321,16 +320,14 @@ export default function Negotiation() {
       
       // Notify the other user - FIXED LINK
       const otherUserId = neg.bidder_id === user.id ? neg.offerer_id : neg.bidder_id;
-      await base44.entities.Notification.create({
+      await base44.functions.invoke('sendNotification', {
         user_id: otherUserId,
         type: 'negotiation_closed',
         title: 'Negotiation closed',
         message: `The item owner has accepted another offer for ${negotiation.item_title}`,
         related_id: neg.id,
         related_type: 'negotiation',
-        link_url: createPageUrl(`Browse`), // FIXED: Navigate to Browse instead of ItemDetail
-        from_user_id: user.id,
-        from_user_name: user.full_name
+        link_url: createPageUrl(`Browse`)
       });
     }));
 
@@ -344,16 +341,14 @@ export default function Negotiation() {
     });
 
     await Promise.all(waitlistUsers.map(async (waitlistEntry) => {
-      await base44.entities.Notification.create({
+      await base44.functions.invoke('sendNotification', {
         user_id: waitlistEntry.user_id,
         type: 'item_available',
         title: 'Negotiation spot may be available',
         message: `A negotiation for ${negotiation.item_title} was closed. You may be able to start negotiating now!`,
         related_id: negotiation.item_id,
         related_type: 'item',
-        link_url: createPageUrl(`ItemDetail?id=${negotiation.item_id}`),
-        from_user_id: user.id,
-        from_user_name: 'Swap4Work'
+        link_url: createPageUrl(`ItemDetail?id=${negotiation.item_id}`)
       });
       await base44.entities.ItemWaitlist.update(waitlistEntry.id, {
         notified: true,
@@ -405,16 +400,14 @@ export default function Negotiation() {
     });
 
     await Promise.all(waitlistUsers.map(async (waitlistEntry) => {
-      await base44.entities.Notification.create({
+      await base44.functions.invoke('sendNotification', {
         user_id: waitlistEntry.user_id,
         type: 'item_available',
         title: 'Negotiation spot available',
         message: `A negotiation for ${negotiation.item_title} was declined. You can now start negotiating!`,
         related_id: negotiation.item_id,
         related_type: 'item',
-        link_url: createPageUrl(`ItemDetail?id=${negotiation.item_id}`),
-        from_user_id: user.id,
-        from_user_name: 'Swap4Work'
+        link_url: createPageUrl(`ItemDetail?id=${negotiation.item_id}`)
       });
     }));
 

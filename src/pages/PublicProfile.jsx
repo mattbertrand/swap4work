@@ -254,16 +254,14 @@ export default function PublicProfile() {
         proposal_hours: selectedItem.required_hours
       });
 
-      await base44.entities.Notification.create({
+      await base44.functions.invoke('sendNotification', {
         user_id: userId,
         type: 'new_negotiation',
         title: 'New service request',
         message: `${currentUser.full_name} requested your service in exchange for ${selectedItem.title}`,
         related_id: negotiation.id,
         related_type: 'negotiation',
-        link_url: createPageUrl(`Negotiation?id=${negotiation.id}`),
-        from_user_id: currentUser.id,
-        from_user_name: currentUser.full_name
+        link_url: createPageUrl(`Negotiation?id=${negotiation.id}`)
       });
 
       return negotiation;
