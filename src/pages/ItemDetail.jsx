@@ -424,6 +424,11 @@ export default function ItemDetail() {
 
   const isOwner = user?.id === item.offerer_id;
 
+  // Real photos first; services without them fall back to the category cover
+  const displayPhotos = item.photos?.length > 0
+    ? item.photos
+    : (item.cover_image ? [item.cover_image] : []);
+
   return (
     <div className="min-h-screen p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
@@ -443,7 +448,7 @@ export default function ItemDetail() {
             <Card className="overflow-hidden border-orange-100 shadow-xl">
               <Carousel className="w-full">
                 <CarouselContent>
-                  {item.photos?.map((photo, index) => (
+                  {displayPhotos.map((photo, index) => (
                     <CarouselItem key={index}>
                       <div className="aspect-[4/3] bg-gray-100">
                         <img
@@ -455,7 +460,7 @@ export default function ItemDetail() {
                     </CarouselItem>
                   ))}
                 </CarouselContent>
-                {item.photos?.length > 1 && (
+                {displayPhotos.length > 1 && (
                   <>
                     <CarouselPrevious className="left-4" />
                     <CarouselNext className="right-4" />
@@ -503,9 +508,17 @@ export default function ItemDetail() {
                     <Badge className="bg-orange-100 text-orange-700">
                       {item.category}
                     </Badge>
-                    <Badge className="bg-green-100 text-green-700">
-                      {item.condition}
-                    </Badge>
+                    {item.condition && item.listing_type === "item" && (
+                      <Badge className="bg-green-100 text-green-700">
+                        {item.condition}
+                      </Badge>
+                    )}
+                    {item.listing_type === "service" && item.photos?.length > 0 && (
+                      <Badge className="bg-emerald-100 text-emerald-700">
+                        <CheckCircle2 className="w-3 h-3 mr-1" />
+                        Real photos
+                      </Badge>
+                    )}
                   </div>
                   {/* Time posted */}
                   <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
@@ -516,7 +529,7 @@ export default function ItemDetail() {
 
                 <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-6 border-2 border-orange-200">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-gray-600 font-medium">Required Work</span>
+                    <span className="text-gray-600 font-medium">{item.listing_type === "service" ? "Service Hours" : "Required Work"}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Clock className="w-8 h-8 text-orange-600" />

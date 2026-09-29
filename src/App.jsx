@@ -19,6 +19,7 @@ import AdminUserManagement from './pages/AdminUserManagement';
 import HowItWorks from './pages/HowItWorks';
 import Privacy from './pages/Privacy';
 import CommunityGuidelines from './pages/CommunityGuidelines';
+import EditService from './pages/EditService';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -70,6 +71,7 @@ const AuthenticatedApp = () => {
         <Route path="/howitworks" element={<HowItWorks />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/communityguidelines" element={<CommunityGuidelines />} />
+        <Route path="/editservice" element={<EditService />} />
         <Route path="*" element={<PageNotFound />} />
       </Routes>
     </LayoutWrapper>

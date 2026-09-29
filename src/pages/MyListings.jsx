@@ -119,8 +119,8 @@ export default function MyListings() {
         <CardContent className="p-5">
           <div className="flex gap-4 mb-4">
             <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-              {item.photos?.[0] ? (
-                <img src={item.photos[0]} alt={item.title} className="w-full h-full object-cover" />
+              {(item.photos?.[0] || item.cover_image) ? (
+                <img src={item.photos?.[0] || item.cover_image} alt={item.title} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
                   <Package className="w-8 h-8 text-gray-300" />
@@ -203,7 +203,7 @@ export default function MyListings() {
               </Button>
             </Link>
             {canEdit && (
-              <Link to={createPageUrl(`EditItem?id=${item.id}`)} className="flex-1">
+              <Link to={createPageUrl(`${item.listing_type === 'service' ? 'EditService' : 'EditItem'}?id=${item.id}`)} className="flex-1">
                 <Button className="w-full bg-orange-600 hover:bg-orange-700">
                   <Edit className="w-4 h-4 mr-2" />
                   Edit

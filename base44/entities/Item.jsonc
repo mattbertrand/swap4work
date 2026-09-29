@@ -57,6 +57,10 @@
       },
       "description": "Array of photo URLs (required for items, optional for services)"
     },
+    "cover_image": {
+      "type": "string",
+      "description": "Auto-assigned category cover image URL (services only). Real photos in 'photos' display instead of the cover when present."
+    },
     "condition": {
       "type": "string",
       "enum": [

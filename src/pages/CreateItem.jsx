@@ -13,6 +13,9 @@ import { normalizeCityName, isValidCityName } from "@/lib/location";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import UnsavedChangesDialog from "@/components/forms/UnsavedChangesDialog";
 import AuthModal from "@/components/auth/AuthModal";
+import ServicePhotosSection from "@/components/forms/ServicePhotosSection";
+import ServiceDetailsFields from "@/components/forms/ServiceDetailsFields";
+import { getServiceCover } from "@/lib/serviceCovers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function CreateItem() {
@@ -165,6 +168,7 @@ export default function CreateItem() {
       await base44.entities.Item.create({
         ...formData,
         listing_type: listingType,
+        ...(listingType === "service" ? { cover_image: getServiceCover(formData.category) } : {}),
         required_hours: parseFloat(formData.required_hours),
         estimated_value: parseFloat(formData.estimated_value) || 0,
         location: publicLocation,
@@ -283,7 +287,17 @@ export default function CreateItem() {
                 </div>
               </div>
 
-              {/* Photos - items only */}
+              {/* Photos */}
+              {listingType === "service" && (
+                <ServicePhotosSection
+                  category={formData.category}
+                  photos={formData.photos}
+                  uploading={uploading}
+                  onFilesSelected={handleFileUpload}
+                  onRemovePhoto={removePhoto}
+                />
+              )}
+
               {listingType === "item" && (
                 <div>
                   <Label className="text-base font-semibold mb-3 block">
@@ -309,14 +323,16 @@ export default function CreateItem() {
               )}
 
               {/* Basic Info */}
+              {listingType === "item" ? (
+              <>
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="title">{listingType === "item" ? "Item" : "Service"} Title <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="title">Item Title <span className="text-red-500">*</span></Label>
                   <Input
                     id="title"
                     value={formData.title}
                     onChange={(e) => setFormData(p => ({ ...p, title: e.target.value }))}
-                    placeholder={listingType === "item" ? "e.g., MacBook Pro 2020" : "e.g., Professional House Cleaning"}
+                    placeholder="e.g., MacBook Pro 2020"
                     required
                     className="mt-2"
                   />
@@ -327,27 +343,13 @@ export default function CreateItem() {
                   <Select value={formData.category} onValueChange={(value) => setFormData(p => ({ ...p, category: value }))}>
                     <SelectTrigger className="mt-2"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {listingType === "item" ? (
-                        <>
-                          <SelectItem value="Electronics">Electronics</SelectItem>
-                          <SelectItem value="Home Goods">Home Goods</SelectItem>
-                          <SelectItem value="Furniture">Furniture</SelectItem>
-                          <SelectItem value="Appliances">Appliances</SelectItem>
-                          <SelectItem value="Tools">Tools</SelectItem>
-                          <SelectItem value="Sports Equipment">Sports Equipment</SelectItem>
-                          <SelectItem value="Other">Other</SelectItem>
-                        </>
-                      ) : (
-                        <>
-                          <SelectItem value="Home Repairs">Home Repairs</SelectItem>
-                          <SelectItem value="Cleaning">Cleaning</SelectItem>
-                          <SelectItem value="Yard Work">Yard Work</SelectItem>
-                          <SelectItem value="Digital Services">Digital Services</SelectItem>
-                          <SelectItem value="Tutoring">Tutoring</SelectItem>
-                          <SelectItem value="Personal Assistance">Personal Assistance</SelectItem>
-                          <SelectItem value="Creative Services">Creative Services</SelectItem>
-                        </>
-                      )}
+                      <SelectItem value="Electronics">Electronics</SelectItem>
+                      <SelectItem value="Home Goods">Home Goods</SelectItem>
+                      <SelectItem value="Furniture">Furniture</SelectItem>
+                      <SelectItem value="Appliances">Appliances</SelectItem>
+                      <SelectItem value="Tools">Tools</SelectItem>
+                      <SelectItem value="Sports Equipment">Sports Equipment</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -370,7 +372,7 @@ export default function CreateItem() {
 
                 <div>
                   <Label htmlFor="required_hours">
-                    {listingType === "item" ? "Work Hours Required" : "Service Hours Offered"} <span className="text-red-500">*</span>
+                    Work Hours Required <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="required_hours"
@@ -400,6 +402,8 @@ export default function CreateItem() {
                   </div>
                 )}
               </div>
+              </>
+              ) : null}
 
               {/* Location */}
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -417,13 +421,15 @@ export default function CreateItem() {
                 </div>
               </div>
 
+              {listingType === "item" ? (
+              <>
               <div>
                 <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData(p => ({ ...p, description: e.target.value }))}
-                  placeholder={listingType === "item" ? "Detailed description of the item..." : "Describe the service you're offering, your experience, and what's included..."}
+                  placeholder="Detailed description of the item..."
                   rows={4}
                   required
                   className="mt-2"
@@ -431,12 +437,12 @@ export default function CreateItem() {
               </div>
 
               <div>
-                <Label htmlFor="suggested_tasks">{listingType === "item" ? "Suggested Tasks" : "Service Details"}</Label>
+                <Label htmlFor="suggested_tasks">Suggested Tasks</Label>
                 <Textarea
                   id="suggested_tasks"
                   value={formData.suggested_tasks}
                   onChange={(e) => setFormData(p => ({ ...p, suggested_tasks: e.target.value }))}
-                  placeholder={listingType === "item" ? "e.g., Clean garage, organize storage, help with moving..." : "e.g., Includes materials, takes 2-3 hours, flexible schedule..."}
+                  placeholder="e.g., Clean garage, organize storage, help with moving..."
                   rows={3}
                   className="mt-2"
                 />
@@ -453,6 +459,10 @@ export default function CreateItem() {
                   className="mt-2"
                 />
               </div>
+              </>
+              ) : (
+                <ServiceDetailsFields formData={formData} setFormData={setFormData} />
+              )}
 
               <div className="flex gap-4 pt-4">
                 <Button type="button" variant="outline" onClick={() => { markClean(); navigate(-1); }} className="flex-1">
