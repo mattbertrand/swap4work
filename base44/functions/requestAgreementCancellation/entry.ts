@@ -57,7 +57,7 @@ export default async function(req) {
     // Mirror onto the agreement for UI display only — approval logic re-reads
     // the server ledger and never trusts this copy.
     await db.Agreement.update(agreementId, {
-      cancellation_request: requestData,
+      cancellation_request: { ...requestData, status: 'pending_mutual' },
       history: [...(agreement.history || []), {
         timestamp: now.toISOString(),
         actor_id: user.id,

@@ -33,6 +33,15 @@ export default async function(req) {
       return Response.json({ error: 'You can only review a completed agreement' }, { status: 400 });
     }
 
+    // Completion must be proven by server-written handover confirmations from
+    // BOTH parties — the Agreement status field itself is client-writable, so
+    // on its own it proves nothing.
+    const confirmations = await db.HandoverConfirmation.filter({ agreement_id: agreementId });
+    const confirmedIds = confirmations.map((c) => c.user_id);
+    if (!confirmedIds.includes(agreement.offerer_id) || !confirmedIds.includes(agreement.worker_id)) {
+      return Response.json({ error: 'You can only review a completed agreement' }, { status: 400 });
+    }
+
     const existing = await db.Rating.filter({ agreement_id: agreementId, from_user_id: user.id });
     if (existing[0]) {
       return Response.json({ error: 'You have already reviewed this agreement' }, { status: 409 });

@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
-import { getActiveUser } from '../../shared/moderation.ts';
+import { getActiveUser, applyModerationFlags } from '../../shared/moderation.ts';
 
 // Admin-only report moderation. The Report resolution record, moderation
 // history, warning/notification to the reported user, listing hiding, and
@@ -103,10 +103,18 @@ export default async function(req) {
         is_suspended: true,
         suspension_end_date: suspendEndDate.split('T')[0]
       });
+      await applyModerationFlags(db, report.reported_user_id, {
+        is_suspended: true,
+        suspension_end_date: suspendEndDate.split('T')[0]
+      });
     }
 
     if (action === 'banned' && report.reported_user_id) {
       await db.User.update(report.reported_user_id, {
+        is_banned: true,
+        is_suspended: true
+      });
+      await applyModerationFlags(db, report.reported_user_id, {
         is_banned: true,
         is_suspended: true
       });

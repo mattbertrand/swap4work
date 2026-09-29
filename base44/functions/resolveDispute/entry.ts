@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
-import { getActiveUser } from '../../shared/moderation.ts';
+import { getActiveUser, applyModerationFlags } from '../../shared/moderation.ts';
 
 // Admin-only dispute resolution. All privileged writes (Dispute resolution
 // record, karma transactions, user karma/suspension, agreement and item
@@ -108,6 +108,10 @@ export default async function(req) {
         if (newKarma < 0) {
           updateData.is_suspended = true;
           updateData.suspension_end_date = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+          await applyModerationFlags(db, agreement.offerer_id, {
+            is_suspended: true,
+            suspension_end_date: updateData.suspension_end_date
+          });
         }
         await db.User.update(agreement.offerer_id, updateData);
       }

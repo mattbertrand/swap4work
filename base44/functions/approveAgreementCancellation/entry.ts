@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
-import { getActiveUser, loadVerifiedAgreement } from '../../shared/moderation.ts';
+import { getActiveUser, loadVerifiedAgreement, applyModerationFlags } from '../../shared/moderation.ts';
 
 // Approves the OTHER party's pending cancellation request for an agreement.
 // All karma, cancellation-count and auto-suspension bookkeeping happens here,
@@ -24,8 +24,18 @@ export default async function(req) {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const request = agreement.cancellation_request;
-    if (!request || request.status !== 'pending_mutual' || request.requested_by === user.id) {
+    // The pending request must exist in the server-written CancellationRequest
+    // ledger — the copy on the Agreement is client-writable display data and
+    // must never be trusted (a forged requested_by would let a worker frame
+    // the offerer for a mid-agreement cancellation penalty).
+    let request = null;
+    try {
+      const pendingRequests = await db.CancellationRequest.filter({ agreement_id: agreementId, status: 'pending' });
+      request = pendingRequests[0];
+    } catch (e) {
+      request = null;
+    }
+    if (!request || request.requested_by === user.id) {
       return Response.json({ error: 'There is no pending cancellation request from the other party' }, { status: 400 });
     }
     if (agreement.status !== 'locked' && agreement.status !== 'in_progress') {
@@ -73,16 +83,22 @@ export default async function(req) {
             karma_points: newKarma,
             cancellation_count: (offerers[0].cancellation_count || 0) + 1
           };
-          // Auto-suspend on negative karma
+          // Auto-suspend on negative karma. The enforced flag lives in the
+          // server-only ModerationStatus ledger; the User field is display-only.
           if (newKarma < 0) {
             updateData.is_suspended = true;
             updateData.suspension_end_date = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+            await applyModerationFlags(db, agreement.offerer_id, {
+              is_suspended: true,
+              suspension_end_date: updateData.suspension_end_date
+            });
           }
           await db.User.update(agreement.offerer_id, updateData);
         }
       }
     }
 
+    await db.CancellationRequest.update(request.id, { status: 'approved' });
     await db.Agreement.update(agreementId, {
       status: 'cancelled_mutual',
       cancellation_request: { ...request, status: 'approved' },

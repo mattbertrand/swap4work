@@ -58,7 +58,25 @@ export default async function(req) {
       recipient = null;
     }
     if (!recipient) {
-      return Response.json({ error: 'Recipient not found' }, { status: 404 });
+      // Uniform response: indistinguishable from a blocked send, so callers
+      // cannot probe which user ids exist.
+      return Response.json({ success: true, sent: false });
+    }
+
+    // Rate limits (admins exempt) to stop notification spam/flooding.
+    if (!isAdmin) {
+      try {
+        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+        const recentFromSender = await db.Notification.filter({ from_user_id: user.id, created_date: { $gte: oneHourAgo } });
+        if (recentFromSender.length >= 20) {
+          return Response.json({ error: 'Too many notifications sent recently. Please try again later.' }, { status: 429 });
+        }
+        if (recentFromSender.filter((n) => n.user_id === toUserId).length >= 5) {
+          return Response.json({ error: 'Too many notifications sent to this member recently.' }, { status: 429 });
+        }
+      } catch (e) {
+        // Rate limiting is best-effort; never block legitimate sends on errors.
+      }
     }
 
     // Respect blocks: if the recipient blocked the sender, silently skip

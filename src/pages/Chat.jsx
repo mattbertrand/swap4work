@@ -175,19 +175,14 @@ export default function Chat() {
   const handleRequestCancellation = async (cancellationData) => {
     if (!user || !agreement) return;
 
-    const updateData = {
-      cancellation_request: {
-        status: "pending_mutual",
-        requested_by: user.id,
-        requested_by_name: user.full_name,
-        reason: cancellationData.reason,
-        requested_date: cancellationData.requested_date,
-        expires_at: cancellationData.expires_at
-      },
-      history: addToHistory('cancellation_requested', `${user.full_name} requested cancellation: ${cancellationData.reason}`)
-    };
-
-    await updateAgreementMutation.mutateAsync({ id: agreementId, data: updateData });
+    // The request is recorded in a server-side ledger with the requester's
+    // identity taken from the session, so it can't be forged in the other
+    // party's name.
+    await base44.functions.invoke('requestAgreementCancellation', {
+      agreement_id: agreementId,
+      reason: cancellationData.reason
+    });
+    queryClient.invalidateQueries(['agreement', agreementId]);
   };
 
   const handleOpenDispute = async (disputeData) => {
@@ -223,17 +218,11 @@ export default function Chat() {
       });
       navigate(createPageUrl("MyAgreements"));
     } else {
-      // Rejection - could trigger dispute
-      await updateAgreementMutation.mutateAsync({
-        id: agreementId,
-        data: {
-          cancellation_request: {
-            ...agreement.cancellation_request,
-            status: 'rejected'
-          },
-          history: addToHistory('cancellation_rejected', 'Cancellation request rejected')
-        }
+      // Rejection is recorded server-side alongside the request ledger
+      await base44.functions.invoke('rejectAgreementCancellation', {
+        agreement_id: agreementId
       });
+      queryClient.invalidateQueries(['agreement', agreementId]);
     }
   };
 

@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { applyModerationFlags } from '../../shared/moderation.ts';
 
 export default async function(req) {
   try {
@@ -38,6 +39,10 @@ export default async function(req) {
       ? (action === 'ban' ? { is_suspended: true, is_banned: true } : { is_suspended: true })
       : { is_suspended: false, is_banned: false };
     await db.User.update(userId, userUpdate);
+    // Enforced flags live in the server-only ModerationStatus ledger
+    await applyModerationFlags(db, userId, suspending
+      ? (action === 'ban' ? { is_suspended: true, is_banned: true } : { is_suspended: true })
+      : { is_suspended: false, is_banned: false });
 
     // 2. Hide (or restore) their listings
     await db.Item.updateMany({ offerer_id: userId }, { $set: { is_hidden: suspending } });
