@@ -50,97 +50,27 @@ export default function AgreementDetail() {
     enabled: !!agreementId && !!user && !!agreement
   });
 
-  const updateAgreementMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Agreement.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['agreement', agreementId]);
-    }
-  });
+
 
   const handleConfirmHandover = async () => {
     if (!user || !agreement) return;
 
-    const isOfferer = user.id === agreement.offerer_id;
-    
-    // Update confirmation status
-    const updateData = isOfferer 
-      ? { offerer_handover_confirmed: true }
-      : { worker_handover_confirmed: true };
-    
-    await updateAgreementMutation.mutateAsync({
-      id: agreementId,
-      data: updateData
+    // Handover confirmation, agreement completion, stats updates and the
+    // notification all run server-side so reputation fields can't be forged
+    const res = await base44.functions.invoke('confirmAgreementHandover', {
+      agreement_id: agreementId
     });
+    queryClient.invalidateQueries(['agreement', agreementId]);
 
-    // Re-fetch to get updated data
-    const updated = await base44.entities.Agreement.filter({ id: agreementId });
-    const updatedAgreement = updated[0];
-
-    // Check if both confirmed
-    if (updatedAgreement.offerer_handover_confirmed && updatedAgreement.worker_handover_confirmed) {
-      // Both confirmed! Complete the agreement
+    if (res.data?.both_confirmed) {
       confetti({
         particleCount: 100,
         spread: 70,
         origin: { y: 0.6 }
       });
 
-      await base44.entities.Agreement.update(agreementId, {
-        status: 'completed',
-        completion_date: new Date().toISOString()
-      });
-
-      // Update both workers' stats in the Worker entity
-      const offererWorkers = await base44.entities.Worker.filter({ user_id: agreement.offerer_id });
-      const workerWorkers = await base44.entities.Worker.filter({ user_id: agreement.worker_id });
-
-      if (offererWorkers[0]) {
-        await base44.entities.Worker.update(offererWorkers[0].id, {
-          hours_completed: (offererWorkers[0].hours_completed || 0) + (updatedAgreement.hours_logged || updatedAgreement.agreed_hours),
-          completed_trades: (offererWorkers[0].completed_trades || 0) + 1
-        });
-      }
-
-      if (workerWorkers[0]) {
-        await base44.entities.Worker.update(workerWorkers[0].id, {
-          hours_completed: (workerWorkers[0].hours_completed || 0) + (updatedAgreement.hours_logged || updatedAgreement.agreed_hours),
-          completed_trades: (workerWorkers[0].completed_trades || 0) + 1
-        });
-      }
-
-      // Update both users' stats in the User entity (source of truth for profile views)
-      const hoursToAdd = updatedAgreement.hours_logged || updatedAgreement.agreed_hours;
-      const offererUsers = await base44.entities.User.filter({ id: agreement.offerer_id });
-      if (offererUsers[0]) {
-        await base44.entities.User.update(agreement.offerer_id, {
-          hours_completed: (offererUsers[0].hours_completed || 0) + hoursToAdd,
-          completed_trades: (offererUsers[0].completed_trades || 0) + 1
-        });
-      }
-      const workerUsers = await base44.entities.User.filter({ id: agreement.worker_id });
-      if (workerUsers[0]) {
-        await base44.entities.User.update(agreement.worker_id, {
-          hours_completed: (workerUsers[0].hours_completed || 0) + hoursToAdd,
-          completed_trades: (workerUsers[0].completed_trades || 0) + 1
-        });
-      }
-
-      // Notify the other party
-      const otherUserId = isOfferer ? agreement.worker_id : agreement.offerer_id;
-      await base44.entities.Notification.create({
-        user_id: otherUserId,
-        type: 'agreement_confirmed',
-        title: 'Agreement completed!',
-        message: `The handover for ${agreement.item_title} has been confirmed by both parties`,
-        related_id: agreementId,
-        related_type: 'agreement',
-        link_url: createPageUrl(`AgreementDetail?id=${agreementId}`),
-        from_user_id: user.id,
-        from_user_name: user.full_name
-      });
-
       toast.success('Agreement completed! 🎉');
-      
+
       // Show review modal after a short delay
       setTimeout(() => {
         setShowReviewModal(true);
@@ -155,86 +85,23 @@ export default function AgreementDetail() {
 
     setIsSubmittingReview(true);
     try {
-      const isOfferer = user.id === agreement.offerer_id;
-      const otherUserId = isOfferer ? agreement.worker_id : agreement.offerer_id;
-      const otherUserName = isOfferer ? agreement.worker_name : agreement.offerer_name;
-
-      // Create rating
-      await base44.entities.Rating.create({
+      // Rating, reputation recompute and karma all happen server-side
+      await base44.functions.invoke('submitAgreementReview', {
         agreement_id: agreementId,
-        from_user_id: user.id,
-        to_user_id: otherUserId,
-        from_user_name: user.full_name,
-        to_user_name: otherUserName,
         stars,
-        review: review || "",
-        published: true
-      });
-
-      // Update rated user's average rating in Worker entity
-      const allRatings = await base44.entities.Rating.filter({ to_user_id: otherUserId });
-      const totalStars = allRatings.reduce((sum, r) => sum + r.stars, 0);
-      const avgRating = totalStars / allRatings.length;
-
-      const ratedWorkers = await base44.entities.Worker.filter({ user_id: otherUserId });
-      if (ratedWorkers[0]) {
-        await base44.entities.Worker.update(ratedWorkers[0].id, {
-          rating: avgRating,
-          total_ratings: allRatings.length
-        });
-      }
-
-      // Keep the rated member's listings in sync with their updated reputation
-      await base44.entities.Item.updateMany(
-        { offerer_id: otherUserId },
-        { $set: { offerer_rating: avgRating, offerer_total_ratings: allRatings.length } }
-      );
-
-      // Award karma based on rating
-      let karmaPoints = 0;
-      if (stars === 5) karmaPoints = 10;
-      else if (stars === 4) karmaPoints = 5;
-      else if (stars === 3) karmaPoints = 0;
-      else if (stars === 2) karmaPoints = -5;
-      else if (stars === 1) karmaPoints = -10;
-
-      if (karmaPoints !== 0) {
-        {
-          await base44.entities.KarmaTransaction.create({
-            user_id: otherUserId,
-            user_name: otherUserName,
-            type: karmaPoints > 0 ? 'gain' : 'loss',
-            reason: stars >= 4 ? 'positive_review' : 'negative_review',
-            points: Math.abs(karmaPoints),
-            agreement_id: agreementId,
-            description: `Received ${stars}-star review from ${user.full_name}`
-          });
-        }
-      }
-
-      // Notify the rated user
-      await base44.entities.Notification.create({
-        user_id: otherUserId,
-        type: 'rating_received',
-        title: 'New rating received!',
-        message: `${user.full_name} rated your work ${stars} stars for ${agreement.item_title}`,
-        related_id: agreementId,
-        related_type: 'agreement',
-        link_url: createPageUrl(`Profile`),
-        from_user_id: user.id,
-        from_user_name: user.full_name
+        review: review || ""
       });
 
       toast.success('Review submitted! Thank you for your feedback.');
       setShowReviewModal(false);
       queryClient.invalidateQueries(['rating', agreementId, user.id]);
-      
+
       setTimeout(() => {
         navigate(createPageUrl('Home'));
       }, 1000);
     } catch (error) {
       console.error('Error submitting review:', error);
-      toast.error('Failed to submit review');
+      toast.error(error.response?.data?.error || 'Failed to submit review');
     } finally {
       setIsSubmittingReview(false);
     }

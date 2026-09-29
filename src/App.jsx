@@ -10,6 +10,7 @@ import { createBrowserRouter, RouterProvider, Route, Routes } from 'react-router
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import AccountSuspendedScreen from '@/components/AccountSuspendedScreen';
 import Join from './pages/Join';
 import Auth from './pages/Auth';
 import Terms from './pages/Terms';
@@ -42,6 +43,8 @@ const AuthenticatedApp = () => {
   if (authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
+    } else if (authError.type === 'account_suspended') {
+      return <AccountSuspendedScreen banned={authError.banned} />;
     } else if (authError.type === 'auth_required') {
       // Redirect to login automatically
       navigateToLogin();

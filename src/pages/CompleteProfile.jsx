@@ -75,7 +75,6 @@ export default function CompleteProfile() {
   useEffect(() => {
     base44.auth.me().then(async userData => {
       setUser(userData);
-      setPhoneVerified(userData.phone_verified || false);
       const parsedLoc = parseLocationString(userData.location || "");
       const availabilityParts = userData.availability ? userData.availability.split(' | ') : [];
       const days = availabilityParts[0] ? availabilityParts[0].split(', ').filter(Boolean) : [];
@@ -95,6 +94,17 @@ export default function CompleteProfile() {
       setLocationFields(parsedLoc);
       setSelectedDays(days);
       setSelectedTimes(times);
+      // Phone confirmation comes from the server-written PhoneVerification
+      // record (created by the verification function) — never a client flag
+      let phoneIsVerified = false;
+      try {
+        const verifications = await base44.entities.PhoneVerification.filter({ user_id: userData.id });
+        phoneIsVerified = verifications.some(v => v.phone && v.phone === (userData.phone || ""));
+      } catch (err) {
+        // Don't block profile completion if this lookup fails
+      }
+      setPhoneVerified(phoneIsVerified);
+
       // Check if the user has already accepted the terms
       let hasAccepted = false;
       try {
@@ -113,7 +123,7 @@ export default function CompleteProfile() {
         locationFields: parsedLoc,
         selectedDays: [...days].sort(),
         selectedTimes: [...times].sort(),
-        phoneVerified: userData.phone_verified || false,
+        phoneVerified: phoneIsVerified,
         termsAccepted: hasAccepted
       }));
     }).catch(() => {
@@ -221,7 +231,6 @@ export default function CompleteProfile() {
         longitude: formData.longitude ?? (geo.status === "valid" ? geo.longitude : null),
         phone: normalizePhoneToE164(formData.phone) || formData.phone,
         availability: availabilityString,
-        phone_verified: phoneVerified,
         profile_completed: true
       });
       if (!existingTerms) {

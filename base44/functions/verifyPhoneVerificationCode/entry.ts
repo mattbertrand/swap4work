@@ -1,11 +1,12 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { normalizePhoneE164 } from '../../shared/phone.ts';
+import { getActiveUser } from '../../shared/moderation.ts';
 
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    const { user, status, error } = await getActiveUser(base44);
+    if (!user) return Response.json({ error }, { status });
 
     const body = await req.json();
     const phone = normalizePhoneE164(String(body.phone || ''));
@@ -40,6 +41,17 @@ export default async function(req) {
     }
 
     await base44.asServiceRole.entities.PhoneVerificationCode.update(latest.id, { used: true });
+
+    // Record the confirmation server-side — the client never writes a
+    // "verified" flag, so the status can't be forged through profile updates.
+    const db = base44.asServiceRole.entities;
+    const verifiedNow = new Date().toISOString();
+    const existing = await db.PhoneVerification.filter({ user_id: user.id, phone }, '-created_date', 20);
+    if (existing[0]) {
+      await db.PhoneVerification.update(existing[0].id, { verified_date: verifiedNow });
+    } else {
+      await db.PhoneVerification.create({ user_id: user.id, phone, verified_date: verifiedNow });
+    }
     return Response.json({ confirmed: true });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

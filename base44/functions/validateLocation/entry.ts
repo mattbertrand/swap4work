@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { getActiveUser } from '../../shared/moderation.ts';
 
 // Geographic validation of a manually entered City + State (+ ZIP) against
 // OpenStreetMap via Nominatim — the same free service the app's "Locate Me"
@@ -60,8 +61,8 @@ function extractCity(result) {
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    const { user, status, error } = await getActiveUser(base44);
+    if (!user) return Response.json({ error }, { status });
 
     const body = await req.json().catch(() => ({}));
     const city = String(body.city || '').trim().slice(0, 80);

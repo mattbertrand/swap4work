@@ -92,6 +92,28 @@ export const AuthProvider = ({ children }) => {
       // Now check if the user is authenticated
       setIsLoadingAuth(true);
       const currentUser = await base44.auth.me();
+
+      // Enforce moderation flags: suspended/banned members are blocked from
+      // the app entirely (admins are never moderated).
+      const suspensionEnded = currentUser.suspension_end_date &&
+        new Date(currentUser.suspension_end_date) <= new Date();
+      const isBlocked = currentUser.role !== 'admin' && (
+        currentUser.is_banned ||
+        (currentUser.is_suspended && !suspensionEnded)
+      );
+      if (isBlocked) {
+        setAuthError({
+          type: 'account_suspended',
+          message: currentUser.is_banned
+            ? 'Your account has been removed from Swap4Work.'
+            : 'Your account is suspended.',
+          banned: !!currentUser.is_banned
+        });
+        setIsAuthenticated(false);
+        setIsLoadingAuth(false);
+        return;
+      }
+
       setUser(currentUser);
       setIsAuthenticated(true);
       setIsLoadingAuth(false);

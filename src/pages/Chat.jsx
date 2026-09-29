@@ -66,9 +66,7 @@ export default function Chat() {
     }
   });
 
-  const createKarmaTransactionMutation = useMutation({
-    mutationFn: (data) => base44.entities.KarmaTransaction.create(data)
-  });
+
 
   const createDisputeMutation = useMutation({
     mutationFn: (data) => base44.entities.Dispute.create(data),
@@ -214,83 +212,12 @@ export default function Chat() {
     if (!user || !agreement) return;
 
     if (approved) {
-      // Calculate partial credit if work has started
-      const hoursLogged = agreement.hours_logged || 0;
-      const agreedHours = agreement.agreed_hours || 1;
-      const completionPercentage = Math.min((hoursLogged / agreedHours) * 100, 100);
 
-      if (hoursLogged > 0) {
-        // Award partial karma to worker
-        const partialKarma = Math.floor((completionPercentage / 100) * 10);
-        await createKarmaTransactionMutation.mutateAsync({
-          user_id: agreement.worker_id,
-          user_name: agreement.worker_name,
-          type: "gain",
-          reason: "partial_milestone_credit",
-          points: partialKarma,
-          agreement_id: agreementId,
-          description: `Partial credit for ${completionPercentage.toFixed(1)}% completion (${hoursLogged}/${agreedHours} hours)`
-        });
-
-        // Update worker karma
-        const workers = await base44.entities.User.filter({ id: agreement.worker_id });
-        if (workers[0]) {
-          await base44.entities.User.update(agreement.worker_id, {
-            karma_points: (workers[0].karma_points || 0) + partialKarma
-          });
-        }
-
-        // Penalize offerer if they initiated cancellation
-        if (agreement.cancellation_request.requested_by === agreement.offerer_id) {
-          await createKarmaTransactionMutation.mutateAsync({
-            user_id: agreement.offerer_id,
-            user_name: agreement.offerer_name,
-            type: "loss",
-            reason: "mid_agreement_cancellation",
-            points: -20,
-            agreement_id: agreementId,
-            description: "Mid-agreement cancellation after work started"
-          });
-
-          const offerers = await base44.entities.User.filter({ id: agreement.offerer_id });
-          if (offerers[0]) {
-            const newKarma = (offerers[0].karma_points || 0) - 20;
-            const updateData = {
-              karma_points: newKarma,
-              cancellation_count: (offerers[0].cancellation_count || 0) + 1
-            };
-            
-            // Suspend if karma is negative
-            if (newKarma < 0) {
-              updateData.is_suspended = true;
-              updateData.suspension_end_date = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-            }
-            
-            await base44.entities.User.update(agreement.offerer_id, updateData);
-          }
-        }
-      }
-
-      // Mark agreement as cancelled
-      await updateAgreementMutation.mutateAsync({
-        id: agreementId,
-        data: {
-          status: 'cancelled_mutual',
-          cancellation_request: {
-            ...agreement.cancellation_request,
-            status: 'approved'
-          },
-          history: addToHistory('cancellation_approved', 'Mutual cancellation approved')
-        }
+      // Karma adjustments, agreement completion and item release all happen
+      // server-side so reputation fields can't be written from the client
+      await base44.functions.invoke('approveAgreementCancellation', {
+        agreement_id: agreementId
       });
-
-      // Unreserve item
-      await base44.entities.Item.update(agreement.item_id, {
-        is_reserved: false,
-        reserved_for_agreement_id: null,
-        status: 'active'
-      });
-
       navigate(createPageUrl("MyAgreements"));
     } else {
       // Rejection - could trigger dispute

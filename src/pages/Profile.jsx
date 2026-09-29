@@ -87,7 +87,7 @@ export default function Profile() {
   const [verifyingLocation, setVerifyingLocation] = useState(false);
 
   useEffect(() => {
-    base44.auth.me().then(userData => {
+    base44.auth.me().then(async userData => {
       setUser(userData);
       setFormData({
         full_name: userData.full_name || "",
@@ -98,7 +98,14 @@ export default function Profile() {
         bio: userData.bio || "",
         skills: userData.skills || ""
       });
-      setPhoneVerified(userData.phone_verified || false);
+      // Phone confirmation comes from the server-written PhoneVerification
+      // record — never from a client-set flag on the user record
+      try {
+        const verifications = await base44.entities.PhoneVerification.filter({ user_id: userData.id });
+        setPhoneVerified(verifications.some(v => v.phone && v.phone === (userData.phone || "")));
+      } catch (err) {
+        // Non-blocking: leave the badge off if the lookup fails
+      }
       setLocationFields(parseLocationString(userData.location || ""));
       // Parse availability into days/times
       if (userData.availability) {
@@ -313,7 +320,6 @@ export default function Profile() {
       longitude: formData.longitude ?? (geo.status === "valid" ? geo.longitude : null),
       phone: normalizedPhone,
       availability: availabilityString,
-      phone_verified: phoneVerified,
       profile_completed: profileComplete
     });
 
@@ -403,7 +409,7 @@ export default function Profile() {
                 <p className="text-gray-500 text-sm mb-4">{user.email}</p>
 
                 <div className="flex justify-center gap-2 mb-4">
-                  {user.phone_verified && (
+                  {phoneVerified && (
                     <Badge className="bg-green-100 text-green-700">
                       <CheckCircle2 className="w-3 h-3 mr-1" />
                       Phone number saved
