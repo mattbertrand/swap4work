@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import EmailField from "@/components/auth/EmailField";
 import EmailConfirmField from "@/components/auth/EmailConfirmField";
 import PasswordField from "@/components/auth/PasswordField";
-import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
+import SocialSignInButtons from "@/components/auth/SocialSignInButtons";
 import { normalizeEmail, isValidEmailFormat } from "@/lib/emailValidation";
 import { getAuthErrorMessage, isDuplicateAccountError } from "@/lib/authErrors";
 import { AlertCircle, Loader2 } from "lucide-react";
@@ -108,7 +108,7 @@ export default function SignUpForm({ onRegistered, onSwitchToLogin, returnPath }
         )}
       </Button>
 
-      <GoogleSignInButton returnPath={returnPath} />
+      <SocialSignInButtons returnPath={returnPath} />
 
       <p className="text-sm text-center text-gray-600">
         Already have an account?{" "}

@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import EmailField from "@/components/auth/EmailField";
 import PasswordField from "@/components/auth/PasswordField";
-import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
+import SocialSignInButtons from "@/components/auth/SocialSignInButtons";
 import { normalizeEmail, isValidEmailFormat, maskEmail } from "@/lib/emailValidation";
 import { getAuthErrorMessage, isUnverifiedError } from "@/lib/authErrors";
 import { AlertCircle, Loader2, Info } from "lucide-react";
@@ -110,7 +110,7 @@ export default function LogInForm({ onLoggedIn, onUnverified, onSwitchToSignUp, 
         )}
       </Button>
 
-      <GoogleSignInButton returnPath={returnPath} />
+      <SocialSignInButtons returnPath={returnPath} />
 
       <div className="flex flex-col gap-2 text-center text-sm">
         <button
