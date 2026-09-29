@@ -145,6 +145,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Re-reads the current user without toggling the app-wide loading states,
+  // so pages (e.g. CompleteProfile) can refresh the session after an update
+  // without unmounting the app shell.
+  const refreshUser = async () => {
+    try {
+      const currentUser = await base44.auth.me();
+      setUser(currentUser);
+      setIsAuthenticated(true);
+    } catch (error) {
+      // Keep the last known session state
+    }
+  };
+
   const navigateToLogin = () => {
     // Use the SDK's redirectToLogin method
     base44.auth.redirectToLogin(window.location.href);
@@ -160,7 +173,8 @@ export const AuthProvider = ({ children }) => {
       appPublicSettings,
       logout,
       navigateToLogin,
-      checkAppState
+      checkAppState,
+      refreshUser
     }}>
       {children}
     </AuthContext.Provider>

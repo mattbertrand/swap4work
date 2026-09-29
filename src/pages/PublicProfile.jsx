@@ -283,6 +283,12 @@ export default function PublicProfile() {
       setAuthModalOpen(true);
       return;
     }
+    if (!currentUser.profile_completed || !currentUser.location || !currentUser.phone) {
+      toast.error("Please complete your profile before requesting a service.");
+      const currentUrl = window.location.pathname + window.location.search;
+      navigate(createPageUrl(`CompleteProfile?returnUrl=${encodeURIComponent(currentUrl)}`));
+      return;
+    }
     if (myItems.length === 0) {
       toast.error("You need to list an item to offer in exchange first.");
       return;

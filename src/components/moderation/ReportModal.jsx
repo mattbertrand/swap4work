@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { authLoginUrl } from "@/lib/authNavigation";
 import {
   Dialog,
   DialogContent,
@@ -47,6 +49,7 @@ export default function ReportModal({
   const [alsoBlock, setAlsoBlock] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (open) {
@@ -116,6 +119,30 @@ export default function ReportModal({
               appropriate action.
             </p>
           </div>
+        ) : !currentUser ? (
+          <>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Flag className="w-5 h-5 text-red-500" />
+                Report {targetLabel}
+              </DialogTitle>
+              <DialogDescription>
+                You need to be signed in to report {targetLabel}. Sign in to
+                help keep Swap4Work safe.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="mt-4">
+              <Button variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => navigate(authLoginUrl(window.location.pathname + window.location.search))}
+                className="bg-orange-500 hover:bg-orange-600"
+              >
+                Sign in to report
+              </Button>
+            </DialogFooter>
+          </>
         ) : (
           <>
             <DialogHeader>

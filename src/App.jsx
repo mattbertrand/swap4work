@@ -1,5 +1,6 @@
 import './App.css'
 import { Toaster } from "@/components/ui/toaster"
+import { Toaster as SonnerToaster } from "@/components/ui/sonner"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import VisualEditAgent from '@/lib/VisualEditAgent'
@@ -89,6 +90,7 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <RouterProvider router={router} />
         <Toaster />
+        <SonnerToaster />
         <VisualEditAgent />
       </QueryClientProvider>
     </AuthProvider>

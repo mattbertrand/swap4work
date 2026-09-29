@@ -39,41 +39,31 @@ import {
 import { Button } from "@/components/ui/button";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import GuestBanner from "@/components/auth/GuestBanner";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [user, setUser] = React.useState(null);
-  const [loading, setLoading] = React.useState(true);
+  // Session is loaded once by AuthProvider — reusing it keeps the shell mounted
+  // during navigation (no per-route re-fetch, no hard page reloads).
+  const { user } = useAuth();
 
   React.useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const userData = await base44.auth.me();
-        setUser(userData);
+    if (!user || user.profile_completed) return;
+    if (window.location.pathname.includes('CompleteProfile')) return;
 
-        if (userData && !userData.profile_completed && !window.location.pathname.includes('CompleteProfile')) {
-          const protectedPages = [
-          createPageUrl('CreateItem'),
-          createPageUrl('MyListings'),
-          createPageUrl('MyAgreements')].
-          map((url) => new URL(url, window.location.origin).pathname);
+    const protectedPages = [
+      createPageUrl('CreateItem'),
+      createPageUrl('MyListings'),
+      createPageUrl('MyAgreements')].
+      map((url) => new URL(url, window.location.origin).pathname);
 
-          const currentPath = window.location.pathname;
+    const currentPath = window.location.pathname;
 
-          if (protectedPages.some((pagePath) => currentPath.startsWith(pagePath))) {
-            window.location.href = createPageUrl(`CompleteProfile?returnUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`);
-          }
-        }
-      } catch (error) {
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, [location.pathname]);
+    if (protectedPages.some((pagePath) => currentPath.startsWith(pagePath))) {
+      navigate(createPageUrl(`CompleteProfile?returnUrl=${encodeURIComponent(currentPath + window.location.search)}`));
+    }
+  }, [user, location.pathname, navigate]);
 
   const isAdmin = user?.role === 'admin';
 
@@ -141,12 +131,6 @@ export default function Layout({ children, currentPageName }) {
       url: createPageUrl("AdminUserManagement"),
       icon: Shield
     });
-  }
-
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
-    </div>;
   }
 
   return (

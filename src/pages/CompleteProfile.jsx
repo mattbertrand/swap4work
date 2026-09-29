@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { parseSkills } from "@/lib/skills";
 import { isValidCityName } from "@/lib/location";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/AuthContext";
 
 const SKILL_CATEGORIES = {
   "Home Repairs / Maintenance": ["Handyman work","Furniture assembly","Mounting (TVs, shelves)","Minor plumbing","Minor electrical","Painting","Drywall patching","Appliance installation","Pressure washing","HVAC filter change"],
@@ -39,6 +40,7 @@ const TIME_SLOTS = ["Morning (6am–12pm)","Afternoon (12pm–5pm)","Evening (5p
 
 export default function CompleteProfile() {
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   const urlParams = new URLSearchParams(window.location.search);
   // Only allow relative paths to prevent open redirect
   const rawReturnUrl = urlParams.get('returnUrl') || createPageUrl("Home");
@@ -240,6 +242,7 @@ export default function CompleteProfile() {
           accepted_at: new Date().toISOString()
         });
       }
+      await refreshUser();
       toast.success('Profile completed!');
       markClean();
       navigate(returnUrl);
