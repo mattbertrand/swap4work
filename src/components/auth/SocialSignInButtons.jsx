@@ -12,7 +12,7 @@ const GoogleMark = () => (
 );
 
 const FacebookMark = () => (
-  <svg viewBox="0 0 320 512" className="w-4.5 h-4.5 flex-shrink-0" aria-hidden="true">
+  <svg viewBox="0 0 320 512" className="w-5 h-5 flex-shrink-0" aria-hidden="true">
     <path
       fill="#1877F2"
       d="M279.14 288l14.22-92.66h-88.91v-60.13c0-25.35 12.42-50.06 52.24-50.06h40.42V6.26S260.43 0 225.36 0c-73.22 0-121.08 44.38-121.08 124.72v70.62H22.89V288h81.39v224h100.17V288z"
@@ -21,7 +21,7 @@ const FacebookMark = () => (
 );
 
 const AppleMark = () => (
-  <svg viewBox="0 0 384 512" className="w-4.5 h-4.5 flex-shrink-0" aria-hidden="true">
+  <svg viewBox="0 0 384 512" className="w-5 h-5 flex-shrink-0" aria-hidden="true">
     <path
       fill="#000000"
       d="M318.7 268.6c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273c0 26.2 4.8 53.3 14.5 81.2 12.9 36.7 59.8 126.4 104.3 124.9 22.6-.6 38.5-16.1 67.9-16.1 28.4 0 43.2 16.1 68.3 16.1 44.9-.7 87.7-81.7 100-118.5-64.4-30.3-140.3-30.3-140.3-92zM258.8 81.9c21.5-25.6 32.8-55.9 30.5-88.1-29.4 1.9-65.1 19.6-86.1 45.2-19.2 23-32.8 53.5-30.2 83.3 32.6 2.5 63.2-15.2 85.8-40.4z"
@@ -30,7 +30,7 @@ const AppleMark = () => (
 );
 
 const MicrosoftMark = () => (
-  <svg viewBox="0 0 23 23" className="w-4.5 h-4.5 flex-shrink-0" aria-hidden="true">
+  <svg viewBox="0 0 23 23" className="w-5 h-5 flex-shrink-0" aria-hidden="true">
     <rect x="1" y="1" width="10" height="10" fill="#F25022" />
     <rect x="12" y="1" width="10" height="10" fill="#7FBA00" />
     <rect x="1" y="12" width="10" height="10" fill="#00A4EF" />
