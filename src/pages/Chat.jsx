@@ -52,7 +52,10 @@ export default function Chat() {
   });
 
   const sendMessageMutation = useMutation({
-    mutationFn: (data) => base44.entities.Message.create(data),
+    mutationFn: async (data) => {
+      const res = await base44.functions.invoke('sendMessage', data);
+      return res.data.message;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['messages', agreementId]);
       setMessage("");

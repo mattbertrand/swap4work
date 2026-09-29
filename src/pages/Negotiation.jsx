@@ -88,7 +88,8 @@ export default function Negotiation() {
   const sendMessageMutation = useMutation({
     mutationFn: async (data) => {
       console.log('📤 Sending message:', data);
-      const result = await base44.entities.Message.create(data);
+      const res = await base44.functions.invoke('sendMessage', data);
+      const result = res.data.message;
       console.log('✅ Message created:', result);
       return result;
     },

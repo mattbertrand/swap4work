@@ -5,6 +5,7 @@
 export function sanitizeNextPath(path) {
   if (!path || typeof path !== "string") return null;
   if (!path.startsWith("/") || path.startsWith("//") || path.includes("://")) return null;
+  if (path.includes("\\") || /[\x00-\x1f\x7f]/.test(path)) return null;
   return path;
 }
 

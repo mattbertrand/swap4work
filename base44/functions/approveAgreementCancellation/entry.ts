@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
-import { getActiveUser } from '../../shared/moderation.ts';
+import { getActiveUser, loadVerifiedAgreement } from '../../shared/moderation.ts';
 
 // Approves the OTHER party's pending cancellation request for an agreement.
 // All karma, cancellation-count and auto-suspension bookkeeping happens here,
@@ -17,14 +17,8 @@ export default async function(req) {
     }
 
     const db = base44.asServiceRole.entities;
-    let agreement = null;
-    try {
-      const agreements = await db.Agreement.filter({ id: agreementId });
-      agreement = agreements[0];
-    } catch (e) {
-      agreement = null;
-    }
-    if (!agreement) return Response.json({ error: 'Agreement not found' }, { status: 404 });
+    const { agreement, status: loadStatus, error: loadError } = await loadVerifiedAgreement(db, agreementId);
+    if (!agreement) return Response.json({ error: loadError }, { status: loadStatus });
 
     if (user.id !== agreement.offerer_id && user.id !== agreement.worker_id && user.role !== 'admin') {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
@@ -39,7 +33,8 @@ export default async function(req) {
     }
 
     // Partial karma credit for work actually logged (server-side figures only)
-    const hoursLogged = agreement.hours_logged || 0;
+    const logs = await db.TimeLog.filter({ agreement_id: agreementId });
+    const hoursLogged = logs.reduce((sum, l) => sum + (l.hours || 0), 0);
     const agreedHours = agreement.agreed_hours || 1;
     if (hoursLogged > 0) {
       const completionPercentage = Math.min((hoursLogged / agreedHours) * 100, 100);

@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
-import { getActiveUser } from '../../shared/moderation.ts';
+import { getActiveUser, loadVerifiedAgreement } from '../../shared/moderation.ts';
 
 // Records a review for a completed agreement and recomputes the rated
 // member's reputation server-side so ratings and karma can't be forged.
@@ -21,14 +21,8 @@ export default async function(req) {
     }
 
     const db = base44.asServiceRole.entities;
-    let agreement = null;
-    try {
-      const agreements = await db.Agreement.filter({ id: agreementId });
-      agreement = agreements[0];
-    } catch (e) {
-      agreement = null;
-    }
-    if (!agreement) return Response.json({ error: 'Agreement not found' }, { status: 404 });
+    const { agreement, status: loadStatus, error: loadError } = await loadVerifiedAgreement(db, agreementId);
+    if (!agreement) return Response.json({ error: loadError }, { status: loadStatus });
 
     const isOfferer = user.id === agreement.offerer_id;
     const isWorker = user.id === agreement.worker_id;

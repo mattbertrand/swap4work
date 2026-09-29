@@ -1,0 +1,45 @@
+{
+  "name": "HandoverConfirmation",
+  "type": "object",
+  "properties": {
+    "agreement_id": {
+      "type": "string",
+      "description": "Agreement the handover confirmation belongs to"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "User who confirmed the handover through the backend function"
+    },
+    "confirmed_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the confirmation was recorded"
+    }
+  },
+  "required": [
+    "agreement_id",
+    "user_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
