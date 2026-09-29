@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import EmailField from "@/components/auth/EmailField";
 import PasswordField from "@/components/auth/PasswordField";
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { normalizeEmail, isValidEmailFormat, maskEmail } from "@/lib/emailValidation";
 import { getAuthErrorMessage, isUnverifiedError } from "@/lib/authErrors";
 import { AlertCircle, Loader2, Info } from "lucide-react";
@@ -12,7 +13,7 @@ import { AlertCircle, Loader2, Info } from "lucide-react";
  * enumeration). An unverified account (platform returns 403) is routed to
  * the verification/recovery flow instead of a dead end.
  */
-export default function LogInForm({ onLoggedIn, onUnverified, onSwitchToSignUp, notice, initialEmail = "" }) {
+export default function LogInForm({ onLoggedIn, onUnverified, onSwitchToSignUp, notice, initialEmail = "", returnPath }) {
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -108,6 +109,8 @@ export default function LogInForm({ onLoggedIn, onUnverified, onSwitchToSignUp, 
           "Log in"
         )}
       </Button>
+
+      <GoogleSignInButton returnPath={returnPath} />
 
       <div className="flex flex-col gap-2 text-center text-sm">
         <button

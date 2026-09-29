@@ -79,6 +79,7 @@ export default function Auth() {
           <SignUpForm
             onRegistered={handleRegistered}
             onSwitchToLogin={() => switchMode("login", { prefillEmail: loginPrefillEmail })}
+            returnPath={nextPath}
           />
         )}
 
@@ -89,6 +90,7 @@ export default function Auth() {
             onLoggedIn={redirectAfterLogin}
             onUnverified={handleUnverifiedLogin}
             onSwitchToSignUp={() => switchMode("signup")}
+            returnPath={nextPath}
           />
         )}
 
@@ -114,6 +116,7 @@ export default function Auth() {
             onLoggedIn={redirectAfterLogin}
             onUnverified={handleUnverifiedLogin}
             onSwitchToSignUp={() => switchMode("signup")}
+            returnPath={nextPath}
           />
         )}
       </div>

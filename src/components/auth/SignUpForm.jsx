@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import EmailField from "@/components/auth/EmailField";
 import EmailConfirmField from "@/components/auth/EmailConfirmField";
 import PasswordField from "@/components/auth/PasswordField";
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { normalizeEmail, isValidEmailFormat } from "@/lib/emailValidation";
 import { getAuthErrorMessage, isDuplicateAccountError } from "@/lib/authErrors";
 import { AlertCircle, Loader2 } from "lucide-react";
@@ -14,7 +15,7 @@ import { AlertCircle, Loader2 } from "lucide-react";
  * in-memory credentials to the verification step. No duplicate accounts:
  * the platform rejects an email that is already registered.
  */
-export default function SignUpForm({ onRegistered, onSwitchToLogin }) {
+export default function SignUpForm({ onRegistered, onSwitchToLogin, returnPath }) {
   const [email, setEmail] = useState("");
   const [confirmEmail, setConfirmEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -106,6 +107,8 @@ export default function SignUpForm({ onRegistered, onSwitchToLogin }) {
           "Create account"
         )}
       </Button>
+
+      <GoogleSignInButton returnPath={returnPath} />
 
       <p className="text-sm text-center text-gray-600">
         Already have an account?{" "}
