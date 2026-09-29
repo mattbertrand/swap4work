@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { authLoginUrl } from "@/lib/authNavigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -85,7 +86,7 @@ export default function TradeDashboard() {
             <p className="text-gray-700 font-medium mb-2">Sign in to see your trades</p>
             <p className="text-gray-500 text-sm mb-6">Your active agreements, hours, and milestones live here once you're signed in.</p>
             <Button
-              onClick={() => base44.auth.redirectToLogin()}
+              onClick={() => navigate(authLoginUrl(window.location.pathname + window.location.search))}
               className="bg-gradient-to-r from-orange-500 to-amber-600"
             >
               Sign In

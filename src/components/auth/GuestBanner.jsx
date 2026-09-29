@@ -1,10 +1,12 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { UserPlus, X, Zap, Star, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { base44 } from "@/api/base44Client";
+import { authSignupUrl, authLoginUrl } from "@/lib/authNavigation";
 
 export default function GuestBanner() {
   const [dismissed, setDismissed] = useState(false);
+  const navigate = useNavigate();
 
   if (dismissed) return null;
 
@@ -53,14 +55,14 @@ export default function GuestBanner() {
         <div className="flex flex-col items-center gap-3 flex-shrink-0">
           <Button
             size="lg"
-            onClick={() => base44.auth.redirectToLogin()}
+            onClick={() => navigate(authSignupUrl(window.location.pathname + window.location.search))}
             className="bg-white text-orange-600 hover:bg-orange-50 font-bold text-base px-8 py-6 h-auto shadow-xl rounded-xl"
           >
             <UserPlus className="w-5 h-5 mr-2" />
             Create Free Account
           </Button>
           <button
-            onClick={() => base44.auth.redirectToLogin()}
+            onClick={() => navigate(authLoginUrl(window.location.pathname + window.location.search))}
             className="text-orange-100 hover:text-white text-sm underline underline-offset-2 transition-colors"
           >
             Already have an account? Sign in

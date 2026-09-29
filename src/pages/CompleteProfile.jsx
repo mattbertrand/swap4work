@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { authLoginUrl } from "@/lib/authNavigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -116,7 +117,7 @@ export default function CompleteProfile() {
         termsAccepted: hasAccepted
       }));
     }).catch(() => {
-      base44.auth.redirectToLogin(window.location.pathname + window.location.search);
+      navigate(authLoginUrl(window.location.pathname + window.location.search));
     });
   }, []);
 

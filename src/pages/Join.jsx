@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
-import { base44 } from "@/api/base44Client";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { authSignupUrl, authLoginUrl } from "@/lib/authNavigation";
 import { Briefcase, Search, HandshakeIcon, CheckCircle2, ArrowRight, Star } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -14,8 +14,9 @@ export default function Join() {
     }
   }, []);
 
-  const handleSignUp = () => base44.auth.redirectToLogin(window.location.origin);
-  const handleLogIn = () => base44.auth.redirectToLogin(window.location.origin);
+  const navigate = useNavigate();
+  const handleSignUp = () => navigate(authSignupUrl("/"));
+  const handleLogIn = () => navigate(authLoginUrl("/"));
 
   const steps = [
     {

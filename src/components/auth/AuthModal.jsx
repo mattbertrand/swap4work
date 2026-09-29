@@ -1,16 +1,22 @@
 import React from "react";
-import { base44 } from "@/api/base44Client";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { LogIn, UserPlus, Briefcase } from "lucide-react";
+import { authSignupUrl, authLoginUrl } from "@/lib/authNavigation";
 
 export default function AuthModal({ open, onClose, message }) {
+  const navigate = useNavigate();
+  const nextPath = window.location.pathname + window.location.search;
+
   const handleLogin = () => {
-    base44.auth.redirectToLogin(window.location.href);
+    onClose();
+    navigate(authLoginUrl(nextPath));
   };
 
   const handleSignUp = () => {
-    base44.auth.redirectToLogin(window.location.href);
+    onClose();
+    navigate(authSignupUrl(nextPath));
   };
 
   return (

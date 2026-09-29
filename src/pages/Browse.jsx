@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { authLoginUrl } from "@/lib/authNavigation";
 import { Search, MapPin, Clock, Filter, Crosshair, X, Sparkles, XCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -27,6 +28,7 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
 };
 
 export default function Browse() {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -332,7 +334,7 @@ export default function Browse() {
                   </p>
                 </div>
                 <Button 
-                  onClick={() => base44.auth.redirectToLogin()}
+                  onClick={() => navigate(authLoginUrl(window.location.pathname + window.location.search))}
                   size="sm"
                   className="bg-orange-600 hover:bg-orange-700 whitespace-nowrap"
                 >

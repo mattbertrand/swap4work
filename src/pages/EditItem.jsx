@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { authLoginUrl } from "@/lib/authNavigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -56,7 +57,7 @@ export default function EditItem() {
         setUser(userData);
         setCheckingAuth(false);
       } catch (error) {
-        base44.auth.redirectToLogin(window.location.pathname + window.location.search);
+        navigate(authLoginUrl(window.location.pathname + window.location.search));
       }
     };
 

@@ -11,6 +11,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Join from './pages/Join';
+import Auth from './pages/Auth';
 import Terms from './pages/Terms';
 import AdminUserManagement from './pages/AdminUserManagement';
 import HowItWorks from './pages/HowItWorks';
@@ -59,6 +60,7 @@ const AuthenticatedApp = () => {
           <Route key={path} path={`/${path}`} element={<Page />} />
         ))}
         <Route path="/join" element={<Join />} />
+        <Route path="/auth" element={<Auth />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/adminusermanagement" element={<AdminUserManagement />} />
         <Route path="/howitworks" element={<HowItWorks />} />

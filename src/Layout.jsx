@@ -1,7 +1,8 @@
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
+import { authLoginUrl } from "@/lib/authNavigation";
 import {
   Home,
   Package,
@@ -41,6 +42,7 @@ import GuestBanner from "@/components/auth/GuestBanner";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [user, setUser] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
 
@@ -239,7 +241,7 @@ export default function Layout({ children, currentPageName }) {
               </DropdownMenu> :
 
             <Button
-              onClick={() => base44.auth.redirectToLogin()}
+              onClick={() => navigate(authLoginUrl(window.location.pathname + window.location.search))}
               className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700">
               
                 Sign In

@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { authLoginUrl } from "@/lib/authNavigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -119,7 +120,7 @@ export default function Notifications() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-600 mb-4">Please sign in to view notifications</p>
-          <Button onClick={() => base44.auth.redirectToLogin()}>
+          <Button onClick={() => navigate(authLoginUrl(window.location.pathname + window.location.search))}>
             Sign In
           </Button>
         </div>
