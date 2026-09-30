@@ -20,6 +20,8 @@ import LocationFields, { parseLocationString, buildLocationString } from "@/comp
 import { verifyLocationOnline } from "@/lib/locationValidation";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import CustomSkillInput from "@/components/profile/CustomSkillInput";
 
 const SKILL_CATEGORIES = {
   "Home Repairs / Maintenance": [
@@ -73,7 +75,8 @@ export default function Profile() {
     latitude: null,
     longitude: null,
     bio: "",
-    skills: ""
+    skills: "",
+    user_role: "both"
   });
   const [locationFields, setLocationFields] = useState({ street: "", city: "", state: "", zip: "" });
   const [zipError, setZipError] = useState("");
@@ -85,6 +88,7 @@ export default function Profile() {
   const [editSnapshot, setEditSnapshot] = useState(null);
   const [locationErrors, setLocationErrors] = useState({});
   const [verifyingLocation, setVerifyingLocation] = useState(false);
+  const [visibilityError, setVisibilityError] = useState("");
 
   useEffect(() => {
     base44.auth.me().then(async userData => {
@@ -96,7 +100,8 @@ export default function Profile() {
         latitude: userData.latitude || null,
         longitude: userData.longitude || null,
         bio: userData.bio || "",
-        skills: userData.skills || ""
+        skills: userData.skills || "",
+        user_role: userData.user_role || "both"
       });
       // Phone confirmation comes from the server-written PhoneVerification
       // record — never from a client-set flag on the user record
@@ -263,6 +268,14 @@ export default function Profile() {
   const { blocker } = useUnsavedChanges(isDirty);
 
   const handleSave = async () => {
+    // Guardrail: an "Offer Services" profile needs at least one skill
+    if (workerData.is_visible && parseSkills(workerData.skills || formData.skills).length === 0) {
+      setVisibilityError("You need at least one skill to offer services — add a skill below or turn off \"Offer Services\".");
+      toast.error("Add at least one skill or turn off \"Offer Services\" to save.");
+      return;
+    }
+    setVisibilityError("");
+
     // --- Required location validation (City, ZIP, State; street optional) ---
     const locErrors = {};
     if (!locationFields.city) locErrors.city = "City is required";
@@ -325,11 +338,6 @@ export default function Profile() {
 
     // Sync to Worker entity if it exists or if we are making it visible
     if (workerProfile || workerData.is_visible) {
-      if (workerData.is_visible && !workerData.skills) {
-        alert("You must select at least one skill to be visible as a worker.");
-        return;
-      }
-
       await updateWorkerMutation.mutateAsync({
         ...workerData,
         availability: availabilityString,
@@ -550,6 +558,25 @@ export default function Profile() {
                   </div>
 
                   <div>
+                    <Label>I'm interested in</Label>
+                    <p className="text-xs text-gray-500 mt-1">You can change this anytime on your Profile page.</p>
+                    <Select
+                      value={formData.user_role}
+                      onValueChange={(value) => setFormData({ ...formData, user_role: value })}
+                      disabled={!isEditing}
+                    >
+                      <SelectTrigger className="mt-2">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="worker">Offering my work/skills</SelectItem>
+                        <SelectItem value="offerer">Trading my items</SelectItem>
+                        <SelectItem value="both">Both working and trading</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
                     <Label htmlFor="bio">Bio</Label>
                     <Textarea
                       id="bio"
@@ -566,6 +593,7 @@ export default function Profile() {
                     <Label>Skills & Services</Label>
                     <div className="mt-2 space-y-2 border rounded-lg p-4 bg-gray-50 max-h-96 overflow-y-auto">
                       {isEditing ? (
+                        <>
                         <Accordion type="multiple" className="w-full">
                           {Object.entries(SKILL_CATEGORIES).map(([category, skills]) => (
                             <AccordionItem key={category} value={category}>
@@ -609,6 +637,15 @@ export default function Profile() {
                             </AccordionItem>
                           ))}
                         </Accordion>
+                        <CustomSkillInput
+                          currentSkills={parseSkills(workerData.skills || formData.skills)}
+                          onAdd={(skills) => {
+                            const skillString = skills.join(';;');
+                            setWorkerData({ ...workerData, skills: skillString });
+                            setFormData({ ...formData, skills: skillString });
+                          }}
+                        />
+                        </>
                       ) : (
                         <div className="flex flex-wrap gap-2">
                           {parseSkills(formData.skills).map((skill, i) => (
@@ -641,12 +678,22 @@ export default function Profile() {
                       <input
                         type="checkbox"
                         checked={workerData.is_visible}
-                        onChange={(e) => setWorkerData({...workerData, is_visible: e.target.checked})}
+                        onChange={(e) => {
+                          if (e.target.checked && formData.user_role === "offerer" && parseSkills(workerData.skills || formData.skills).length === 0) {
+                            setVisibilityError("Select at least one skill below first — that's what makes you visible in Find Skilled People.");
+                            return;
+                          }
+                          setVisibilityError("");
+                          setWorkerData({...workerData, is_visible: e.target.checked});
+                        }}
                         disabled={!isEditing}
                         className="w-5 h-5 text-orange-600 rounded focus:ring-orange-500"
                       />
                     </div>
                   </div>
+                  {visibilityError && (
+                    <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg p-3">{visibilityError}</p>
+                  )}
 
                   {workerData.is_visible && (
                   <div className="space-y-4 animate-in slide-in-from-top-2">

@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { parseSkills } from "@/lib/skills";
 import { formatPublicLocation } from "@/lib/location";
-import { Search, MapPin, Star, Filter, Users, ArrowRight, X, Plus } from "lucide-react";
+import { Search, MapPin, Star, Filter, Users, ArrowRight, X, Plus, Crosshair } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -197,6 +197,39 @@ export default function BrowseUsers() {
                 <span>1 mi</span>
                 <span>100 mi</span>
               </div>
+            </div>
+          )}
+
+          {/* Enable Location banner */}
+          {user?.latitude && user?.longitude && !useLocation && (
+            <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-3">
+              <MapPin className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 text-sm text-blue-900">
+                <p className="font-medium">Enable location-based search</p>
+                <p className="text-blue-700 mt-1">Filter people by distance to see only nearby opportunities.</p>
+              </div>
+              <Button
+                onClick={() => setUseLocation(true)}
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap"
+              >
+                Enable
+              </Button>
+            </div>
+          )}
+
+          {!user?.latitude && user && (
+            <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-3">
+              <Crosshair className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 text-sm text-blue-900">
+                <p className="font-medium">Enable location-based search</p>
+                <p className="text-blue-700 mt-1">Update your profile with your location to filter people by distance.</p>
+              </div>
+              <Link to={createPageUrl("Profile")}>
+                <Button size="sm" className="whitespace-nowrap">
+                  Update Profile
+                </Button>
+              </Link>
             </div>
           )}
         </div>

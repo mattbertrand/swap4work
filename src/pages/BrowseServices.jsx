@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { Search, MapPin, Filter, Briefcase, X } from "lucide-react";
+import { Search, MapPin, Filter, Briefcase, X, Crosshair } from "lucide-react";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
@@ -265,6 +267,23 @@ export default function BrowseServices() {
                 >
                   Enable
                 </Button>
+              </div>
+            )}
+
+            {!userLocation && user && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-3">
+                <Crosshair className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1 text-sm text-blue-900">
+                  <p className="font-medium">Enable location-based search</p>
+                  <p className="text-blue-700 mt-1">
+                    Update your profile with your location to filter services by distance.
+                  </p>
+                </div>
+                <Link to={createPageUrl("Profile")}>
+                  <Button size="sm" className="whitespace-nowrap">
+                    Update Profile
+                  </Button>
+                </Link>
               </div>
             )}
           </div>

@@ -66,6 +66,13 @@
       "default": "both",
       "description": "Primary role in the platform"
     },
+    "trading_interests": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Item categories this user is interested in trading for (offerer role)"
+    },
     "profile_completed": {
       "type": "boolean",
       "default": false,

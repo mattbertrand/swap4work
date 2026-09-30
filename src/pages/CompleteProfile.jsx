@@ -20,6 +20,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { parseSkills } from "@/lib/skills";
+import TermsDialog from "@/components/terms/TermsDialog";
+import CustomSkillInput from "@/components/profile/CustomSkillInput";
 import { isValidCityName } from "@/lib/location";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
@@ -35,6 +37,7 @@ const SKILL_CATEGORIES = {
   "Creative / Craft": ["Custom crafts","Sewing / alterations","Event decoration","Handmade art creation"]
 };
 
+const ITEM_CATEGORIES = ["Electronics","Home Goods","Furniture","Appliances","Tools","Sports Equipment","Other"];
 const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 const TIME_SLOTS = ["Morning (6am–12pm)","Afternoon (12pm–5pm)","Evening (5pm–9pm)","Night (9pm+)"];
 
@@ -54,6 +57,7 @@ export default function CompleteProfile() {
   const [zipError, setZipError] = useState("");
   const [locationFields, setLocationFields] = useState({ street: "", city: "", state: "", zip: "" });
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsOpen, setTermsOpen] = useState(false);
   const [existingTerms, setExistingTerms] = useState(null);
   const [initialSnapshot, setInitialSnapshot] = useState(null);
   const [locationErrors, setLocationErrors] = useState({});
@@ -68,6 +72,7 @@ export default function CompleteProfile() {
     availability: "",
     photo_url: "",
     user_role: "both",
+    trading_interests: [],
     latitude: null,
     longitude: null
   });
@@ -89,6 +94,7 @@ export default function CompleteProfile() {
         availability: userData.availability || "",
         photo_url: userData.photo_url || "",
         user_role: userData.user_role || "both",
+        trading_interests: Array.isArray(userData.trading_interests) ? userData.trading_interests : [],
         latitude: userData.latitude || null,
         longitude: userData.longitude || null
       };
@@ -359,6 +365,7 @@ export default function CompleteProfile() {
                     <SelectItem value="both">Both working and trading</SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-gray-500 mt-2">You can change this anytime after completing your profile, on your Profile page.</p>
               </div>
 
               {/* Bio */}
@@ -377,7 +384,39 @@ export default function CompleteProfile() {
                 </p>
               </div>
 
-              {/* Skills */}
+              {/* Skills (workers/both) or item-interest picker (offerer) */}
+              {formData.user_role === "offerer" ? (
+                <div>
+                  <Label>Item Interests</Label>
+                  <p className="text-xs text-gray-500 mb-2">Optional — pick the kinds of items you're hoping to trade for. You can change this anytime on your Profile page.</p>
+                  <div className="mt-2 border rounded-lg p-4 bg-gray-50">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {ITEM_CATEGORIES.map((cat) => (
+                        <div key={cat} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`cp-interest-${cat}`}
+                            checked={formData.trading_interests.includes(cat)}
+                            onCheckedChange={(checked) => {
+                              const interests = checked
+                                ? [...formData.trading_interests, cat]
+                                : formData.trading_interests.filter((c) => c !== cat);
+                              setFormData({ ...formData, trading_interests: interests });
+                            }}
+                          />
+                          <label htmlFor={`cp-interest-${cat}`} className="text-sm cursor-pointer">{cat}</label>
+                        </div>
+                      ))}
+                    </div>
+                    {formData.trading_interests.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-3">
+                        {formData.trading_interests.map((c, i) => (
+                          <Badge key={i} variant="secondary" className="text-xs">{c}</Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
               <div>
                 <Label>Skills & Services</Label>
                 <div className="mt-2 border rounded-lg p-4 bg-gray-50 max-h-80 overflow-y-auto">
@@ -421,7 +460,12 @@ export default function CompleteProfile() {
                     ))}
                   </div>
                 )}
+                <CustomSkillInput
+                  currentSkills={parseSkills(formData.skills)}
+                  onAdd={(skills) => setFormData({ ...formData, skills: skills.join(';;') })}
+                />
               </div>
+              )}
 
               {/* Availability */}
               <div>
@@ -475,14 +519,13 @@ export default function CompleteProfile() {
                   />
                   <label htmlFor="terms-accept" className="text-sm text-gray-700 leading-relaxed">
                     I have read and agree to the{" "}
-                    <a
-                      href={createPageUrl("Terms")}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
+                      onClick={() => setTermsOpen(true)}
                       className="text-orange-600 font-medium underline hover:text-orange-700"
                     >
                       Terms &amp; Conditions
-                    </a>{" "}
+                    </button>{" "}
                     and the community safety guidelines.{" "}
                     <span className="text-red-500">*</span>
                   </label>
@@ -512,6 +555,7 @@ export default function CompleteProfile() {
       </div>
 
       <UnsavedChangesDialog blocker={blocker} />
+      <TermsDialog open={termsOpen} onOpenChange={setTermsOpen} />
     </div>
   );
 }

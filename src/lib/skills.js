@@ -29,3 +29,36 @@ export function parseSkills(skillsString) {
   parts.push(current);
   return parts.map(s => s.trim()).filter(Boolean);
 }
+
+// --- Custom ("Other") skills ---
+// Free-text skills must be safe to store in the ';;'-joined skills string and
+// to render as tags. Keep letters, numbers, spaces and a small set of common
+// punctuation; strip everything else (including the storage separator).
+
+export const MAX_SKILL_LENGTH = 40;
+export const MAX_TOTAL_SKILLS = 40;
+
+export function sanitizeCustomSkill(input) {
+  let s = String(input || "")
+    .replace(/[^a-zA-Z0-9 &()\-,'/]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!s) return "";
+  s = s.replace(/;/g, ""); // never allow the storage separator into a skill
+  if (s.length > MAX_SKILL_LENGTH) s = s.slice(0, MAX_SKILL_LENGTH).trim();
+  return s;
+}
+
+// Adds a sanitized custom skill, case-insensitively deduplicated against the
+// current selections. Returns { skills, error } where error is one of
+// 'empty' | 'duplicate' | 'limit' | null.
+export function appendCustomSkill(currentSkills, input) {
+  const skill = sanitizeCustomSkill(input);
+  const list = Array.isArray(currentSkills) ? currentSkills : [];
+  if (!skill) return { skills: list, error: "empty" };
+  if (list.length >= MAX_TOTAL_SKILLS) return { skills: list, error: "limit" };
+  if (list.some((s) => s.toLowerCase() === skill.toLowerCase())) {
+    return { skills: list, error: "duplicate" };
+  }
+  return { skills: [...list, skill], error: null };
+}
