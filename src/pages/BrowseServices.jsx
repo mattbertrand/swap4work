@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useBlockedUsers } from "@/hooks/useBlockedUsers";
 import ServiceCard from "@/components/browse/ServiceCard";
+import SignInPromptBanner from "@/components/browse/SignInPromptBanner";
 
 // Calculate distance using Haversine
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -285,6 +286,10 @@ export default function BrowseServices() {
                   </Button>
                 </Link>
               </div>
+            )}
+
+            {!user && (
+              <SignInPromptBanner message="Create an account to see services near you and start trading." />
             )}
           </div>
 

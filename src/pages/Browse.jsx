@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { authLoginUrl } from "@/lib/authNavigation";
 import { Search, MapPin, Clock, Filter, Crosshair, X, Sparkles, XCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import ItemCard from "../components/browse/ItemCard";
+import SignInPromptBanner from "@/components/browse/SignInPromptBanner";
 import { useBlockedUsers } from "@/hooks/useBlockedUsers";
 
 // Calculate distance between two coordinates using Haversine formula
@@ -28,7 +28,6 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
 };
 
 export default function Browse() {
-  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -325,22 +324,7 @@ export default function Browse() {
             )}
 
             {!user && (
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 flex items-start gap-3">
-                <Crosshair className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
-                <div className="flex-1 text-sm text-orange-900">
-                  <p className="font-medium">Sign in for personalized results</p>
-                  <p className="text-orange-700 mt-1">
-                    Create an account to see items near you and start trading.
-                  </p>
-                </div>
-                <Button 
-                  onClick={() => navigate(authLoginUrl(window.location.pathname + window.location.search))}
-                  size="sm"
-                  className="bg-orange-600 hover:bg-orange-700 whitespace-nowrap"
-                >
-                  Sign In
-                </Button>
-              </div>
+              <SignInPromptBanner message="Create an account to see items near you and start trading." />
             )}
           </div>
 

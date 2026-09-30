@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { useBlockedUsers } from "@/hooks/useBlockedUsers";
+import SignInPromptBanner from "@/components/browse/SignInPromptBanner";
 
 // Calculate distance between two coordinates
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -230,6 +231,12 @@ export default function BrowseUsers() {
                   Update Profile
                 </Button>
               </Link>
+            </div>
+          )}
+
+          {!user && (
+            <div className="mt-6">
+              <SignInPromptBanner message="Create an account to see people near you and start trading." />
             </div>
           )}
         </div>
