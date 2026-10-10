@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { displayName } from "@/lib/names";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +28,7 @@ export default function OfferCard({ offer, isOwnOffer, onAccept, onCounter, onDe
           <div className="flex items-center gap-2">
             <Clock className={`w-5 h-5 ${isOwnOffer ? 'text-blue-600' : 'text-orange-600'}`} />
             <div>
-              <p className="font-semibold text-gray-900">{offer.offered_by_name}</p>
+              <p className="font-semibold text-gray-900">{displayName(offer.offered_by_name)}</p>
               <p className="text-xs text-gray-500">
                 {format(new Date(offer.timestamp), 'MMM d, h:mm a')}
               </p>

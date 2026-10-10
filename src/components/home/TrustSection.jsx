@@ -1,5 +1,6 @@
 import React from "react";
 import { base44 } from "@/api/base44Client";
+import { displayName } from "@/lib/names";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -110,8 +111,8 @@ export default function TrustSection() {
 
                   <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                     <div>
-                      <p className="font-semibold text-gray-900 text-sm">{rating.from_user_name}</p>
-                      <p className="text-xs text-gray-500">reviewed {rating.to_user_name}</p>
+                      <p className="font-semibold text-gray-900 text-sm">{displayName(rating.from_user_name)}</p>
+                      <p className="text-xs text-gray-500">reviewed {displayName(rating.to_user_name)}</p>
                     </div>
                     <CheckCircle2 className="w-5 h-5 text-green-500" />
                   </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { displayName } from "@/lib/names";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { formatDuration } from "@/lib/duration";
@@ -132,7 +133,7 @@ export default function AgreementDetail() {
 
   const isOfferer = user.id === agreement.offerer_id;
   const isWorker = user.id === agreement.worker_id;
-  const otherParty = isOfferer ? agreement.worker_name : agreement.offerer_name;
+  const otherParty = displayName(isOfferer ? agreement.worker_name : agreement.offerer_name);
 
   // Check if user already confirmed
   const userConfirmed = isOfferer 
@@ -287,7 +288,7 @@ export default function AgreementDetail() {
                 'bg-gray-50 border-gray-200'
               }`}>
                 <p className="text-sm text-gray-600 mb-2">Item Owner</p>
-                <p className="font-semibold text-gray-900">{agreement.offerer_name}</p>
+                <p className="font-semibold text-gray-900">{displayName(agreement.offerer_name)}</p>
                 <div className="mt-2 flex items-center gap-2">
                   {agreement.offerer_handover_confirmed ? (
                     <>
@@ -309,7 +310,7 @@ export default function AgreementDetail() {
                 'bg-gray-50 border-gray-200'
               }`}>
                 <p className="text-sm text-gray-600 mb-2">Worker</p>
-                <p className="font-semibold text-gray-900">{agreement.worker_name}</p>
+                <p className="font-semibold text-gray-900">{displayName(agreement.worker_name)}</p>
                 <div className="mt-2 flex items-center gap-2">
                   {agreement.worker_handover_confirmed ? (
                     <>

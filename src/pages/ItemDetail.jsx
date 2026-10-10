@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { displayName } from "@/lib/names";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
 import { formatDuration } from "@/lib/duration";
@@ -300,7 +301,7 @@ export default function ItemDetail() {
         expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
       });
 
-      const offerText = `${user.full_name} offered ${hours} hours${work_type ? ` for ${work_type}` : ''}${message ? `\n\n${message}` : ''}`;
+      const offerText = `${displayName(user.full_name)} offered ${hours} hours${work_type ? ` for ${work_type}` : ''}${message ? `\n\n${message}` : ''}`;
 
       await base44.entities.Message.create({
         negotiation_id: negotiation.id,
@@ -316,7 +317,7 @@ export default function ItemDetail() {
         user_id: item.offerer_id,
         type: 'new_negotiation',
         title: 'New negotiation started',
-        message: `${user.full_name} wants to trade work for your ${item.title}`,
+        message: `${displayName(user.full_name)} wants to trade work for your ${item.title}`,
         related_id: negotiation.id,
         related_type: 'negotiation',
         link_url: createPageUrl(`Negotiation?id=${negotiation.id}`)
@@ -634,7 +635,7 @@ export default function ItemDetail() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <p className="font-semibold text-gray-900 group-hover:text-orange-700 transition-colors">
-                              {item.offerer_name}
+                              {displayName(item.offerer_name)}
                             </p>
                             <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-orange-600 opacity-0 group-hover:opacity-100 transition-all" />
                           </div>

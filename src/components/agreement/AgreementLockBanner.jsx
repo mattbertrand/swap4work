@@ -1,6 +1,7 @@
 import React from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Lock, AlertTriangle, Clock, CheckCircle2 } from "lucide-react";
+import { displayName } from "@/lib/names";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -30,7 +31,7 @@ export default function AgreementLockBanner({ agreement, user, onRequestCancella
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <p className="font-semibold text-orange-900 mb-1">
-                    {requestedByMe ? "You" : cancellationRequest.requested_by_name} requested cancellation
+                    {requestedByMe ? "You" : displayName(cancellationRequest.requested_by_name)} requested cancellation
                   </p>
                   <p className="text-sm text-orange-700 mb-2">
                     {cancellationRequest.reason}

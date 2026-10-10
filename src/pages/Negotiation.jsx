@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
+import { displayName } from "@/lib/names";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { formatDuration } from "@/lib/duration";
@@ -209,7 +210,7 @@ export default function Negotiation() {
       await sendMessageMutation.mutateAsync({
         negotiation_id: negotiationId,
         from_user_id: user.id,
-        from_user_name: user.full_name,
+        from_user_name: displayName(user.full_name),
         to_user_id: otherUserId,
         text: message,
         message_type: "text"
@@ -219,7 +220,7 @@ export default function Negotiation() {
         user_id: otherUserId,
         type: 'new_message',
         title: 'New message',
-        message: `${user.full_name} sent you a message about ${negotiation.item_title}`,
+        message: `${displayName(user.full_name)} sent you a message about ${negotiation.item_title}`,
         related_id: negotiationId,
         related_type: 'negotiation',
         link_url: createPageUrl(`Negotiation?id=${negotiationId}`),
@@ -245,7 +246,7 @@ export default function Negotiation() {
       ...(negotiation.offer_history || []),
       {
         offered_by: user.id,
-        offered_by_name: user.full_name,
+        offered_by_name: displayName(user.full_name),
         hours: offerData.hours,
         work_type: offerData.work_type || "",
         message: offerData.message || "",
@@ -268,9 +269,9 @@ export default function Negotiation() {
     await sendMessageMutation.mutateAsync({
       negotiation_id: negotiationId,
       from_user_id: user.id,
-      from_user_name: user.full_name,
+      from_user_name: displayName(user.full_name),
       to_user_id: otherUserId,
-      text: `${user.full_name} offered ${formatDuration(offerData.hours)}${offerData.work_type ? ` for ${offerData.work_type}` : ''}${offerData.message ? `\n\n${offerData.message}` : ''}`,
+      text: `${displayName(user.full_name)} offered ${formatDuration(offerData.hours)}${offerData.work_type ? ` for ${offerData.work_type}` : ''}${offerData.message ? `\n\n${offerData.message}` : ''}`,
       message_type: "offer",
       proposal_hours: offerData.hours
     });
@@ -279,7 +280,7 @@ export default function Negotiation() {
       user_id: otherUserId,
       type: 'counter_offer',
       title: 'New counter offer',
-      message: `${user.full_name} offered ${formatDuration(offerData.hours)} for ${negotiation.item_title}`,
+      message: `${displayName(user.full_name)} offered ${formatDuration(offerData.hours)} for ${negotiation.item_title}`,
       related_id: negotiationId,
       related_type: 'negotiation',
       link_url: createPageUrl(`Negotiation?id=${negotiationId}`),
@@ -362,9 +363,9 @@ export default function Negotiation() {
     await sendMessageMutation.mutateAsync({
       negotiation_id: negotiationId,
       from_user_id: user.id,
-      from_user_name: user.full_name,
+      from_user_name: displayName(user.full_name),
       to_user_id: otherUserId,
-      text: `✅ ${user.full_name} accepted the offer of ${formatDuration(agreedHours)}!`,
+      text: `✅ ${displayName(user.full_name)} accepted the offer of ${formatDuration(agreedHours)}!`,
       message_type: "system"
     });
 
@@ -372,7 +373,7 @@ export default function Negotiation() {
       user_id: otherUserId,
       type: 'offer_accepted',
       title: 'Offer accepted!',
-      message: `${user.full_name} accepted your offer of ${formatDuration(agreedHours)} for ${negotiation.item_title}`,
+      message: `${displayName(user.full_name)} accepted your offer of ${formatDuration(agreedHours)} for ${negotiation.item_title}`,
       related_id: negotiationId,
       related_type: 'negotiation',
       link_url: createPageUrl(`Negotiation?id=${negotiationId}`),
@@ -417,7 +418,7 @@ export default function Negotiation() {
       user_id: otherUserId,
       type: 'offer_declined',
       title: 'Offer declined',
-      message: `${user.full_name} declined the negotiation for ${negotiation.item_title}`,
+      message: `${displayName(user.full_name)} declined the negotiation for ${negotiation.item_title}`,
       related_id: negotiationId,
       related_type: 'negotiation',
       link_url: createPageUrl("Browse"),
@@ -583,7 +584,7 @@ export default function Negotiation() {
       user_id: otherUserId,
       type: 'offer_declined',
       title: 'Agreement cancelled',
-      message: `${user.full_name} cancelled the agreement for ${negotiation.item_title}`,
+      message: `${displayName(user.full_name)} cancelled the agreement for ${negotiation.item_title}`,
       related_id: negotiationId,
       related_type: 'negotiation',
       link_url: createPageUrl('Browse'),
@@ -595,9 +596,9 @@ export default function Negotiation() {
     await sendMessageMutation.mutateAsync({
       negotiation_id: negotiationId,
       from_user_id: user.id,
-      from_user_name: user.full_name,
+      from_user_name: displayName(user.full_name),
       to_user_id: otherUserId,
-      text: `❌ ${user.full_name} cancelled the agreement.`,
+      text: `❌ ${displayName(user.full_name)} cancelled the agreement.`,
       message_type: "system"
     });
 
@@ -620,7 +621,7 @@ export default function Negotiation() {
 
   const isOfferer = useMemo(() => user?.id === negotiation?.offerer_id, [user?.id, negotiation?.offerer_id]);
   const isBidder = useMemo(() => user?.id === negotiation?.bidder_id, [user?.id, negotiation?.bidder_id]);
-  const otherParty = useMemo(() => isOfferer ? negotiation?.bidder_name : negotiation?.offerer_name, [isOfferer, negotiation?.bidder_name, negotiation?.offerer_name]);
+  const otherParty = useMemo(() => displayName(isOfferer ? negotiation?.bidder_name : negotiation?.offerer_name), [isOfferer, negotiation?.bidder_name, negotiation?.offerer_name]);
   const currentOfferHours = useMemo(() => negotiation?.counter_offer_hours || negotiation?.initial_offer_hours, [negotiation?.counter_offer_hours, negotiation?.initial_offer_hours]);
   const isNegotiationClosed = negotiation?.status === 'closed';
   const otherUserId = isOfferer ? negotiation?.bidder_id : negotiation?.offerer_id;

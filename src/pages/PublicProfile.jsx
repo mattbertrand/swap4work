@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { displayName } from "@/lib/names";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { formatDuration } from "@/lib/duration";
@@ -259,7 +260,7 @@ export default function PublicProfile() {
         user_id: userId,
         type: 'new_negotiation',
         title: 'New service request',
-        message: `${currentUser.full_name} requested your service in exchange for ${selectedItem.title}`,
+        message: `${displayName(currentUser.full_name)} requested your service in exchange for ${selectedItem.title}`,
         related_id: negotiation.id,
         related_type: 'negotiation',
         link_url: createPageUrl(`Negotiation?id=${negotiation.id}`)
@@ -359,7 +360,7 @@ export default function PublicProfile() {
                   )}
                 </div>
 
-                <h1 className="text-2xl font-bold text-gray-900 mb-1">{userProfile.full_name}</h1>
+                <h1 className="text-2xl font-bold text-gray-900 mb-1">{displayName(userProfile.full_name)}</h1>
                 <div className="flex justify-center items-center gap-1 text-gray-500 mb-4 text-sm">
                   <MapPin className="w-3 h-3" />
                   {formatPublicLocation(userProfile.location) || "Location unavailable"}
@@ -545,7 +546,7 @@ export default function PublicProfile() {
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
-                            <span className="font-semibold text-gray-900">{rating.from_user_name}</span>
+                            <span className="font-semibold text-gray-900">{displayName(rating.from_user_name)}</span>
                             <div className="flex">
                               {[...Array(5)].map((_, i) => (
                                 <Star
@@ -599,7 +600,7 @@ export default function PublicProfile() {
       <Dialog open={serviceModalOpen} onOpenChange={setServiceModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Request Service from {userProfile.full_name}</DialogTitle>
+            <DialogTitle>Request Service from {displayName(userProfile.full_name)}</DialogTitle>
             <DialogDescription>
               Select one of your items to offer in exchange for their service.
             </DialogDescription>

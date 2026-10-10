@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { displayName } from "@/lib/names";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { formatDuration } from "@/lib/duration";
@@ -176,7 +177,7 @@ export default function MyListings() {
                   >
                     <div className="flex items-center justify-between p-2 bg-white rounded hover:bg-blue-50 transition-colors">
                       <span className="text-xs text-gray-700 font-medium">
-                        {negotiation.bidder_name}
+                        {displayName(negotiation.bidder_name)}
                       </span>
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="text-xs">

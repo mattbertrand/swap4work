@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { displayName } from "@/lib/names";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -257,7 +258,7 @@ export default function BrowseUsers() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredUsers.map(worker => (
-              <Link key={worker.id} to={createPageUrl(`PublicProfile?userId=${worker.user_id}&workerId=${worker.id}&name=${encodeURIComponent(worker.full_name || '')}`)}>
+              <Link key={worker.id} to={createPageUrl(`PublicProfile?userId=${worker.user_id}&workerId=${worker.id}&name=${encodeURIComponent(displayName(worker.full_name || ''))}`)}>
 
                 <Card className="hover:shadow-xl transition-shadow border-blue-100 cursor-pointer h-full">
                   <CardContent className="p-6">
@@ -277,7 +278,7 @@ export default function BrowseUsers() {
                       )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-bold text-lg text-gray-900 truncate">{worker.full_name}</h3>
+                          <h3 className="font-bold text-lg text-gray-900 truncate">{displayName(worker.full_name)}</h3>
                         </div>
                         <div className="flex items-center gap-2 mb-1">
                           {formatPublicLocation(worker.location) && (

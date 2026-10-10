@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { displayName } from "@/lib/names";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { formatDuration } from "@/lib/duration";
@@ -91,7 +92,7 @@ export default function MyAgreements() {
         user_id: otherUserId,
         type: 'agreement_created',
         title: 'Negotiation cancelled',
-        message: `${user.full_name} cancelled the negotiation for ${negotiation.item_title}`,
+        message: `${displayName(user.full_name)} cancelled the negotiation for ${negotiation.item_title}`,
         related_id: negotiation.item_id,
         related_type: 'item',
         link_url: createPageUrl(`Browse`)
@@ -117,7 +118,7 @@ export default function MyAgreements() {
         user_id: otherUserId,
         type: 'agreement_created',
         title: 'Agreement cancelled',
-        message: `${user.full_name} cancelled the agreement for ${agreement.item_title}`,
+        message: `${displayName(user.full_name)} cancelled the agreement for ${agreement.item_title}`,
         related_id: agreement.item_id,
         related_type: 'item',
         link_url: createPageUrl(`Browse`)
@@ -189,7 +190,7 @@ export default function MyAgreements() {
             <div className="flex-1">
               <h3 className="font-bold text-xl text-gray-900 mb-1">{negotiation.item_title}</h3>
               <p className="text-sm text-gray-500">
-                {user.id === negotiation.bidder_id ? `With ${negotiation.offerer_name}` : `With ${negotiation.bidder_name}`}
+                {user.id === negotiation.bidder_id ? `With ${displayName(negotiation.offerer_name)}` : `With ${displayName(negotiation.bidder_name)}`}
               </p>
             </div>
             <Badge className={config.color}>
@@ -255,7 +256,7 @@ export default function MyAgreements() {
             <div className="flex-1">
               <h3 className="font-bold text-xl text-gray-900 mb-1">{agreement.item_title}</h3>
               <p className="text-sm text-gray-500">
-                {user.id === agreement.worker_id ? `With ${agreement.offerer_name}` : `With ${agreement.worker_name}`}
+                {user.id === agreement.worker_id ? `With ${displayName(agreement.offerer_name)}` : `With ${displayName(agreement.worker_name)}`}
               </p>
             </div>
             <Badge className={config.color}>

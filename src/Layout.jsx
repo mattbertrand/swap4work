@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { displayName } from "@/lib/names";
 import { base44 } from "@/api/base44Client";
 import { authLoginUrl } from "@/lib/authNavigation";
 import {
@@ -199,7 +200,7 @@ export default function Layout({ children, currentPageName }) {
                       </div>
                   }
                     <div className="flex-1 min-w-0 text-left">
-                      <p className="font-medium text-gray-900 text-sm truncate">{user.full_name}</p>
+                      <p className="font-medium text-gray-900 text-sm truncate">{displayName(user.full_name)}</p>
                       <p className="text-xs text-gray-500 truncate">{user.email}</p>
                     </div>
                   </button>

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { formatDuration } from "@/lib/duration";
+import { displayName } from "@/lib/names";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -178,7 +179,7 @@ export default function AgreementDraft({
               {hasConfirmed ? (
                 <>
                   <CheckCircle2 className="w-4 h-4 inline mr-2" />
-                  You've confirmed. Waiting for {isOfferer ? negotiation.bidder_name : negotiation.offerer_name} to confirm.
+                  You've confirmed. Waiting for {displayName(isOfferer ? negotiation.bidder_name : negotiation.offerer_name)} to confirm.
                 </>
               ) : (
                 <>

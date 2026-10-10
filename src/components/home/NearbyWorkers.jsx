@@ -1,5 +1,6 @@
 import React from "react";
 import { base44 } from "@/api/base44Client";
+import { displayName } from "@/lib/names";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -137,7 +138,7 @@ export default function NearbyWorkers() {
                       )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-bold text-lg text-gray-900 truncate">{worker.full_name}</h3>
+                          <h3 className="font-bold text-lg text-gray-900 truncate">{displayName(worker.full_name)}</h3>
                         </div>
                         {worker.rating > 0 && (
                           <div className="flex items-center gap-1">

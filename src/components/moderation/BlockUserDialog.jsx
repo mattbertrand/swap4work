@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { displayName } from "@/lib/names";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,7 +34,7 @@ export default function BlockUserDialog({
         blocked_name: blockedUserName || "",
         blocked_photo_url: "",
       });
-      toast.success(`${blockedUserName} has been blocked`);
+      toast.success(`${displayName(blockedUserName)} has been blocked`);
       onBlocked?.();
       onClose();
     } catch (error) {
@@ -49,7 +50,7 @@ export default function BlockUserDialog({
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
             <Ban className="w-5 h-5 text-orange-600" />
-            Block {blockedUserName}?
+            Block {displayName(blockedUserName)}?
           </AlertDialogTitle>
           <AlertDialogDescription>
             Once blocked, neither of you can message or negotiate with each

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { displayName } from "@/lib/names";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -157,7 +158,7 @@ export default function TimeTracking() {
       user_id: agreement.offerer_id,
       type: 'work_completed',
       title: 'Work completed!',
-      message: `${user.full_name} has completed the work for ${agreement.item_title}. Please review and confirm handover.`,
+      message: `${displayName(user.full_name)} has completed the work for ${agreement.item_title}. Please review and confirm handover.`,
       related_id: agreementId,
       related_type: 'agreement',
       link_url: createPageUrl(`AgreementDetail?id=${agreementId}`)
@@ -242,7 +243,7 @@ if (!agreement) {
             <div className="flex justify-between items-start">
               <div>
                 <CardTitle className="text-2xl mb-1">{agreement.item_title}</CardTitle>
-                <p className="text-gray-600">Working with {agreement.offerer_name}</p>
+                <p className="text-gray-600">Working with {displayName(agreement.offerer_name)}</p>
               </div>
               <Badge className={`text-white ${
                 progress >= 100 ? 'bg-green-500' :

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
+import { displayName } from "@/lib/names";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -96,7 +97,7 @@ export default function Chat() {
     const historyEntry = {
       timestamp: new Date().toISOString(),
       actor_id: user.id,
-      actor_name: user.full_name,
+      actor_name: displayName(user.full_name),
       action,
       message
     };
@@ -111,7 +112,7 @@ export default function Chat() {
     sendMessageMutation.mutate({
       agreement_id: agreementId,
       from_user_id: user.id,
-      from_user_name: user.full_name,
+      from_user_name: displayName(user.full_name),
       to_user_id: otherUserId,
       text: message,
       message_type: "text"
@@ -126,7 +127,7 @@ export default function Chat() {
     sendMessageMutation.mutate({
       agreement_id: agreementId,
       from_user_id: user.id,
-      from_user_name: user.full_name,
+      from_user_name: displayName(user.full_name),
       to_user_id: otherUserId,
       text: `I propose ${proposedHours} hours for this work.`,
       message_type: "proposal",
@@ -235,7 +236,7 @@ export default function Chat() {
   }
 
   const isWorker = user.id === agreement.worker_id;
-  const otherParty = isWorker ? agreement.offerer_name : agreement.worker_name;
+  const otherParty = displayName(isWorker ? agreement.offerer_name : agreement.worker_name);
   const hasAgreed = isWorker ? agreement.worker_agreed : agreement.offerer_agreed;
   const otherAgreed = isWorker ? agreement.offerer_agreed : agreement.worker_agreed;
   const bothAgreed = agreement.worker_agreed && agreement.offerer_agreed;

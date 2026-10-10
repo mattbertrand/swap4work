@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { displayName } from "@/lib/names";
 import { Badge } from "@/components/ui/badge";
 import { formatDuration } from "@/lib/duration";
 import { Card, CardContent } from "@/components/ui/card";
@@ -86,7 +87,7 @@ export default function ServiceCard({ service }) {
 
             <div className="flex items-center justify-between gap-2 pt-2 mt-2 border-t border-gray-100">
               <span className="text-xs text-gray-600 font-medium truncate">
-                {service.offerer_name}
+                {displayName(service.offerer_name)}
               </span>
               <OwnerReputation rating={service.offerer_rating} totalRatings={service.offerer_total_ratings} />
             </div>

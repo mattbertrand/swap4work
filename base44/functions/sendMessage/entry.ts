@@ -34,6 +34,12 @@ export default async function(req) {
 
     const db = base44.asServiceRole.entities;
 
+    // Messages are user-facing: store the name shortened (first name + last initial)
+    const nameParts = String(user.full_name || '').trim().split(/\s+/);
+    const shortName = nameParts.length > 1
+      ? `${nameParts[0]} ${nameParts[nameParts.length - 1][0].toUpperCase()}.`
+      : (nameParts[0] || '');
+
     // Enforce blocks in either direction
     const blocksA = await db.BlockedUser.filter({ blocker_id: user.id, blocked_id: toUserId });
     const blocksB = await db.BlockedUser.filter({ blocker_id: toUserId, blocked_id: user.id });
@@ -44,7 +50,7 @@ export default async function(req) {
     // When tied to a thread, the sender must be a participant of it
     const payload = {
       from_user_id: user.id,
-      from_user_name: user.full_name,
+      from_user_name: shortName,
       to_user_id: toUserId,
       text,
       message_type: messageType

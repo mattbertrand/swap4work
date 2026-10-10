@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { displayName } from "@/lib/names";
 import { MapPin, Clock, CheckCircle2, AlertCircle, Package, Calendar, ArrowRight } from "lucide-react";
 import { formatDuration } from "@/lib/duration";
 import { Badge } from "@/components/ui/badge";
@@ -127,7 +128,7 @@ export default function ItemCard({ item, showDistance, userAgreements = [] }) {
           <div className="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
             <div className="min-w-0">
               <span className="text-xs text-gray-600 font-medium block truncate">
-                {item.offerer_name}
+                {displayName(item.offerer_name)}
               </span>
               <OwnerReputation rating={item.offerer_rating} totalRatings={item.offerer_total_ratings} />
             </div>

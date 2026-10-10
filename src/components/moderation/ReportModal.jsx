@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { displayName } from "@/lib/names";
 import { authLoginUrl } from "@/lib/authNavigation";
 import {
   Dialog,
@@ -101,9 +102,9 @@ export default function ReportModal({
   };
 
   const targetLabel =
-    targetType === "user"
-      ? reportedUserName || targetName
-      : targetName || "this content";
+  targetType === "user"
+    ? displayName(reportedUserName || targetName)
+    : targetName || "this content";
 
   return (
     <Dialog open={open} onOpenChange={onClose}>

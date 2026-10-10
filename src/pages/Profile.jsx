@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
+import { displayName } from "@/lib/names";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -413,7 +414,7 @@ export default function Profile() {
                   </label>
                 </div>
 
-                <h2 className="text-2xl font-bold text-gray-900 mb-1">{user.full_name}</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-1">{displayName(user.full_name)}</h2>
                 <p className="text-gray-500 text-sm mb-4">{user.email}</p>
 
                 <div className="flex justify-center gap-2 mb-4">
@@ -787,7 +788,7 @@ export default function Profile() {
                               {blockedUser.blocked_name?.[0]?.toUpperCase() || "?"}
                             </span>
                           </div>
-                          <span className="font-medium text-gray-900">{blockedUser.blocked_name}</span>
+                          <span className="font-medium text-gray-900">{displayName(blockedUser.blocked_name)}</span>
                         </div>
                         <Button
                           size="sm"
@@ -826,7 +827,7 @@ export default function Profile() {
                               />
                             ))}
                           </div>
-                          <span className="font-semibold text-gray-900">{rating.from_user_name}</span>
+                          <span className="font-semibold text-gray-900">{displayName(rating.from_user_name)}</span>
                         </div>
                         {rating.review && (
                           <p className="text-gray-700 text-sm">{rating.review}</p>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { displayName } from "@/lib/names";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -198,7 +199,7 @@ export default function Notifications() {
                               {notification.from_user_name && (
                                 <>
                                   <span>•</span>
-                                  <span>from {notification.from_user_name}</span>
+                                  <span>from {displayName(notification.from_user_name)}</span>
                                 </>
                               )}
                             </div>
@@ -238,7 +239,7 @@ export default function Notifications() {
                               {notification.from_user_name && (
                                 <>
                                   <span>•</span>
-                                  <span>from {notification.from_user_name}</span>
+                                  <span>from {displayName(notification.from_user_name)}</span>
                                 </>
                               )}
                             </div>
