@@ -6,6 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Clock, TrendingDown, TrendingUp } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import HoursMinutesInput from "@/components/forms/HoursMinutesInput";
+import { formatDuration } from "@/lib/duration";
 
 export default function CounterOfferModal({ 
   open, 
@@ -19,53 +21,33 @@ export default function CounterOfferModal({
   submitLabel = "Send Counter Offer",
   onAccept = null
 }) {
-  const [hours, setHours] = useState("");
+  const [hours, setHours] = useState(null);
   const [workType, setWorkType] = useState("");
   const [message, setMessage] = useState("");
 
   // Auto-populate when modal opens
   useEffect(() => {
     if (open) {
-      console.log('🔢 Counter Offer Modal opened with defaults:', {
-        defaultHours,
-        defaultWorkType,
-        currentOffer
-      });
-      
       // Set default hours (either passed default or current offer)
-      const initialHours = defaultHours || currentOffer || "";
-      setHours(initialHours.toString());
-      
-      // Set default work type
+      setHours(defaultHours || currentOffer || null);
       setWorkType(defaultWorkType || "");
-      
-      console.log('✅ Pre-filled fields:', {
-        hours: initialHours,
-        workType: defaultWorkType || ""
-      });
     }
   }, [open, defaultHours, defaultWorkType, currentOffer]);
 
   const handleSubmit = () => {
-    if (!hours || parseFloat(hours) <= 0) {
-      alert("Please enter valid hours");
+    if (!hours) {
+      alert("Please enter a valid work time (at least 5 minutes, e.g. 00:05).");
       return;
     }
 
-    console.log('📤 Submitting counter offer:', {
-      hours: parseFloat(hours),
-      work_type: workType,
-      message
-    });
-
     onSubmit({
-      hours: parseFloat(hours),
+      hours,
       work_type: workType,
       message
     });
 
     // Reset and close
-    setHours("");
+    setHours(null);
     setWorkType("");
     setMessage("");
     onClose();
@@ -73,13 +55,13 @@ export default function CounterOfferModal({
 
   const handleClose = () => {
     // Reset on close
-    setHours("");
+    setHours(null);
     setWorkType("");
     setMessage("");
     onClose();
   };
 
-  const difference = hours && currentOffer ? parseFloat(hours) - currentOffer : 0;
+  const difference = hours && currentOffer ? hours - currentOffer : 0;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -90,7 +72,7 @@ export default function CounterOfferModal({
             {title}
           </DialogTitle>
           <DialogDescription>
-            Current offer is {currentOffer} hours. What would you like to propose?
+            Current offer is {formatDuration(currentOffer)}. What would you like to propose?
           </DialogDescription>
         </DialogHeader>
 
@@ -98,33 +80,26 @@ export default function CounterOfferModal({
           {suggestedHours && (
             <Alert className="bg-blue-50 border-blue-200">
               <AlertDescription className="text-sm text-blue-900">
-                💡 <strong>AI Suggestion:</strong> Similar items trade for {suggestedHours[0]}–{suggestedHours[1]} hours
+                💡 <strong>AI Suggestion:</strong> Similar items trade for {formatDuration(suggestedHours[0])}–{formatDuration(suggestedHours[1])}
               </AlertDescription>
             </Alert>
           )}
 
           <div>
-            <Label htmlFor="hours">Hours Offered *</Label>
-            <div className="relative">
-              <Input
-                id="hours"
-                type="number"
-                step="0.5"
-                min="0.5"
-                value={hours}
-                onChange={(e) => setHours(e.target.value)}
-                placeholder="e.g., 8.5"
-                className="mt-2 pr-16"
-              />
-              {difference !== 0 && hours && (
-                <div className={`absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-sm font-medium ${
-                  difference > 0 ? 'text-red-600' : 'text-green-600'
-                }`}>
-                  {difference > 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                  {Math.abs(difference)}h
-                </div>
-              )}
-            </div>
+            <Label htmlFor="hours">Time Offered *</Label>
+            <HoursMinutesInput
+              id="hours"
+              value={hours}
+              onChange={setHours}
+            />
+            {difference !== 0 && hours && (
+              <div className={`flex items-center gap-1 text-sm font-medium ${
+                difference > 0 ? 'text-red-600' : 'text-green-600'
+              }`}>
+                {difference > 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                {formatDuration(Math.abs(difference))}
+              </div>
+            )}
           </div>
 
           <div>
@@ -165,7 +140,7 @@ export default function CounterOfferModal({
           )}
           <Button 
             onClick={handleSubmit}
-            disabled={!hours || parseFloat(hours) <= 0}
+            disabled={!hours}
             className="bg-orange-600 hover:bg-orange-700"
           >
             {submitLabel}

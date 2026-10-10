@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { formatDuration } from "@/lib/duration";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -189,7 +190,7 @@ export default function TradeDashboard() {
                           <div className="flex justify-between text-sm mb-1">
                             <span className="text-gray-500">Progress</span>
                             <span className="font-medium text-gray-700">
-                              {(trade.hours_logged || 0).toFixed(1)} / {trade.agreed_hours}h
+                              {formatDuration(trade.hours_logged || 0)} / {formatDuration(trade.agreed_hours)}
                             </span>
                           </div>
                           <Progress value={progress} className="h-2" />

@@ -5,9 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Clock, Package, Loader2 } from "lucide-react";
+import HoursMinutesInput from "@/components/forms/HoursMinutesInput";
+import { formatDuration } from "@/lib/duration";
 
 export default function StartNegotiationModal({ open, onClose, item, onConfirm, loading }) {
-  const [hours, setHours] = useState(item?.required_hours || "");
+  const [hours, setHours] = useState(item?.required_hours || null);
   const [workType, setWorkType] = useState("");
   const [message, setMessage] = useState("");
 
@@ -21,9 +23,9 @@ export default function StartNegotiationModal({ open, onClose, item, onConfirm, 
   }, [open, item?.required_hours]);
 
   const handleConfirm = () => {
-    if (!hours || parseFloat(hours) <= 0) return;
+    if (!hours) return;
     onConfirm({
-      hours: parseFloat(hours),
+      hours,
       work_type: workType,
       message
     });
@@ -44,24 +46,16 @@ export default function StartNegotiationModal({ open, onClose, item, onConfirm, 
 
         <div className="space-y-4 py-4">
           <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-            <p className="text-sm text-orange-800 font-medium">Item requested: {item?.required_hours} hours</p>
+            <p className="text-sm text-orange-800 font-medium">Item requested: {formatDuration(item?.required_hours)}</p>
           </div>
 
           <div>
-            <Label htmlFor="start-hours">Hours You're Offering <span className="text-red-500">*</span></Label>
-            <div className="flex items-center gap-2 mt-2">
-              <Input
-                id="start-hours"
-                type="number"
-                step="0.5"
-                min="0.5"
-                value={hours}
-                onChange={(e) => setHours(e.target.value)}
-                placeholder="e.g., 10"
-                className="flex-1"
-              />
-              <span className="text-gray-500 text-sm whitespace-nowrap">hours</span>
-            </div>
+            <Label htmlFor="start-hours">Time You're Offering <span className="text-red-500">*</span></Label>
+            <HoursMinutesInput
+              id="start-hours"
+              value={hours}
+              onChange={setHours}
+            />
           </div>
 
           <div>
@@ -94,7 +88,7 @@ export default function StartNegotiationModal({ open, onClose, item, onConfirm, 
           </Button>
           <Button
             onClick={handleConfirm}
-            disabled={!hours || parseFloat(hours) <= 0 || loading}
+            disabled={!hours || loading}
             className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"
           >
             {loading ? (

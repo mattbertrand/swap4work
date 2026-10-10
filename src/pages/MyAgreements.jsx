@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { formatDuration } from "@/lib/duration";
 import { createPageUrl } from "@/utils";
 import { Clock, CheckCircle2, AlertCircle, MessageSquare, TrendingUp, Trash2 } from "lucide-react";
 import AuthModal from "@/components/auth/AuthModal";
@@ -199,7 +200,7 @@ export default function MyAgreements() {
           <div className="mb-4 p-3 bg-orange-50 rounded-lg">
             <div className="flex items-center gap-2 text-orange-700">
               <Clock className="w-4 h-4" />
-              <span className="font-semibold">Current offer: {currentOffer} hours</span>
+              <span className="font-semibold">Current offer: {formatDuration(currentOffer)}</span>
             </div>
             {negotiation.last_activity && (
               <p className="text-xs text-gray-600 mt-1">
@@ -267,7 +268,7 @@ export default function MyAgreements() {
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-gray-600">Progress</span>
                 <span className="font-semibold text-orange-600">
-                  {agreement.hours_logged || 0} / {agreement.agreed_hours} hours
+                  {formatDuration(agreement.hours_logged || 0)} / {formatDuration(agreement.agreed_hours)} of work
                 </span>
               </div>
               <Progress value={progress} className="h-2" />

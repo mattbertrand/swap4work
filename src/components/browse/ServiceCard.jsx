@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Badge } from "@/components/ui/badge";
+import { formatDuration } from "@/lib/duration";
 import { Card, CardContent } from "@/components/ui/card";
 import { Briefcase, Camera, Clock, MapPin } from "lucide-react";
 import OwnerReputation from "@/components/browse/OwnerReputation";
@@ -61,7 +62,7 @@ export default function ServiceCard({ service }) {
             <div className="flex items-center justify-between pb-3 border-b border-gray-200">
               <div className="flex items-center gap-2 text-blue-600 font-bold">
                 <Clock className="w-5 h-5" />
-                <span>{service.required_hours}h offered</span>
+                <span>{formatDuration(service.required_hours)} offered</span>
               </div>
             </div>
 

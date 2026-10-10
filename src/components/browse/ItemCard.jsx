@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { MapPin, Clock, CheckCircle2, AlertCircle, Package, Calendar, ArrowRight } from "lucide-react";
+import { formatDuration } from "@/lib/duration";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { formatDistanceToNow, parseISO } from "date-fns";
@@ -103,7 +104,7 @@ export default function ItemCard({ item, showDistance, userAgreements = [] }) {
             <div className="flex items-center gap-2 text-orange-600 font-bold">
               <Clock className="w-4 h-4 flex-shrink-0" />
               <span className="text-sm">
-                {item.required_hours} {item.required_hours === 1 ? "hour" : "hours"} of work
+                {formatDuration(item.required_hours)} of work
               </span>
             </div>
           </div>

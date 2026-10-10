@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { formatDuration } from "@/lib/duration";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -259,7 +260,7 @@ export default function AdminDashboard() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge className="bg-orange-100 text-orange-700">
-                          {item.required_hours}h
+                          {formatDuration(item.required_hours)}
                         </Badge>
                         <Badge className={
                           item.status === 'active' ? 'bg-green-100 text-green-700' :

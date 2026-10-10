@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { formatDuration } from "@/lib/duration";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -214,7 +215,7 @@ export default function AgreementDetail() {
                   <p className="text-sm text-gray-500 mb-1">Agreed Hours</p>
                   <p className="font-semibold text-gray-900 flex items-center gap-2">
                     <Clock className="w-4 h-4 text-orange-600" />
-                    {agreement.agreed_hours} hours
+                    {formatDuration(agreement.agreed_hours)}
                   </p>
                 </div>
                 <div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { formatDuration } from "@/lib/duration";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -269,7 +270,7 @@ export default function Negotiation() {
       from_user_id: user.id,
       from_user_name: user.full_name,
       to_user_id: otherUserId,
-      text: `${user.full_name} offered ${offerData.hours} hours${offerData.work_type ? ` for ${offerData.work_type}` : ''}${offerData.message ? `\n\n${offerData.message}` : ''}`,
+      text: `${user.full_name} offered ${formatDuration(offerData.hours)}${offerData.work_type ? ` for ${offerData.work_type}` : ''}${offerData.message ? `\n\n${offerData.message}` : ''}`,
       message_type: "offer",
       proposal_hours: offerData.hours
     });
@@ -278,7 +279,7 @@ export default function Negotiation() {
       user_id: otherUserId,
       type: 'counter_offer',
       title: 'New counter offer',
-      message: `${user.full_name} offered ${offerData.hours} hours for ${negotiation.item_title}`,
+      message: `${user.full_name} offered ${formatDuration(offerData.hours)} for ${negotiation.item_title}`,
       related_id: negotiationId,
       related_type: 'negotiation',
       link_url: createPageUrl(`Negotiation?id=${negotiationId}`),
@@ -363,7 +364,7 @@ export default function Negotiation() {
       from_user_id: user.id,
       from_user_name: user.full_name,
       to_user_id: otherUserId,
-      text: `✅ ${user.full_name} accepted the offer of ${agreedHours} hours!`,
+      text: `✅ ${user.full_name} accepted the offer of ${formatDuration(agreedHours)}!`,
       message_type: "system"
     });
 
@@ -371,7 +372,7 @@ export default function Negotiation() {
       user_id: otherUserId,
       type: 'offer_accepted',
       title: 'Offer accepted!',
-      message: `${user.full_name} accepted your offer of ${agreedHours} hours for ${negotiation.item_title}`,
+      message: `${user.full_name} accepted your offer of ${formatDuration(agreedHours)} for ${negotiation.item_title}`,
       related_id: negotiationId,
       related_type: 'negotiation',
       link_url: createPageUrl(`Negotiation?id=${negotiationId}`),
@@ -768,7 +769,7 @@ export default function Negotiation() {
               <Alert className="mb-4 bg-orange-50 border-orange-200">
                 <Clock className="w-4 h-4 text-orange-600" />
                 <AlertDescription className="text-orange-900">
-                  <strong>Current Offer:</strong> {currentOfferHours} hours
+                  <strong>Current Offer:</strong> {formatDuration(currentOfferHours)}
                   {negotiation.work_type && ` • ${negotiation.work_type}`}
                 </AlertDescription>
               </Alert>
@@ -1007,7 +1008,7 @@ export default function Negotiation() {
           setShowCounterModal(false);
         }}
         currentOffer={currentOfferHours}
-        suggestedHours={item ? [item.required_hours - 2, item.required_hours + 2] : null}
+        suggestedHours={item ? [Math.max(0, item.required_hours - 2), item.required_hours + 2] : null}
         defaultHours={item?.required_hours}
         defaultWorkType={negotiation?.work_type || ""}
         onSubmit={handleCounterOffer}

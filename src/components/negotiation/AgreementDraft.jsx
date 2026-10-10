@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { formatDuration } from "@/lib/duration";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,8 +65,7 @@ export default function AgreementDraft({
             <div className="text-right">
               <div className="flex items-center gap-2 justify-end">
                 <Clock className="w-5 h-5 text-orange-600" />
-                <span className="text-3xl font-bold text-gray-900">{negotiation.agreed_hours}</span>
-                <span className="text-lg text-gray-600">hours</span>
+                <span className="text-3xl font-bold text-gray-900">{formatDuration(negotiation.agreed_hours)}</span>
               </div>
               {negotiation.work_type && (
                 <p className="text-sm text-gray-600 mt-1">{negotiation.work_type}</p>

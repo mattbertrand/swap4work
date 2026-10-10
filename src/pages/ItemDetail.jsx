@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
+import { formatDuration } from "@/lib/duration";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -533,8 +534,7 @@ export default function ItemDetail() {
                   </div>
                   <div className="flex items-center gap-3">
                     <Clock className="w-8 h-8 text-orange-600" />
-                    <span className="text-4xl font-bold text-gray-900">{item.required_hours}</span>
-                    <span className="text-xl text-gray-600">hours</span>
+                    <span className="text-4xl font-bold text-gray-900">{formatDuration(item.required_hours)}</span>
                   </div>
                   {item.estimated_value > 0 && (
                     <div className="mt-3 text-sm text-gray-600">

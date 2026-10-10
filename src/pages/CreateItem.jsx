@@ -15,6 +15,7 @@ import UnsavedChangesDialog from "@/components/forms/UnsavedChangesDialog";
 import AuthModal from "@/components/auth/AuthModal";
 import ServicePhotosSection from "@/components/forms/ServicePhotosSection";
 import ServiceDetailsFields from "@/components/forms/ServiceDetailsFields";
+import HoursMinutesInput from "@/components/forms/HoursMinutesInput";
 import { getServiceCover } from "@/lib/serviceCovers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -146,6 +147,11 @@ export default function CreateItem() {
       return;
     }
 
+    if (!formData.required_hours) {
+      alert("Please enter a valid work time (at least 5 minutes, e.g. 00:05).");
+      return;
+    }
+
     if (!locFields.city || !locFields.state) {
       alert("Please enter at least a city and state for your location");
       return;
@@ -169,7 +175,7 @@ export default function CreateItem() {
         ...formData,
         listing_type: listingType,
         ...(listingType === "service" ? { cover_image: getServiceCover(formData.category) } : {}),
-        required_hours: parseFloat(formData.required_hours),
+        required_hours: formData.required_hours,
         estimated_value: parseFloat(formData.estimated_value) || 0,
         location: publicLocation,
         latitude: coords.latitude,
@@ -374,16 +380,10 @@ export default function CreateItem() {
                   <Label htmlFor="required_hours">
                     Work Hours Required <span className="text-red-500">*</span>
                   </Label>
-                  <Input
+                  <HoursMinutesInput
                     id="required_hours"
-                    type="number"
-                    min="1"
-                    step="0.5"
                     value={formData.required_hours}
-                    onChange={(e) => setFormData(p => ({ ...p, required_hours: e.target.value }))}
-                    placeholder="e.g., 40"
-                    required
-                    className="mt-2"
+                    onChange={(value) => setFormData(p => ({ ...p, required_hours: value }))}
                   />
                 </div>
 

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { formatDuration } from "@/lib/duration";
 import { Clock, CheckCircle2, XCircle, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import {
@@ -39,8 +40,7 @@ export default function OfferCard({ offer, isOwnOffer, onAccept, onCounter, onDe
 
         <div className="bg-white rounded-lg p-3 mb-3">
           <div className="flex items-baseline gap-2 mb-2">
-            <span className="text-3xl font-bold text-gray-900">{offer.hours}</span>
-            <span className="text-lg text-gray-600">hours</span>
+            <span className="text-3xl font-bold text-gray-900">{formatDuration(offer.hours)}</span>
           </div>
           {offer.work_type && (
             <p className="text-sm text-gray-700">

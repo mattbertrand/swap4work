@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
+import { formatDuration } from "@/lib/duration";
 import { createPageUrl } from "@/utils";
 import { Plus, Package, Clock, Eye, Edit, Trash2, MessageSquare, Calendar } from "lucide-react";
 import AuthModal from "@/components/auth/AuthModal";
@@ -143,7 +144,7 @@ export default function MyListings() {
               <div className="flex items-center gap-4 text-sm">
                 <div className="flex items-center gap-1 text-orange-600 font-medium">
                   <Clock className="w-4 h-4" />
-                  <span>{item.required_hours}h</span>
+                  <span>{formatDuration(item.required_hours)}</span>
                 </div>
                 <div className="flex items-center gap-1 text-gray-500">
                   <Calendar className="w-4 h-4" />

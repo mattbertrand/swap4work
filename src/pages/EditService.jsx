@@ -88,7 +88,7 @@ export default function EditService() {
       setFormData({
         title: item.title || "",
         category: item.category || "Home Repairs",
-        required_hours: item.required_hours?.toString() || "",
+        required_hours: item.required_hours || "",
         description: item.description || "",
         suggested_tasks: item.suggested_tasks || "",
         offerer_terms: item.offerer_terms || "",
@@ -176,6 +176,11 @@ export default function EditService() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!formData.required_hours) {
+      alert("Please enter a valid service time (at least 5 minutes, e.g. 00:05).");
+      return;
+    }
+
     if (!locFields.city || !locFields.state) {
       alert("Please enter at least a city and state for your location");
       return;
@@ -196,7 +201,7 @@ export default function EditService() {
       await base44.entities.Item.update(itemId, {
         title: formData.title,
         category: formData.category,
-        required_hours: parseFloat(formData.required_hours),
+        required_hours: formData.required_hours,
         description: formData.description,
         suggested_tasks: formData.suggested_tasks,
         offerer_terms: formData.offerer_terms,

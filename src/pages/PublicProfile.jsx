@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
+import { formatDuration } from "@/lib/duration";
 import { createPageUrl } from "@/utils";
 import { parseSkills } from "@/lib/skills";
 import { formatPublicLocation } from "@/lib/location";
@@ -614,7 +615,7 @@ export default function PublicProfile() {
                 <SelectContent>
                   {myItems.map(item => (
                     <SelectItem key={item.id} value={item.id}>
-                      {item.title} ({item.required_hours}h)
+                      {item.title} ({formatDuration(item.required_hours)})
                     </SelectItem>
                   ))}
                 </SelectContent>

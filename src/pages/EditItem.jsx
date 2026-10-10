@@ -13,6 +13,7 @@ import { Upload, X, ArrowLeft, Loader2, MapPin } from "lucide-react";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import UnsavedChangesDialog from "@/components/forms/UnsavedChangesDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import HoursMinutesInput from "@/components/forms/HoursMinutesInput";
 
 export default function EditItem() {
   const navigate = useNavigate();
@@ -83,7 +84,7 @@ export default function EditItem() {
         description: item.description || "",
         category: item.category || "Electronics",
         condition: item.condition || "Good",
-        required_hours: item.required_hours?.toString() || "",
+        required_hours: item.required_hours || "",
         location: item.location || "",
         latitude: item.latitude || null,
         longitude: item.longitude || null,
@@ -243,6 +244,10 @@ export default function EditItem() {
       alert("Please upload at least 3 photos");
       return;
     }
+    if (!formData.required_hours) {
+      alert("Please enter a valid work time (at least 5 minutes, e.g. 00:05).");
+      return;
+    }
 
     if (!formData.latitude || !formData.longitude) {
       await geocodeLocation(formData.location);
@@ -252,7 +257,7 @@ export default function EditItem() {
     try {
       await updateItemMutation.mutateAsync({
         ...formData,
-        required_hours: parseFloat(formData.required_hours),
+        required_hours: formData.required_hours,
         estimated_value: parseFloat(formData.estimated_value) || 0,
       });
     } catch (error) {
@@ -395,16 +400,10 @@ export default function EditItem() {
 
                 <div>
                   <Label htmlFor="required_hours">Required Work Hours <span className="text-red-500">*</span></Label>
-                  <Input
+                  <HoursMinutesInput
                     id="required_hours"
-                    type="number"
-                    min="1"
-                    step="0.5"
                     value={formData.required_hours}
-                    onChange={(e) => setFormData({...formData, required_hours: e.target.value})}
-                    placeholder="e.g., 40"
-                    required
-                    className="mt-2"
+                    onChange={(value) => setFormData({...formData, required_hours: value})}
                   />
                 </div>
 
