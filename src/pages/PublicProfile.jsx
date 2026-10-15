@@ -617,7 +617,7 @@ export default function PublicProfile() {
       />
 
       <Dialog open={serviceModalOpen} onOpenChange={setServiceModalOpen}>
-        <DialogContent>
+        <DialogContent className="grid-cols-[minmax(0,1fr)]">
           <DialogHeader>
             <DialogTitle>Request Service from {displayName(userProfile.full_name)}</DialogTitle>
             <DialogDescription>
