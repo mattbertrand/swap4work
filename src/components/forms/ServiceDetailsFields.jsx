@@ -4,7 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SERVICE_CATEGORIES } from "@/lib/serviceCovers";
-import HoursMinutesInput from "@/components/forms/HoursMinutesInput";
+import ServiceTimeSelect from "@/components/forms/ServiceTimeSelect";
 
 // Shared service listing fields — used by the create form and the service edit page.
 // Controlled through the same formData / setFormData shape the create form uses.
@@ -38,7 +38,7 @@ export default function ServiceDetailsFields({ formData, setFormData }) {
 
         <div>
           <Label htmlFor="required_hours">Service Time Offered <span className="text-red-500">*</span></Label>
-          <HoursMinutesInput
+          <ServiceTimeSelect
             id="required_hours"
             value={formData.required_hours}
             onChange={(value) => setFormData((p) => ({ ...p, required_hours: value }))}

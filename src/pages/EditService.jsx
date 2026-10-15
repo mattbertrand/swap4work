@@ -177,7 +177,7 @@ export default function EditService() {
     e.preventDefault();
 
     if (!formData.required_hours) {
-      alert("Please enter a valid service time (at least 5 minutes, e.g. 00:05).");
+      alert("Please select the time this service takes.");
       return;
     }
 
