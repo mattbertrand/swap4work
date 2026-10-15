@@ -629,10 +629,10 @@ export default function PublicProfile() {
             <div>
               <Label>What you're offering</Label>
               <Select value={selectedListingId} onValueChange={setSelectedListingId}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full [&>span]:min-w-0">
                   <SelectValue placeholder="Select a listing..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="w-[var(--radix-select-trigger-width)]">
                   {myItems.length > 0 && (
                     <SelectGroup>
                       <SelectLabel>My items</SelectLabel>
