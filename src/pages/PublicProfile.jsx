@@ -50,7 +50,7 @@ export default function PublicProfile() {
         try {
           const workers = await base44.entities.Worker.filter({ id: workerId });
           worker = workers[0];
-        } catch {}
+        } catch { /* worker lookup is best-effort */ }
       }
       if (worker) {
         const resolvedUserId = userId || worker.user_id;
@@ -124,7 +124,8 @@ export default function PublicProfile() {
     queryKey: ['userActiveItems', resolvedUserId],
     queryFn: () => base44.entities.Item.filter({ 
       offerer_id: resolvedUserId, 
-      status: 'active' 
+      status: 'active',
+      is_hidden: { $ne: true }
     }, '-created_date'),
     enabled: !!resolvedUserId
   });
