@@ -3,45 +3,73 @@ import { base44 } from "@/api/base44Client";
 import { displayName } from "@/lib/names";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Star, CheckCircle2, Package, Users, TrendingUp } from "lucide-react";
 
+// Every metric on this page comes from live database records, and every
+// sample/demo record (marked is_hidden) is excluded. Nothing is hardcoded,
+// and no placeholder rating is shown when genuine data doesn't exist yet.
 export default function TrustSection() {
-  const { data: allActiveItems = [] } = useQuery({
-    queryKey: ["allActiveItems"],
-    queryFn: () => base44.entities.Item.filter({ status: "active" }),
+  // Active, genuine item listings (sample listings are hidden and excluded)
+  const { data: activeItemCount = 0 } = useQuery({
+    queryKey: ["statsActiveItems"],
+    queryFn: () =>
+      base44.entities.Item.count({
+        status: "active",
+        listing_type: "item",
+        is_hidden: { $ne: true },
+      }),
   });
 
-  const { data: allMembers = [] } = useQuery({
-    queryKey: ["allMembers"],
+  // Member profiles completed by registered members
+  const { data: members = [] } = useQuery({
+    queryKey: ["statsMembers"],
     queryFn: () => base44.entities.Worker.list(),
   });
 
+  // Completed agreements, excluding those reserved over hidden sample listings
   const { data: completedAgreements = [] } = useQuery({
-    queryKey: ["completedAgreements"],
+    queryKey: ["statsCompleted"],
     queryFn: () => base44.entities.Agreement.filter({ status: "completed" }),
   });
 
+  const { data: hiddenItems = [] } = useQuery({
+    queryKey: ["statsHiddenItems"],
+    queryFn: () => base44.entities.Item.filter({ is_hidden: true }),
+  });
+
+  const completedExchanges = React.useMemo(() => {
+    const hiddenIds = new Set(hiddenItems.map((i) => i.id));
+    return completedAgreements.filter((a) => !hiddenIds.has(a.item_id));
+  }, [completedAgreements, hiddenItems]);
+
+  // Ratings tied to genuine completed exchanges only
   const { data: allRatings = [] } = useQuery({
-    queryKey: ["allRatings"],
+    queryKey: ["statsRatings"],
     queryFn: () => base44.entities.Rating.filter({ published: true }),
   });
 
-  const { data: recentRatings = [], isLoading: ratingsLoading } = useQuery({
-    queryKey: ["recentRatings"],
-    queryFn: () => base44.entities.Rating.filter({ published: true }, "-created_date", 6),
-  });
+  const genuineRatings = React.useMemo(() => {
+    const validAgreementIds = new Set(completedExchanges.map((a) => a.id));
+    return allRatings
+      .filter((r) => validAgreementIds.has(r.agreement_id))
+      .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+  }, [allRatings, completedExchanges]);
 
   const avgRating = React.useMemo(() => {
-    if (!allRatings.length) return null;
-    return (allRatings.reduce((sum, r) => sum + r.stars, 0) / allRatings.length).toFixed(1);
-  }, [allRatings]);
+    if (!genuineRatings.length) return null;
+    return (genuineRatings.reduce((sum, r) => sum + r.stars, 0) / genuineRatings.length).toFixed(1);
+  }, [genuineRatings]);
 
   const stats = [
-    { icon: Package, color: "bg-orange-100 text-orange-600", value: allActiveItems.filter((i) => !i.is_hidden).length, label: "Active Items" },
-    { icon: Users, color: "bg-blue-100 text-blue-600", value: allMembers.length, label: "Community Members" },
-    { icon: CheckCircle2, color: "bg-green-100 text-green-600", value: completedAgreements.length, label: "Completed Trades" },
-    { icon: TrendingUp, color: "bg-purple-100 text-purple-600", value: avgRating ?? "—", label: "Avg Rating" },
+    { icon: Package, color: "bg-orange-100 text-orange-600", value: activeItemCount, label: "Active Items" },
+    { icon: Users, color: "bg-blue-100 text-blue-600", value: members.length, label: "Community Members" },
+    { icon: CheckCircle2, color: "bg-green-100 text-green-600", value: completedExchanges.length, label: "Completed Trades" },
+    {
+      icon: TrendingUp,
+      color: "bg-purple-100 text-purple-600",
+      value: avgRating ?? "Not yet rated",
+      label: "Average Rating",
+    },
   ];
 
   return (
@@ -52,8 +80,8 @@ export default function TrustSection() {
             Built on Real Exchanges
           </h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Reputation here comes from finished work — reviews, hours, and
-            completed trades from real members.
+            These numbers come straight from the marketplace — only real
+            listings, members, and finished exchanges are counted.
           </p>
         </div>
 
@@ -72,13 +100,7 @@ export default function TrustSection() {
         <h3 className="text-2xl font-bold text-gray-900 mb-2 text-center">What Our Community Says</h3>
         <p className="text-gray-600 text-center mb-8">Reviews from completed exchanges</p>
 
-        {ratingsLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-2xl h-48 animate-pulse" />
-            ))}
-          </div>
-        ) : recentRatings.length === 0 ? (
+        {genuineRatings.length === 0 ? (
           <div className="text-center py-10 bg-white rounded-2xl border border-orange-100 max-w-xl mx-auto">
             <Star className="w-12 h-12 mx-auto mb-3 text-orange-200" />
             <p className="text-gray-600 text-sm">
@@ -88,7 +110,7 @@ export default function TrustSection() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {recentRatings.map((rating) => (
+            {genuineRatings.slice(0, 6).map((rating) => (
               <Card key={rating.id} className="bg-white border-orange-100 hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2 mb-3">

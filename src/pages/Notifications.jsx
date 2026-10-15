@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { base44 } from "@/api/base44Client";
 import { displayName } from "@/lib/names";
+import { useAuth } from "@/lib/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -14,11 +15,9 @@ import { format, parseISO } from "date-fns";
 export default function Notifications() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => setUser(null));
-  }, []);
+  // Session is shared and already resolved by AuthProvider before routes
+  // render, so an authenticated user never briefly sees the sign-in prompt.
+  const { user, isLoadingAuth } = useAuth();
 
   // Separate queries for unread and read to prevent interference
   const { data: unreadNotifications = [], isLoading: unreadLoading } = useQuery({
@@ -115,6 +114,14 @@ export default function Notifications() {
         return <Bell className="w-5 h-5 text-gray-600" />;
     }
   };
+
+  if (isLoadingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
