@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import ReportModal from "@/components/moderation/ReportModal";
 import AuthModal from "@/components/auth/AuthModal";
+import { useAuth } from "@/lib/AuthContext";
 import StartNegotiationModal from "@/components/negotiation/StartNegotiationModal";
 import OwnerReputation from "@/components/browse/OwnerReputation";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
@@ -48,7 +49,8 @@ const getCityState = (location) => {
 
 export default function ItemDetail() {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+  // Shared session from AuthProvider — no per-page auth fetch, no sign-in flash
+  const { user } = useAuth();
   const [userLocation, setUserLocation] = useState(null);
   const [locationError, setLocationError] = useState(null);
   const [gettingLocation, setGettingLocation] = useState(false);
@@ -61,10 +63,6 @@ export default function ItemDetail() {
   const itemId = urlParams.get('id');
 
   const queryClient = useQueryClient();
-
-  useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => setUser(null));
-  }, []);
 
   const { data: item, isLoading } = useQuery({
     queryKey: ['item', itemId],

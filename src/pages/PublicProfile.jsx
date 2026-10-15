@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Star, MapPin, Clock, Package, Briefcase, MessageSquare, Filter, MoreVertical, Flag, Ban } from "lucide-react";
@@ -24,6 +24,7 @@ import { format } from "date-fns";
 import KarmaDisplay from "../components/profile/KarmaDisplay";
 import ItemCard from "../components/browse/ItemCard";
 import AuthModal from "@/components/auth/AuthModal";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function PublicProfile() {
   const navigate = useNavigate();
@@ -32,11 +33,8 @@ export default function PublicProfile() {
   const workerId = urlParams.get('workerid') || urlParams.get('workerId');
   const nameFromUrl = urlParams.get('name') || "";
 
-  const [currentUser, setCurrentUser] = useState(null);
-
-  useEffect(() => {
-    base44.auth.me().then(setCurrentUser).catch(() => setCurrentUser(null));
-  }, []);
+  // Shared session from AuthProvider — no per-page auth fetch, no sign-in flash
+  const { user: currentUser } = useAuth();
 
   const { data: userProfile, isLoading: profileLoading } = useQuery({
     queryKey: ['publicProfile', userId, workerId],
@@ -189,13 +187,25 @@ export default function PublicProfile() {
     queryKey: ['myItems', currentUser?.id],
     queryFn: () => base44.entities.Item.filter({ 
       offerer_id: currentUser.id, 
-      status: 'active' 
+      status: 'active',
+      listing_type: 'item'
+    }),
+    enabled: !!currentUser
+  });
+
+  // A requester can offer one of their own services in exchange too
+  const { data: myServices = [] } = useQuery({
+    queryKey: ['myServices', currentUser?.id],
+    queryFn: () => base44.entities.Item.filter({
+      offerer_id: currentUser.id,
+      status: 'active',
+      listing_type: 'service'
     }),
     enabled: !!currentUser
   });
 
   const [serviceModalOpen, setServiceModalOpen] = useState(false);
-  const [selectedItemId, setSelectedItemId] = useState("");
+  const [selectedListingId, setSelectedListingId] = useState("");
   const [serviceNote, setServiceNote] = useState("");
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [reviewSort, setReviewSort] = useState("newest");
@@ -220,26 +230,34 @@ export default function PublicProfile() {
     return (ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length).toFixed(1);
   }, [ratings]);
 
+  // Whatever the requester selected to offer — an item or one of their services
+  const selectedListing = React.useMemo(
+    () => [...myItems, ...myServices].find(l => l.id === selectedListingId),
+    [myItems, myServices, selectedListingId]
+  );
+
   const createNegotiationMutation = useMutation({
     mutationFn: async () => {
-      const selectedItem = myItems.find(i => i.id === selectedItemId);
-      if (!selectedItem) throw new Error("Item not found");
+      const offered = selectedListing;
+      if (!offered) throw new Error("Listing not found");
+      const offeredKind = offered.listing_type === 'service' ? 'service' : 'item';
 
       const negotiation = await base44.entities.Negotiation.create({
-        item_id: selectedItem.id,
-        item_title: selectedItem.title,
+        item_id: offered.id,
+        item_title: offered.title,
         offerer_id: currentUser.id,
         offerer_name: currentUser.full_name,
         bidder_id: userId, // The worker is the bidder (providing service)
         bidder_name: userProfile.full_name,
-        initial_offer_hours: selectedItem.required_hours, // Default to item's hours
+        initial_offer_hours: offered.required_hours, // Default to the offered listing's hours
         status: "active",
         current_offer_by: currentUser.id,
         offer_history: [{
           offered_by: currentUser.id,
           offered_by_name: currentUser.full_name,
-          hours: selectedItem.required_hours,
-          work_type: "Service Request",
+          hours: offered.required_hours,
+          work_type: offeredKind === 'service' ? "Service Request (service offered)" : "Service Request",
+          message: `Offering my ${offeredKind}: ${offered.title}`,
           timestamp: new Date().toISOString()
         }],
         last_activity: new Date().toISOString(),
@@ -251,16 +269,16 @@ export default function PublicProfile() {
         from_user_id: currentUser.id,
         from_user_name: currentUser.full_name,
         to_user_id: userId,
-        text: `I'd like to request your service in exchange for my item "${selectedItem.title}".\n\nNote: ${serviceNote}`,
+        text: `I'd like to request your service in exchange for my ${offeredKind} "${offered.title}".\n\nNote: ${serviceNote}`,
         message_type: "offer",
-        proposal_hours: selectedItem.required_hours
+        proposal_hours: offered.required_hours
       });
 
       await base44.functions.invoke('sendNotification', {
         user_id: userId,
         type: 'new_negotiation',
         title: 'New service request',
-        message: `${displayName(currentUser.full_name)} requested your service in exchange for ${selectedItem.title}`,
+        message: `${displayName(currentUser.full_name)} requested your service in exchange for their ${offeredKind} ${offered.title}`,
         related_id: negotiation.id,
         related_type: 'negotiation',
         link_url: createPageUrl(`Negotiation?id=${negotiation.id}`)
@@ -289,8 +307,8 @@ export default function PublicProfile() {
       navigate(createPageUrl(`CompleteProfile?returnUrl=${encodeURIComponent(currentUrl)}`));
       return;
     }
-    if (myItems.length === 0) {
-      toast.error("You need to list an item to offer in exchange first.");
+    if (myItems.length === 0 && myServices.length === 0) {
+      toast.error("You need to list an item or a service to offer in exchange first.");
       return;
     }
     setServiceModalOpen(true);
@@ -602,28 +620,43 @@ export default function PublicProfile() {
           <DialogHeader>
             <DialogTitle>Request Service from {displayName(userProfile.full_name)}</DialogTitle>
             <DialogDescription>
-              Select one of your items to offer in exchange for their service.
+              Select one of your items or services to offer in exchange for their service.
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
             <div>
-              <Label>Offer Item</Label>
-              <Select value={selectedItemId} onValueChange={setSelectedItemId}>
+              <Label>What you're offering</Label>
+              <Select value={selectedListingId} onValueChange={setSelectedListingId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select an item..." />
+                  <SelectValue placeholder="Select a listing..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {myItems.map(item => (
-                    <SelectItem key={item.id} value={item.id}>
-                      {item.title} ({formatDuration(item.required_hours)})
-                    </SelectItem>
-                  ))}
+                  {myItems.length > 0 && (
+                    <SelectGroup>
+                      <SelectLabel>My items</SelectLabel>
+                      {myItems.map(item => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.title} ({formatDuration(item.required_hours)} wanted)
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  )}
+                  {myServices.length > 0 && (
+                    <SelectGroup>
+                      <SelectLabel>My services</SelectLabel>
+                      {myServices.map(service => (
+                        <SelectItem key={service.id} value={service.id}>
+                          {service.title} ({formatDuration(service.required_hours)} of service)
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  )}
                 </SelectContent>
               </Select>
-              {myItems.length === 0 && (
+              {myItems.length === 0 && myServices.length === 0 && (
                 <p className="text-xs text-red-500 mt-1">
-                  You have no active items. <Link to={createPageUrl("CreateItem")} className="underline">Create one first.</Link>
+                  You have no active items or services. <Link to={createPageUrl("CreateItem")} className="underline">Create one first.</Link>
                 </p>
               )}
             </div>
@@ -643,7 +676,7 @@ export default function PublicProfile() {
             <Button variant="outline" onClick={() => setServiceModalOpen(false)}>Cancel</Button>
             <Button 
               onClick={() => createNegotiationMutation.mutate()}
-              disabled={!selectedItemId || !serviceNote || createNegotiationMutation.isPending}
+              disabled={!selectedListing || !serviceNote || createNegotiationMutation.isPending}
               className="bg-blue-600 hover:bg-blue-700"
             >
               {createNegotiationMutation.isPending ? "Sending..." : "Send Request"}

@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ArrowLeft, Send, Clock, AlertTriangle, CheckCircle2, Package, MoreVertical, Ban, Flag, AlertCircle } from "lucide-react";
 import ReportModal from "@/components/moderation/ReportModal";
 import BlockUserDialog from "@/components/moderation/BlockUserDialog";
+import { useAuth } from "@/lib/AuthContext";
 import { useBlockedUsers } from "@/hooks/useBlockedUsers";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -26,7 +27,8 @@ export default function Negotiation() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const messagesEndRef = useRef(null);
-  const [user, setUser] = useState(null);
+  // Shared session from AuthProvider — no per-page auth fetch, no sign-in flash
+  const { user } = useAuth();
   const [message, setMessage] = useState("");
   const [showCounterModal, setShowCounterModal] = useState(false);
   const [hasConfirmed, setHasConfirmed] = useState(false);
@@ -37,10 +39,6 @@ export default function Negotiation() {
 
   const urlParams = new URLSearchParams(window.location.search);
   const negotiationId = urlParams.get('id');
-
-  useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => setUser(null));
-  }, []);
 
   const { data: negotiation, isLoading: negLoading, error: negError } = useQuery({
     queryKey: ['negotiation', negotiationId],

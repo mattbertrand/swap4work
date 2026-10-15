@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { displayName } from "@/lib/names";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Star, CheckCircle2, Package, Users, TrendingUp } from "lucide-react";
 
 // Every metric on this page comes from live database records, and every

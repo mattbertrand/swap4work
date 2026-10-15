@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { useBlockedUsers } from "@/hooks/useBlockedUsers";
 import SignInPromptBanner from "@/components/browse/SignInPromptBanner";
+import { useAuth } from "@/lib/AuthContext";
 
 // Calculate distance between two coordinates
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -30,16 +31,15 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
 };
 
 export default function BrowseUsers() {
-  const [user, setUser] = useState(null);
+  // Shared session from AuthProvider — no per-page auth fetch, no sign-in flash
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [sortBy, setSortBy] = useState("rating");
   const [maxDistance, setMaxDistance] = useState([50]);
   const [useLocation, setUseLocation] = useState(false);
 
-  React.useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => setUser(null));
-  }, []);
+
 
   const { data: allUsers = [], isLoading } = useQuery({
     queryKey: ['workers'],

@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { useBlockedUsers } from "@/hooks/useBlockedUsers";
 import ServiceCard from "@/components/browse/ServiceCard";
 import SignInPromptBanner from "@/components/browse/SignInPromptBanner";
+import { useAuth } from "@/lib/AuthContext";
 
 // Calculate distance using Haversine
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -28,7 +29,8 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
 };
 
 export default function BrowseServices() {
-  const [user, setUser] = useState(null);
+  // Shared session from AuthProvider — no per-page auth fetch, no sign-in flash
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -38,16 +40,12 @@ export default function BrowseServices() {
   const [userLocation, setUserLocation] = useState(null);
   const [acceptsFilter, setAcceptsFilter] = useState("all");
 
+  // Sync the distance filter with the shared session's saved location
   useEffect(() => {
-    base44.auth.me()
-      .then(userData => {
-        setUser(userData);
-        if (userData.latitude && userData.longitude) {
-          setUserLocation({ lat: userData.latitude, lng: userData.longitude });
-        }
-      })
-      .catch(() => setUser(null));
-  }, []);
+    if (user?.latitude && user?.longitude) {
+      setUserLocation({ lat: user.latitude, lng: user.longitude });
+    }
+  }, [user]);
 
   const { data: services = [], isLoading } = useQuery({
     queryKey: ['services', sortBy],

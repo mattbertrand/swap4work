@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Search, MapPin, Clock, Filter, Crosshair, X, Sparkles, XCircle } from "lucide-react";
+import { Search, MapPin, Clock, Filter, Crosshair, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import ItemCard from "../components/browse/ItemCard";
 import SignInPromptBanner from "@/components/browse/SignInPromptBanner";
 import { useBlockedUsers } from "@/hooks/useBlockedUsers";
+import { useAuth } from "@/lib/AuthContext";
 
 // Calculate distance between two coordinates using Haversine formula
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -28,7 +29,8 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
 };
 
 export default function Browse() {
-  const [user, setUser] = useState(null);
+  // Shared session from AuthProvider — no per-page auth fetch, no sign-in flash
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -36,19 +38,14 @@ export default function Browse() {
   const [maxDistance, setMaxDistance] = useState([50]);
   const [useLocation, setUseLocation] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
-  const [showSampleBanner, setShowSampleBanner] = useState(true);
 
+  // Sync the distance filter with the shared session's saved location
   useEffect(() => {
-    base44.auth.me()
-      .then(userData => {
-        setUser(userData);
-        if (userData.latitude && userData.longitude) {
-          setUserLocation({ lat: userData.latitude, lng: userData.longitude });
-          // Don't auto-enable location filter - let user choose
-        }
-      })
-      .catch(() => setUser(null));
-  }, []);
+    if (user?.latitude && user?.longitude) {
+      setUserLocation({ lat: user.latitude, lng: user.longitude });
+      // Don't auto-enable location filter - let user choose
+    }
+  }, [user]);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ['items', sortBy],
@@ -139,29 +136,6 @@ export default function Browse() {
             Browse local items available in exchange for your skills and work hours.
           </p>
         </div>
-
-        {/* Sample Data Banner */}
-        {showSampleBanner && (
-          <div className="mb-8 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-2xl p-4 flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-5 h-5 text-blue-600" />
-            </div>
-            <div className="flex-1">
-              <p className="font-semibold text-blue-900 text-sm">
-                Explore example exchanges
-              </p>
-              <p className="text-blue-700 text-xs">
-                These sample listings show how exchanges look — yours could be the first real one!
-              </p>
-            </div>
-            <button
-              onClick={() => setShowSampleBanner(false)}
-              className="text-blue-400 hover:text-blue-700 flex-shrink-0"
-            >
-              <XCircle className="w-5 h-5" />
-            </button>
-          </div>
-        )}
 
         {/* Filters */}
         <div className="mb-8 bg-white rounded-2xl shadow-md p-6 border border-orange-100">
