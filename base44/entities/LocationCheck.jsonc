@@ -1,0 +1,48 @@
+{
+  "name": "LocationCheck",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "User whose device location was checked"
+    },
+    "checked_area": {
+      "type": "string",
+      "description": "Public 'City, ST' that the device location was matched against (no coordinates stored)"
+    },
+    "checked_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the successful check was recorded"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the check expires and must be renewed"
+    }
+  },
+  "required": [
+    "user_id",
+    "checked_area",
+    "checked_date",
+    "expires_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": null,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
