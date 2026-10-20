@@ -30,6 +30,13 @@
       "type": "number",
       "description": "Longitude for distance calculation"
     },
+    "exchange_areas": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Optional extra 'City, ST' areas where the worker will exchange or provide services (self-reported availability, not residences)"
+    },
     "photo_url": {
       "type": "string",
       "description": "URL to profile photo"

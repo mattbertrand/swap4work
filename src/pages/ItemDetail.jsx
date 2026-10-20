@@ -129,9 +129,18 @@ export default function ItemDetail() {
     !userDeclinedNegotiation &&
     !userClosedNegotiation;
 
+  // Use the member's saved (self-reported) profile coordinates for the 50-mile
+  // proximity rule, so they don't have to share live GPS on every negotiation.
+  // A live device position is only requested as a fallback when no saved
+  // coordinates exist. This is a proximity rule only — it is not a verification.
+  const savedLocation = user && Number.isFinite(user.latitude) && Number.isFinite(user.longitude)
+    ? { lat: user.latitude, lng: user.longitude }
+    : null;
+  const effectiveLocation = userLocation || savedLocation;
+
   // Calculate distance if both user and item have coordinates
-  const distance = userLocation && item?.latitude && item?.longitude
-    ? calculateDistance(userLocation.lat, userLocation.lng, item.latitude, item.longitude)
+  const distance = effectiveLocation && item?.latitude && item?.longitude
+    ? calculateDistance(effectiveLocation.lat, effectiveLocation.lng, item.latitude, item.longitude)
     : null;
 
   const isWithinRange = distance !== null && distance <= 50;
@@ -240,8 +249,8 @@ export default function ItemDetail() {
       return;
     }
 
-    // Get user location if not already obtained
-    let currentLocation = userLocation;
+    // Prefer saved profile coordinates; only ask the device when none are saved
+    let currentLocation = effectiveLocation;
     if (!currentLocation) {
       try {
         currentLocation = await getUserLocation();
@@ -341,8 +350,8 @@ export default function ItemDetail() {
       return;
     }
 
-    // Get location for inspection request too
-    let currentLocation = userLocation;
+    // Same rule as starting a negotiation: saved profile location first
+    let currentLocation = effectiveLocation;
     if (!currentLocation) {
       try {
         currentLocation = await getUserLocation();
@@ -558,11 +567,11 @@ export default function ItemDetail() {
                 </div>
 
                 {/* Location verification banner */}
-                {!isOwner && !userActiveNegotiation && !userLocation && (
+                {!isOwner && !userActiveNegotiation && !effectiveLocation && (
                   <Alert className="bg-blue-50 border-blue-200">
                     <Crosshair className="w-4 h-4 text-blue-600" />
                     <AlertDescription className="text-blue-900 text-sm">
-                      📍 You'll need to verify your location (within 50 miles) to start negotiating for this item.
+                      📍 To start negotiating, we need to know you're within 50 miles of this item. Save a location on your profile, or share your device location when asked.
                     </AlertDescription>
                   </Alert>
                 )}

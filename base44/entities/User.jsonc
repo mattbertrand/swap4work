@@ -18,6 +18,13 @@
       "type": "number",
       "description": "Location longitude for distance calculations"
     },
+    "exchange_areas": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Optional extra 'City, ST' areas where the user is willing to exchange items or provide services (self-reported availability, not residences)"
+    },
     "bio": {
       "type": "string",
       "description": "Short bio about the user"

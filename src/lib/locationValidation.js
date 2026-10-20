@@ -13,7 +13,7 @@ import { isValidCityName } from "@/lib/location";
  *                                                            may fall back to the
  *                                                            local format checks
  */
-export async function verifyLocationOnline(fields) {
+export async function verifyLocationOnline(fields, { zipOptional = false } = {}) {
   const city = (fields.city || "").trim();
   const state = (fields.state || "").trim();
   const zip = (fields.zip || "").trim();
@@ -22,8 +22,8 @@ export async function verifyLocationOnline(fields) {
   if (!city) return { status: "invalid", field: "city", message: "City is required" };
   if (!isValidCityName(city)) return { status: "invalid", field: "city", message: "Please enter a valid city." };
   if (!state) return { status: "invalid", field: "state", message: "State is required" };
-  if (!zip) return { status: "invalid", field: "zip", message: "ZIP code is required" };
-  if (!/^\d{5}(-\d{4})?$/.test(zip)) return { status: "invalid", field: "zip", message: "Enter a valid 5-digit ZIP code" };
+  if (!zip && !zipOptional) return { status: "invalid", field: "zip", message: "ZIP code is required" };
+  if (zip && !/^\d{5}(-\d{4})?$/.test(zip)) return { status: "invalid", field: "zip", message: "Enter a valid 5-digit ZIP code" };
 
   try {
     const res = await base44.functions.invoke("validateLocation", { city, state, zip });

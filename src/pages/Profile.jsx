@@ -23,6 +23,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import CustomSkillInput from "@/components/profile/CustomSkillInput";
+import LocationCheckCard from "@/components/location/LocationCheckCard";
+import ExchangeAreasField from "@/components/location/ExchangeAreasField";
 
 const SKILL_CATEGORIES = {
   "Home Repairs / Maintenance": [
@@ -90,6 +92,7 @@ export default function Profile() {
   const [locationErrors, setLocationErrors] = useState({});
   const [verifyingLocation, setVerifyingLocation] = useState(false);
   const [visibilityError, setVisibilityError] = useState("");
+  const [exchangeAreas, setExchangeAreas] = useState([]);
 
   useEffect(() => {
     base44.auth.me().then(async userData => {
@@ -113,6 +116,7 @@ export default function Profile() {
         // Non-blocking: leave the badge off if the lookup fails
       }
       setLocationFields(parseLocationString(userData.location || ""));
+      setExchangeAreas(Array.isArray(userData.exchange_areas) ? userData.exchange_areas : []);
       // Parse availability into days/times
       if (userData.availability) {
         const parts = userData.availability.split(' | ');
@@ -263,7 +267,7 @@ export default function Profile() {
   // --- Unsaved changes protection (Edit Profile) ---
   // Snapshot is taken when editing starts; dirty = current form differs from it.
   const captureEditState = () => JSON.stringify({
-    formData, locationFields, workerData, selectedDays, selectedTimes, phoneVerified
+    formData, locationFields, workerData, selectedDays, selectedTimes, phoneVerified, exchangeAreas
   });
   const isDirty = isEditing && !!editSnapshot && captureEditState() !== editSnapshot;
   const { blocker } = useUnsavedChanges(isDirty);
@@ -334,6 +338,7 @@ export default function Profile() {
       longitude: formData.longitude ?? (geo.status === "valid" ? geo.longitude : null),
       phone: normalizedPhone,
       availability: availabilityString,
+      exchange_areas: exchangeAreas,
       profile_completed: profileComplete
     });
 
@@ -347,9 +352,44 @@ export default function Profile() {
         latitude: formData.latitude ?? (geo.status === "valid" ? geo.latitude : null),
         longitude: formData.longitude ?? (geo.status === "valid" ? geo.longitude : null),
         photo_url: user.photo_url,
-        phone: normalizedPhone
+        phone: normalizedPhone,
+        exchange_areas: exchangeAreas
       });
     }
+  };
+
+  // Cancel: discard every unsaved edit — restore all fields from the saved
+  // user/worker records and clear every validation message.
+  const handleCancelEdit = () => {
+    if (user) {
+      setFormData({
+        full_name: user.full_name || "",
+        phone: user.phone || "",
+        location: user.location || "",
+        latitude: user.latitude || null,
+        longitude: user.longitude || null,
+        bio: user.bio || "",
+        skills: user.skills || "",
+        user_role: user.user_role || "both"
+      });
+      setLocationFields(parseLocationString(user.location || ""));
+      setExchangeAreas(Array.isArray(user.exchange_areas) ? user.exchange_areas : []);
+      const parts = (user.availability || "").split(" | ");
+      setSelectedDays(parts[0] ? parts[0].split(", ").filter(Boolean) : []);
+      setSelectedTimes(parts[1] ? parts[1].split(", ").filter(Boolean) : []);
+      setWorkerData({
+        is_visible: workerProfile ? workerProfile.is_visible : false,
+        availability: workerProfile?.availability || "",
+        skills: workerProfile?.skills || user.skills || "",
+        bio: workerProfile?.bio || user.bio || "",
+        max_concurrent_offers: workerProfile?.max_concurrent_offers || 10
+      });
+    }
+    setLocationErrors({});
+    setZipError("");
+    setVisibilityError("");
+    setEditSnapshot(null);
+    setIsEditing(false);
   };
 
   const handleLogout = () => {
@@ -492,6 +532,8 @@ export default function Profile() {
                       onClick={() => {
                         setIsEditing(true);
                         setLocationErrors({});
+                        setZipError("");
+                        setVisibilityError("");
                         setEditSnapshot(captureEditState());
                       }}
                       variant="outline"
@@ -503,7 +545,7 @@ export default function Profile() {
                       <Button onClick={handleSave} disabled={verifyingLocation} className="bg-orange-600 hover:bg-orange-700">
                         {verifyingLocation ? "Verifying location..." : "Save Changes"}
                       </Button>
-                      <Button onClick={() => setIsEditing(false)} variant="outline">
+                      <Button onClick={handleCancelEdit} variant="outline">
                         Cancel
                       </Button>
                     </div>
@@ -536,7 +578,7 @@ export default function Profile() {
                   </div>
 
                   <div>
-                    <Label className="text-sm font-medium">Location</Label>
+                    <Label className="text-sm font-medium">Primary location <span className="text-gray-400 font-normal">(self-reported)</span></Label>
                     <div className="mt-2">
                       <LocationFields
                         value={locationFields}
@@ -556,7 +598,20 @@ export default function Profile() {
                         }}
                       />
                     </div>
+                    <div className="mt-4">
+                      <LocationCheckCard
+                        userId={user.id}
+                        savedLocation={user.location}
+                        hasUnsavedLocation={isEditing && formData.location !== (user.location || "")}
+                      />
+                    </div>
                   </div>
+
+                  <ExchangeAreasField
+                    areas={exchangeAreas}
+                    onChange={setExchangeAreas}
+                    disabled={!isEditing}
+                  />
 
                   <div>
                     <Label>I'm interested in</Label>

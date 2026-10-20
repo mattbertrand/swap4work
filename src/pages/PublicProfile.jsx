@@ -25,6 +25,7 @@ import KarmaDisplay from "../components/profile/KarmaDisplay";
 import ItemCard from "../components/browse/ItemCard";
 import AuthModal from "@/components/auth/AuthModal";
 import { useAuth } from "@/lib/AuthContext";
+import LocationCheckedBadge from "@/components/location/LocationCheckedBadge";
 
 export default function PublicProfile() {
   const navigate = useNavigate();
@@ -384,6 +385,14 @@ export default function PublicProfile() {
                   <MapPin className="w-3 h-3" />
                   {formatPublicLocation(userProfile.location) || "Location unavailable"}
                 </div>
+                <div className="flex justify-center mb-4 -mt-2">
+                  <LocationCheckedBadge userId={resolvedUserId} location={userProfile.location} />
+                </div>
+                {Array.isArray(workerEntity?.exchange_areas) && workerEntity.exchange_areas.length > 0 && (
+                  <p className="text-xs text-gray-500 mb-4">
+                    Also exchanges in: {workerEntity.exchange_areas.join(" · ")}
+                  </p>
+                )}
 
 
 
