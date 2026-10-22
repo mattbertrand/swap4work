@@ -14,6 +14,7 @@ import { useBlockedUsers } from "@/hooks/useBlockedUsers";
 import ServiceCard from "@/components/browse/ServiceCard";
 import SignInPromptBanner from "@/components/browse/SignInPromptBanner";
 import { useAuth } from "@/lib/AuthContext";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 // Calculate distance using Haversine
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -31,6 +32,7 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
 export default function BrowseServices() {
   // Shared session from AuthProvider — no per-page auth fetch, no sign-in flash
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -112,10 +114,10 @@ export default function BrowseServices() {
       <div className="max-w-7xl mx-auto">
         <div className="mb-8 text-center">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Browse <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600">Services</span>
+            {t("browse.services_title_a")} <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600">{t("browse.services_title_b")}</span>
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Find skilled people offering services in exchange for items or other services.
+            {t("browse.services_sub")}
           </p>
         </div>
 
@@ -125,7 +127,7 @@ export default function BrowseServices() {
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <Input
-                  placeholder="Search services..."
+                  placeholder={t("browse.search_services")}
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   onKeyPress={(e) => {
@@ -150,13 +152,13 @@ export default function BrowseServices() {
                 className="h-12 px-8 bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700"
               >
                 <Search className="w-5 h-5 mr-2" />
-                Search
+                {t("common.search")}
               </Button>
             </div>
 
             {searchTerm && (
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Searching for:</span>
+                <span className="text-sm text-gray-600">{t("browse.searching_for")}</span>
                 <Badge variant="outline" className="text-blue-600 border-blue-300">
                   "{searchTerm}"
                   <button
@@ -173,40 +175,40 @@ export default function BrowseServices() {
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger className="w-full md:w-48 h-12">
                   <Filter className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="Category" />
+                  <SelectValue placeholder={t("filter.category")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  <SelectItem value="Home Repairs">Home Repairs</SelectItem>
-                  <SelectItem value="Cleaning">Cleaning</SelectItem>
-                  <SelectItem value="Yard Work">Yard Work</SelectItem>
-                  <SelectItem value="Digital Services">Digital Services</SelectItem>
-                  <SelectItem value="Tutoring">Tutoring</SelectItem>
-                  <SelectItem value="Personal Assistance">Personal Assistance</SelectItem>
-                  <SelectItem value="Creative Services">Creative Services</SelectItem>
+                  <SelectItem value="all">{t("browse.all_categories")}</SelectItem>
+                  <SelectItem value="Home Repairs">{t("cat.Home Repairs")}</SelectItem>
+                  <SelectItem value="Cleaning">{t("cat.Cleaning")}</SelectItem>
+                  <SelectItem value="Yard Work">{t("cat.Yard Work")}</SelectItem>
+                  <SelectItem value="Digital Services">{t("cat.Digital Services")}</SelectItem>
+                  <SelectItem value="Tutoring">{t("cat.Tutoring")}</SelectItem>
+                  <SelectItem value="Personal Assistance">{t("cat.Personal Assistance")}</SelectItem>
+                  <SelectItem value="Creative Services">{t("cat.Creative Services")}</SelectItem>
                 </SelectContent>
               </Select>
 
               <Select value={acceptsFilter} onValueChange={setAcceptsFilter}>
                 <SelectTrigger className="w-full md:w-48 h-12">
-                  <SelectValue placeholder="Accepts" />
+                  <SelectValue placeholder={t("filter.accepts")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="item">Items Only</SelectItem>
-                  <SelectItem value="service">Services Only</SelectItem>
-                  <SelectItem value="both">Items & Services</SelectItem>
+                  <SelectItem value="all">{t("filter.all_types")}</SelectItem>
+                  <SelectItem value="item">{t("prefs.items_only")}</SelectItem>
+                  <SelectItem value="service">{t("prefs.services_only")}</SelectItem>
+                  <SelectItem value="both">{t("prefs.items_services")}</SelectItem>
                 </SelectContent>
               </Select>
 
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="w-full md:w-48 h-12">
-                  <SelectValue placeholder="Sort by" />
+                  <SelectValue placeholder={t("filter.sort_by")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="-created_date">Newest First</SelectItem>
-                  <SelectItem value="required_hours">Fewest Hours</SelectItem>
-                  <SelectItem value="-required_hours">Most Hours</SelectItem>
+                  <SelectItem value="-created_date">{t("sort.newest")}</SelectItem>
+                  <SelectItem value="required_hours">{t("sort.fewest_hours")}</SelectItem>
+                  <SelectItem value="-required_hours">{t("sort.most_hours")}</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -217,7 +219,7 @@ export default function BrowseServices() {
                   className="h-12 border-blue-300 text-blue-600 hover:bg-blue-50"
                 >
                   <MapPin className="w-4 h-4 mr-2" />
-                  Within {maxDistance[0]} mi
+                  {t("browse.within_mi", { n: maxDistance[0] })}
                   <X className="w-4 h-4 ml-2" />
                 </Button>
               )}
@@ -227,11 +229,11 @@ export default function BrowseServices() {
               <div className="border-t border-gray-200 pt-4">
                 <div className="flex items-center justify-between mb-3">
                   <Label className="text-sm font-medium text-gray-700">
-                    Distance from your location
+                    {t("browse.distance_from_location")}
                   </Label>
                   <Badge variant="outline" className="text-blue-600 border-blue-300">
                     <MapPin className="w-3 h-3 mr-1" />
-                    Within {maxDistance[0]} miles
+                    {t("browse.within_miles", { n: maxDistance[0] })}
                   </Badge>
                 </div>
                 <div className="flex items-center gap-4">
@@ -254,9 +256,9 @@ export default function BrowseServices() {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 text-sm text-blue-900">
-                  <p className="font-medium">Enable location-based search</p>
+                  <p className="font-medium">{t("browse.enable_location_title")}</p>
                   <p className="text-blue-700 mt-1">
-                    Filter services by distance to see only nearby opportunities.
+                    {t("browse.enable_location_sub_services")}
                   </p>
                 </div>
                 <Button
@@ -264,7 +266,7 @@ export default function BrowseServices() {
                   size="sm"
                   className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap"
                 >
-                  Enable
+                  {t("common.enable")}
                 </Button>
               </div>
             )}
@@ -273,29 +275,30 @@ export default function BrowseServices() {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-3">
                 <Crosshair className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 text-sm text-blue-900">
-                  <p className="font-medium">Enable location-based search</p>
+                  <p className="font-medium">{t("browse.enable_location_title")}</p>
                   <p className="text-blue-700 mt-1">
-                    Update your profile with your location to filter services by distance.
+                    {t("browse.update_location_sub_services")}
                   </p>
                 </div>
                 <Link to={createPageUrl("Profile")}>
                   <Button size="sm" className="whitespace-nowrap">
-                    Update Profile
+                    {t("profile.update_profile")}
                   </Button>
                 </Link>
               </div>
             )}
 
             {!user && (
-              <SignInPromptBanner message="Create an account to see services near you and start trading." />
+              <SignInPromptBanner message={t("browse.guest_prompt_services")} />
             )}
           </div>
 
           <div className="mt-4 pt-4 border-t border-gray-200">
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-600">
-                Showing <span className="font-semibold text-gray-900">{filteredServices.length}</span> of <span className="font-semibold text-gray-900">{services.length}</span> services
-                {useLocation && userLocation && ` within ${maxDistance[0]} miles`}
+                {useLocation && userLocation
+                  ? t("browse.showing_within", { shown: filteredServices.length, total: services.length, miles: maxDistance[0] })
+                  : t("browse.showing", { shown: filteredServices.length, total: services.length })}
               </span>
               {(searchTerm || categoryFilter !== "all" || acceptsFilter !== "all" || (useLocation && userLocation)) && (
                 <Button
@@ -310,7 +313,7 @@ export default function BrowseServices() {
                   size="sm"
                   className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                 >
-                  Clear All Filters
+                  {t("filter.clear_all")}
                 </Button>
               )}
             </div>
@@ -328,9 +331,9 @@ export default function BrowseServices() {
             <div className="w-24 h-24 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
               <Briefcase className="w-12 h-12 text-blue-400" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No services found</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">{t("browse.no_services")}</h3>
             <p className="text-gray-500 mb-4">
-              Try adjusting your filters or search terms
+              {t("browse.no_items_default")}
             </p>
             <Button
               onClick={() => {
@@ -342,7 +345,7 @@ export default function BrowseServices() {
               }}
               className="bg-gradient-to-r from-blue-500 to-cyan-600"
             >
-              Clear Filters
+              {t("filter.clear")}
             </Button>
           </div>
         ) : (

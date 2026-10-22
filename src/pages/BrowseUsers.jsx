@@ -16,6 +16,7 @@ import { Slider } from "@/components/ui/slider";
 import { useBlockedUsers } from "@/hooks/useBlockedUsers";
 import SignInPromptBanner from "@/components/browse/SignInPromptBanner";
 import { useAuth } from "@/lib/AuthContext";
+import { useLanguage } from "@/i18n/LanguageContext";
 import LocationCheckedBadge from "@/components/location/LocationCheckedBadge";
 
 // Calculate distance between two coordinates
@@ -34,6 +35,7 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
 export default function BrowseUsers() {
   // Shared session from AuthProvider — no per-page auth fetch, no sign-in flash
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [sortBy, setSortBy] = useState("rating");
@@ -122,17 +124,17 @@ export default function BrowseUsers() {
         <div className="mb-8 text-center">
           <div className="flex flex-col md:flex-row justify-between items-center mb-4">
             <h1 className="text-4xl font-bold text-gray-900">
-              Find Skilled <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600">People</span>
+              {t("people.find_title_a")} <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600">{t("people.find_title_b")}</span>
             </h1>
             <Link to={createPageUrl("Profile")}>
               <Button className="mt-4 md:mt-0 bg-blue-600 hover:bg-blue-700">
                 <Plus className="w-4 h-4 mr-2" />
-                Offer Services
+                {t("people.offer_services")}
               </Button>
             </Link>
           </div>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto md:mx-0 mb-8 text-center md:text-left">
-            Connect with local community members ready to help with your tasks.
+            {t("people.sub")}
           </p>
         </div>
 
@@ -143,7 +145,7 @@ export default function BrowseUsers() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <Input
-                  placeholder="Search by name, skills (e.g. carpentry, babysitting)..."
+                  placeholder={t("people.search_placeholder")}
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
@@ -151,18 +153,18 @@ export default function BrowseUsers() {
                 />
               </div>
               <Button onClick={handleSearch} className="h-12 px-6 bg-blue-600 hover:bg-blue-700">
-                Search
+                {t("common.search")}
               </Button>
             </div>
             
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-full md:w-48 h-12">
-                <SelectValue placeholder="Sort by" />
+                <SelectValue placeholder={t("filter.sort_by")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="rating">Highest Rated</SelectItem>
-                <SelectItem value="completed">Most Active</SelectItem>
-                {user?.latitude && <SelectItem value="distance">Nearest</SelectItem>}
+                <SelectItem value="rating">{t("sort.highest_rated")}</SelectItem>
+                <SelectItem value="completed">{t("sort.most_active")}</SelectItem>
+                {user?.latitude && <SelectItem value="distance">{t("sort.nearest")}</SelectItem>}
               </SelectContent>
             </Select>
 
@@ -173,7 +175,7 @@ export default function BrowseUsers() {
                 className={`h-12 px-4 ${useLocation ? 'bg-blue-100 text-blue-700 border-blue-200' : ''}`}
               >
                 <MapPin className="w-4 h-4 mr-2" />
-                {useLocation ? `Within ${maxDistance[0]} mi` : 'Filter by Distance'}
+                {useLocation ? t("browse.within_mi", { n: maxDistance[0] }) : t("people.filter_by_distance")}
                 {useLocation && <X className="w-4 h-4 ml-2" />}
               </Button>
             )}
@@ -183,9 +185,9 @@ export default function BrowseUsers() {
           {useLocation && user?.latitude && (
             <div className="mt-6 pt-6 border-t border-gray-100 animate-in slide-in-from-top-2">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-sm font-medium text-gray-700">Maximum Distance</span>
+                <span className="text-sm font-medium text-gray-700">{t("people.max_distance")}</span>
                 <Badge variant="secondary" className="bg-blue-50 text-blue-700">
-                  {maxDistance[0]} miles
+                  {t("browse.within_miles", { n: maxDistance[0] })}
                 </Badge>
               </div>
               <Slider
@@ -197,8 +199,8 @@ export default function BrowseUsers() {
                 className="w-full"
               />
               <div className="flex justify-between mt-2 text-xs text-gray-400">
-                <span>1 mi</span>
-                <span>100 mi</span>
+                <span>{t("listing.mi_away", { mi: 1 })}</span>
+                <span>{t("listing.mi_away", { mi: 100 })}</span>
               </div>
             </div>
           )}
@@ -208,15 +210,15 @@ export default function BrowseUsers() {
             <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-3">
               <MapPin className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1 text-sm text-blue-900">
-                <p className="font-medium">Enable location-based search</p>
-                <p className="text-blue-700 mt-1">Filter people by distance to see only nearby opportunities.</p>
+                <p className="font-medium">{t("browse.enable_location_title")}</p>
+                <p className="text-blue-700 mt-1">{t("browse.enable_location_sub_people")}</p>
               </div>
               <Button
                 onClick={() => setUseLocation(true)}
                 size="sm"
                 className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap"
               >
-                Enable
+                {t("common.enable")}
               </Button>
             </div>
           )}
@@ -225,12 +227,12 @@ export default function BrowseUsers() {
             <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-3">
               <Crosshair className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1 text-sm text-blue-900">
-                <p className="font-medium">Enable location-based search</p>
-                <p className="text-blue-700 mt-1">Update your profile with your location to filter people by distance.</p>
+                <p className="font-medium">{t("browse.enable_location_title")}</p>
+                <p className="text-blue-700 mt-1">{t("browse.update_location_sub_people")}</p>
               </div>
               <Link to={createPageUrl("Profile")}>
                 <Button size="sm" className="whitespace-nowrap">
-                  Update Profile
+                  {t("profile.update_profile")}
                 </Button>
               </Link>
             </div>
@@ -238,7 +240,7 @@ export default function BrowseUsers() {
 
           {!user && (
             <div className="mt-6">
-              <SignInPromptBanner message="Create an account to see people near you and start trading." />
+              <SignInPromptBanner message={t("browse.guest_prompt_people")} />
             </div>
           )}
         </div>
@@ -253,8 +255,8 @@ export default function BrowseUsers() {
         ) : filteredUsers.length === 0 ? (
           <div className="text-center py-16">
             <Users className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No people found</h3>
-            <p className="text-gray-500">Try adjusting your search terms.</p>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">{t("people.no_people")}</h3>
+            <p className="text-gray-500">{t("people.no_people_sub")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -293,7 +295,7 @@ export default function BrowseUsers() {
                           <LocationCheckedBadge userId={worker.user_id} location={worker.location} className="text-[10px] px-1.5 py-0" />
                         </div>
                         {Array.isArray(worker.exchange_areas) && worker.exchange_areas.length > 0 && (
-                          <p className="text-xs text-gray-500 mb-1 truncate">Also exchanges in: {worker.exchange_areas.join(" · ")}</p>
+                          <p className="text-xs text-gray-500 mb-1 truncate">{t("people.also_exchanges_in", { areas: worker.exchange_areas.join(" · ") })}</p>
                         )}
                         <div className="flex items-center gap-2 mb-2">
                           {worker.rating > 0 && (
@@ -307,7 +309,7 @@ export default function BrowseUsers() {
                     </div>
 
                     <p className="text-sm text-gray-600 mb-4 line-clamp-2 min-h-[2.5rem]">
-                      {worker.bio || "No bio available."}
+                      {worker.bio || t("people.no_bio")}
                     </p>
 
                     <div className="flex flex-wrap gap-1 mb-4">
@@ -322,7 +324,7 @@ export default function BrowseUsers() {
                             ))}
                             {skills.length > 3 && (
                               <Badge variant="outline" className="text-xs text-gray-500">
-                                +{skills.length - 3} more
+                                {t("people.more_skills", { n: skills.length - 3 })}
                               </Badge>
                             )}
                           </>
@@ -332,10 +334,10 @@ export default function BrowseUsers() {
 
                     <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
                       <div className="text-xs text-gray-500">
-                        <span className="font-semibold text-gray-900">{worker.completed_trades || 0}</span> trades completed
+                        {t("people.trades_completed", { n: worker.completed_trades || 0 })}
                       </div>
                       <Button size="sm" variant="ghost" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 p-0 h-auto font-medium">
-                        View Profile <ArrowRight className="w-3 h-3 ml-1" />
+                        {t("people.view_profile")} <ArrowRight className="w-3 h-3 ml-1" />
                       </Button>
                     </div>
                   </CardContent>
