@@ -54,7 +54,7 @@ export default async function(req) {
     const allowed = getAllowedOfferTypes(target);
     if (!allowed.includes(offeredType)) {
       return Response.json({
-        error: `This owner wants ${allowed.join(' or ')} in return, so a ${offeredType} listing cannot be offered here.`
+        error: `This owner wants ${allowed.join(' or ')} in return, so ${offeredType === 'item' ? 'an' : 'a'} ${offeredType} listing cannot be offered here.`
       }, { status: 400 });
     }
 
