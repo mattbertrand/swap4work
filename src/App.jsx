@@ -10,6 +10,7 @@ import { pagesConfig } from './pages.config'
 import { createBrowserRouter, RouterProvider, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import { LanguageGate } from '@/i18n/LanguageContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import AccountSuspendedScreen from '@/components/AccountSuspendedScreen';
 import Join from './pages/Join';
@@ -89,12 +90,14 @@ function App() {
 
   return (
     <AuthProvider>
+      <LanguageGate>
       <QueryClientProvider client={queryClientInstance}>
         <RouterProvider router={router} />
         <Toaster />
         <SonnerToaster />
         <VisualEditAgent />
       </QueryClientProvider>
+      </LanguageGate>
     </AuthProvider>
   )
 }

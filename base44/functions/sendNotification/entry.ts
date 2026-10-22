@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { getActiveUser } from '../../shared/moderation.ts';
+import { renderNotification } from '../../shared/i18n.ts';
 
 // Creates a user-to-user notification. The sender identity is always derived
 // server-side from the authenticated caller, so a member can never spoof
@@ -63,6 +64,20 @@ export default async function(req) {
       return Response.json({ success: true, sent: false });
     }
 
+    // Localized send: when the caller passes an i18n key + vars, the title and
+    // message are rendered from shared templates in the recipient's saved
+    // language (default English), overriding the raw English text.
+    const recipientLang = (recipient as any)?.language === 'es' ? 'es' : 'en';
+    let finalTitle = title;
+    let finalMessage = message;
+    if (body.i18n && typeof body.i18n.key === 'string') {
+      const rendered = renderNotification(recipientLang, body.i18n.key, body.i18n.vars || {});
+      if (rendered) {
+        finalTitle = rendered.title.slice(0, 200);
+        finalMessage = rendered.message.slice(0, 1000);
+      }
+    }
+
     // Rate limits (admins exempt) to stop notification spam/flooding.
     if (!isAdmin) {
       try {
@@ -94,8 +109,8 @@ export default async function(req) {
     const created = await db.Notification.create({
       user_id: toUserId,
       type,
-      title,
-      message,
+      title: finalTitle,
+      message: finalMessage,
       related_id: body.related_id ? String(body.related_id) : null,
       related_type: relatedType,
       link_url: linkUrl,

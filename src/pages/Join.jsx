@@ -4,8 +4,11 @@ import { createPageUrl } from "@/utils";
 import { authSignupUrl, authLoginUrl } from "@/lib/authNavigation";
 import { Briefcase, Search, HandshakeIcon, CheckCircle2, ArrowRight, Star } from "lucide-react";
 import { motion } from "framer-motion";
+import { useLanguage } from "@/i18n/LanguageContext";
+import LanguageSelector from "@/components/i18n/LanguageSelector";
 
 export default function Join() {
+  const { t } = useLanguage();
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const source = urlParams.get("source");
@@ -21,25 +24,25 @@ export default function Join() {
   const steps = [
     {
       icon: Search,
-      title: "Browse Items & Services",
-      desc: "Find items you need or services offered by people in your community.",
+      title: t("join.step1_title"),
+      desc: t("join.step1_desc"),
     },
     {
       icon: HandshakeIcon,
-      title: "Offer Your Skills",
-      desc: "Propose your time and skills in exchange for items you want.",
+      title: t("join.step2_title"),
+      desc: t("join.step2_desc"),
     },
     {
       icon: CheckCircle2,
-      title: "Exchange & Complete",
-      desc: "Agree on terms, do the work, and receive what you need.",
+      title: t("join.step3_title"),
+      desc: t("join.step3_desc"),
     },
   ];
 
   const examples = [
-    { work: "Help clean a garage", get: "Get a bike", emoji: "🚲" },
-    { work: "Do yard work", get: "Get fresh produce", emoji: "🥦" },
-    { work: "Help someone move", get: "Get furniture", emoji: "🛋️" },
+    { work: t("join.ex1_work"), get: t("join.ex1_get"), emoji: "🚲" },
+    { work: t("join.ex2_work"), get: t("join.ex2_get"), emoji: "🥦" },
+    { work: t("join.ex3_work"), get: t("join.ex3_get"), emoji: "🛋️" },
   ];
 
   return (
@@ -51,12 +54,15 @@ export default function Join() {
           alt="Swap4Work"
           className="h-10 w-auto object-contain"
         />
-        <button
-          onClick={handleLogIn}
-          className="text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors"
-        >
-          Log In
-        </button>
+        <div className="flex items-center gap-4">
+          <LanguageSelector />
+          <button
+            onClick={handleLogIn}
+            className="text-sm font-semibold text-orange-600 hover:text-orange-700 transition-colors"
+          >
+            {t("nav.log_in")}
+          </button>
+        </div>
       </header>
 
       <main className="flex-1">
@@ -69,28 +75,28 @@ export default function Join() {
           >
             <div className="inline-flex items-center gap-2 bg-orange-100 text-orange-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-6">
               <Star className="w-3 h-3 fill-orange-500 text-orange-500" />
-              Community-Powered Exchange
+              {t("join.badge")}
             </div>
             <h1 className="text-3xl font-extrabold text-gray-900 leading-tight mb-4">
-              Trade what you have<br />for what you need —<br />
-              <span className="text-orange-500">no payments between members</span>
+              {t("join.hero_a")}<br />{t("join.hero_b")}<br />
+              <span className="text-orange-500">{t("join.hero_c")}</span>
             </h1>
             <p className="text-gray-600 text-base mb-8 max-w-xs mx-auto leading-relaxed">
-              Help someone for a few hours and get what you want in return.
+              {t("join.subtitle")}
             </p>
             <div className="flex flex-col gap-3 max-w-xs mx-auto">
               <button
                 onClick={handleSignUp}
                 className="w-full bg-gradient-to-r from-orange-500 to-amber-600 text-white font-bold py-4 px-6 rounded-2xl text-base shadow-lg hover:from-orange-600 hover:to-amber-700 active:scale-95 transition-all flex items-center justify-center gap-2"
               >
-                Get Started — It's Free
+                {t("join.get_started")}
                 <ArrowRight className="w-4 h-4" />
               </button>
               <button
                 onClick={handleLogIn}
                 className="w-full bg-white text-gray-700 font-semibold py-4 px-6 rounded-2xl text-base border border-gray-200 hover:bg-gray-50 active:scale-95 transition-all"
               >
-                Log In
+                {t("nav.log_in")}
               </button>
             </div>
           </motion.div>
@@ -98,7 +104,7 @@ export default function Join() {
 
         {/* How It Works */}
         <section className="px-6 py-12">
-          <h2 className="text-xl font-bold text-gray-900 text-center mb-8">How It Works</h2>
+          <h2 className="text-xl font-bold text-gray-900 text-center mb-8">{t("join.how_it_works")}</h2>
           <div className="flex flex-col gap-6 max-w-sm mx-auto">
             {steps.map((step, i) => (
               <motion.div
@@ -125,7 +131,7 @@ export default function Join() {
 
         {/* Examples */}
         <section className="px-6 py-10 bg-gray-50">
-          <h2 className="text-xl font-bold text-gray-900 text-center mb-6">Example Exchanges</h2>
+          <h2 className="text-xl font-bold text-gray-900 text-center mb-6">{t("join.examples_title")}</h2>
           <div className="flex flex-col gap-3 max-w-sm mx-auto">
             {examples.map((ex, i) => (
               <motion.div
@@ -154,31 +160,30 @@ export default function Join() {
             <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-7 h-7 text-green-600" />
             </div>
-            <h2 className="text-lg font-bold text-gray-900 mb-2">Fair &amp; Transparent</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-2">{t("join.trust_title")}</h2>
             <p className="text-gray-500 text-sm leading-relaxed">
-              Written agreements, reviews from completed exchanges, and easy
-              reporting and blocking — built to protect everyone involved.
+              {t("join.trust_desc")}
             </p>
           </div>
         </section>
 
         {/* Final CTA */}
         <section className="px-6 py-10 bg-gradient-to-br from-orange-500 to-amber-600 text-center">
-          <h2 className="text-2xl font-extrabold text-white mb-2">Ready to start?</h2>
-          <p className="text-orange-100 text-sm mb-8">Join your community exchange today.</p>
+          <h2 className="text-2xl font-extrabold text-white mb-2">{t("join.final_title")}</h2>
+          <p className="text-orange-100 text-sm mb-8">{t("join.final_sub")}</p>
           <div className="flex flex-col gap-3 max-w-xs mx-auto">
             <button
               onClick={handleSignUp}
               className="w-full bg-white text-orange-600 font-bold py-4 px-6 rounded-2xl text-base shadow-lg hover:bg-orange-50 active:scale-95 transition-all flex items-center justify-center gap-2"
             >
-              Start Exchanging
+              {t("join.final_cta")}
               <ArrowRight className="w-4 h-4" />
             </button>
             <button
               onClick={handleLogIn}
               className="w-full bg-transparent text-white font-semibold py-4 px-6 rounded-2xl text-base border border-white/40 hover:bg-white/10 active:scale-95 transition-all"
             >
-              Log In
+              {t("nav.log_in")}
             </button>
           </div>
         </section>
@@ -194,13 +199,13 @@ export default function Join() {
           />
         </div>
         <div className="flex items-center justify-center gap-4 text-xs text-gray-400">
-          <Link to={createPageUrl("Terms")} className="hover:text-gray-600 transition-colors">Terms of Service</Link>
+          <Link to={createPageUrl("Terms")} className="hover:text-gray-600 transition-colors">{t("join.terms_of_service")}</Link>
           <span>·</span>
           <Link
             to={createPageUrl("Privacy")}
             className="hover:text-gray-600 transition-colors"
           >
-            Privacy Policy
+            {t("footer.privacy")}
           </Link>
         </div>
       </footer>

@@ -2,6 +2,14 @@
   "name": "User",
   "type": "object",
   "properties": {
+    "language": {
+      "type": "string",
+      "enum": [
+        "en",
+        "es"
+      ],
+      "description": "Preferred interface language (English or Spanish)"
+    },
     "phone": {
       "type": "string",
       "description": "Phone number for verification"

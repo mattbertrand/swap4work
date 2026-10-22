@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { getAllowedOfferTypes } from '../../shared/exchange.ts';
+import { renderNotification, listingTypeLabel } from '../../shared/i18n.ts';
 
 // Creates a negotiation between a requester (bidder) and a listing owner
 // (offerer). Server-side because eligibility, ownership, blocks and the
@@ -84,6 +85,14 @@ export default async function(req) {
       return Response.json({ error: 'This member is currently at their maximum number of active negotiations.' }, { status: 400 });
     }
 
+    // The target owner is the recipient of the offer — messages and the
+    // notification render in their saved language (default English).
+    let ownerLang = 'en';
+    try {
+      const owners = await serviceDb.User.filter({ id: target.offerer_id });
+      if (owners[0]?.language === 'es') ownerLang = 'es';
+    } catch (e) { /* language lookup is best-effort */ }
+
     const now = new Date().toISOString();
     const negotiation = await base44.entities.Negotiation.create({
       item_id: target.id,
@@ -112,26 +121,41 @@ export default async function(req) {
       expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
     });
 
-    const offeredLabel = offeredType === 'service' ? 'service' : 'item';
+    const offeredLabel = listingTypeLabel(offeredType, ownerLang);
+    const offerIntro = ownerLang === 'es'
+      ? `${user.full_name} ofreció su ${offeredLabel} "${offered.title}" a cambio de "${target.title}".`
+      : `${user.full_name} offered their ${offeredLabel} "${offered.title}" in exchange for "${target.title}".`;
+    const workLabel = ownerLang === 'es' ? 'Trabajo' : 'Work';
     await base44.entities.Message.create({
       negotiation_id: negotiation.id,
       from_user_id: user.id,
       from_user_name: user.full_name,
       to_user_id: target.offerer_id,
-      text: `${user.full_name} offered their ${offeredLabel} "${offered.title}" in exchange for "${target.title}".` +
-        (workType ? `\n\nWork: ${workType}` : '') +
+      text: offerIntro +
+        (workType ? `\n\n${workLabel}: ${workType}` : '') +
         (message ? `\n\n${message}` : ''),
       message_type: 'offer',
       proposal_hours: hours
     });
 
     // Notification is best-effort: never fail the negotiation over it.
+    // Sent with an i18n key so sendNotification renders it in the
+    // recipient's saved language.
     try {
       await base44.functions.invoke('sendNotification', {
         user_id: target.offerer_id,
         type: 'new_negotiation',
         title: 'New negotiation started',
-        message: `${user.full_name} offered their ${offeredLabel} "${offered.title}" in exchange for "${target.title}"`,
+        message: `${user.full_name} offered their ${listingTypeLabel(offeredType, 'en')} "${offered.title}" in exchange for "${target.title}"`,
+        i18n: {
+          key: 'new_negotiation',
+          vars: {
+            name: user.full_name,
+            offered_label: listingTypeLabel(offeredType, ownerLang),
+            offered_title: offered.title,
+            target_title: target.title
+          }
+        },
         related_id: negotiation.id,
         related_type: 'negotiation',
         link_url: `/negotiation?id=${negotiation.id}`

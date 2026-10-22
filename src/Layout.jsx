@@ -41,6 +41,8 @@ import { Button } from "@/components/ui/button";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import GuestBanner from "@/components/auth/GuestBanner";
 import { useAuth } from "@/lib/AuthContext";
+import { useLanguage } from "@/i18n/LanguageContext";
+import LanguageSelector from "@/components/i18n/LanguageSelector";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -48,6 +50,7 @@ export default function Layout({ children, currentPageName }) {
   // Session is loaded once by AuthProvider — reusing it keeps the shell mounted
   // during navigation (no per-route re-fetch, no hard page reloads).
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   React.useEffect(() => {
     if (!user || user.profile_completed) return;
@@ -70,47 +73,47 @@ export default function Layout({ children, currentPageName }) {
 
   const navigationItems = [
   {
-    title: "Home",
+    title: t("nav.home"),
     url: createPageUrl("Home"),
     icon: Home
   },
   {
-    title: "Browse Items",
+    title: t("nav.browse_items"),
     url: createPageUrl("Browse"),
     icon: Package
   },
   {
-    title: "Browse Services",
+    title: t("nav.browse_services"),
     url: createPageUrl("BrowseServices"),
     icon: Briefcase
   },
   {
-    title: "Find People",
+    title: t("nav.find_people"),
     url: createPageUrl("BrowseUsers"),
     icon: Users
   },
   {
-    title: "My Listings",
+    title: t("nav.my_listings"),
     url: createPageUrl("MyListings"),
     icon: Package
   },
   {
-    title: "My Agreements",
+    title: t("nav.my_agreements"),
     url: createPageUrl("MyAgreements"),
     icon: Briefcase
   },
   {
-    title: "Trade Dashboard",
+    title: t("nav.trade_dashboard"),
     url: createPageUrl("TradeDashboard"),
     icon: LayoutDashboard
   },
   {
-    title: "Notifications",
+    title: t("nav.notifications"),
     url: createPageUrl("Notifications"),
     icon: Bell
   },
   {
-    title: "Profile",
+    title: t("nav.profile"),
     url: createPageUrl("Profile"),
     icon: User
   }];
@@ -118,17 +121,17 @@ export default function Layout({ children, currentPageName }) {
 
   if (isAdmin) {
     navigationItems.push({
-      title: "Admin Dashboard",
+      title: t("nav.admin_dashboard"),
       url: createPageUrl("AdminDashboard"),
       icon: Shield
     });
     navigationItems.push({
-      title: "Moderation",
+      title: t("nav.moderation"),
       url: createPageUrl("AdminReports"),
       icon: Flag
     });
     navigationItems.push({
-      title: "User Management",
+      title: t("nav.user_management"),
       url: createPageUrl("AdminUserManagement"),
       icon: Shield
     });
@@ -175,7 +178,7 @@ export default function Layout({ children, currentPageName }) {
               <Link to={createPageUrl("CreateItem")} className="block">
                 <button className="w-full bg-gradient-to-r from-orange-500 to-amber-600 text-white font-semibold py-3 px-4 rounded-xl hover:from-orange-600 hover:to-amber-700 transition-all shadow-md flex items-center justify-center gap-2">
                   <Plus className="w-5 h-5 flex-shrink-0" />
-                  <span className="font-semibold text-white">List an Item</span>
+                  <span className="font-semibold text-white">{t("nav.list_an_item")}</span>
                 </button>
               </Link>
             </div>
@@ -209,7 +212,7 @@ export default function Layout({ children, currentPageName }) {
                   <DropdownMenuItem asChild>
                     <Link to={createPageUrl("Profile")} className="flex items-center cursor-pointer">
                       <User className="w-4 h-4 mr-2" />
-                      Profile Settings
+                      {t("nav.profile_settings")}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -220,7 +223,7 @@ export default function Layout({ children, currentPageName }) {
                   className="text-red-600 focus:text-red-600 cursor-pointer">
                   
                     <LogOut className="w-4 h-4 mr-2" />
-                    Sign Out
+                    {t("nav.sign_out")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu> :
@@ -229,7 +232,7 @@ export default function Layout({ children, currentPageName }) {
               onClick={() => navigate(authLoginUrl(window.location.pathname + window.location.search))}
               className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700">
               
-                Sign In
+                {t("nav.sign_in")}
               </Button>
             }
           </SidebarFooter>
@@ -242,7 +245,10 @@ export default function Layout({ children, currentPageName }) {
                 <SidebarTrigger className="md:hidden hover:bg-orange-100 p-2 rounded-lg transition-colors duration-200" />
                 <h1 className="text-xl font-bold text-gray-900 hidden md:block">Swap4Work</h1>
               </div>
-              {user && <NotificationBell user={user} />}
+              <div className="flex items-center gap-3">
+                <LanguageSelector />
+                {user && <NotificationBell user={user} />}
+              </div>
             </div>
           </header>
 
@@ -263,86 +269,86 @@ export default function Layout({ children, currentPageName }) {
                     
                   </div>
                   <p className="text-sm text-gray-600 mb-4">
-                    A local marketplace where items are exchanged for skills and time nearby — the exchange is work, not payments.
+                    {t("footer.tagline")}
                   </p>
                   <p className="text-xs text-gray-500">
-                    Building stronger communities through skill exchange.
+                    {t("footer.mission")}
                   </p>
                 </div>
 
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-4">Quick Links</h4>
+                  <h4 className="font-semibold text-gray-900 mb-4">{t("footer.quick_links")}</h4>
                   <ul className="space-y-2">
                     <li>
                       <Link to={createPageUrl("Browse")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
-                        Browse Items
+                        {t("nav.browse_items")}
                       </Link>
                     </li>
                     <li>
                       <Link to={createPageUrl("CreateItem")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
-                        List an Item
+                        {t("nav.list_an_item")}
                       </Link>
                     </li>
                     <li>
                       <Link to={createPageUrl("MyAgreements")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
-                        My Agreements
+                        {t("nav.my_agreements")}
                       </Link>
                     </li>
                     <li>
                       <Link to={createPageUrl("Profile")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
-                        My Profile
+                        {t("footer.my_profile")}
                       </Link>
                     </li>
                   </ul>
                 </div>
 
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-4">Resources</h4>
+                  <h4 className="font-semibold text-gray-900 mb-4">{t("footer.resources")}</h4>
                   <ul className="space-y-2">
                     <li>
                       <Link to={createPageUrl("HowItWorks")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
-                        How It Works
+                        {t("footer.how_it_works")}
                       </Link>
                     </li>
                     <li>
                       <Link to={createPageUrl("CommunityGuidelines")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
-                        Safety Guidelines
+                        {t("footer.safety_guidelines")}
                       </Link>
                     </li>
                     <li>
                       <Link to={createPageUrl("CommunityGuidelines")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
-                        Community Rules
+                        {t("footer.community_rules")}
                       </Link>
                     </li>
                     <li>
                       <Link to={createPageUrl("HowItWorks")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
-                        FAQ
+                        {t("footer.faq")}
                       </Link>
                     </li>
                   </ul>
                 </div>
 
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-4">Legal</h4>
+                  <h4 className="font-semibold text-gray-900 mb-4">{t("footer.legal")}</h4>
                   <ul className="space-y-2">
                     <li>
                       <Link to={createPageUrl("Terms")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
-                        Terms &amp; Conditions
+                        {t("footer.terms")}
                       </Link>
                     </li>
                     <li>
                       <Link to={createPageUrl("Privacy")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
-                        Privacy Policy
+                        {t("footer.privacy")}
                       </Link>
                     </li>
                     <li>
                       <Link to={createPageUrl("Privacy")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
-                        Cookie Policy
+                        {t("footer.cookies")}
                       </Link>
                     </li>
                     <li>
                       <Link to={createPageUrl("CommunityGuidelines")} className="text-sm text-gray-600 hover:text-orange-600 transition-colors">
-                        Report a Problem
+                        {t("footer.report_problem")}
                       </Link>
                     </li>
                   </ul>
@@ -352,11 +358,11 @@ export default function Layout({ children, currentPageName }) {
               <div className="pt-8 border-t border-gray-200">
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                   <p className="text-sm text-gray-500">
-                    © {new Date().getFullYear()} Swap4Work. All rights reserved.
+                    {t("footer.rights", { year: new Date().getFullYear() })}
                   </p>
                   <div className="flex items-center gap-6">
                     <Link to={createPageUrl("CommunityGuidelines")} className="text-sm text-gray-500 hover:text-orange-600 transition-colors">
-                      Report an Issue
+                      {t("footer.report_issue")}
                     </Link>
                   </div>
                 </div>
