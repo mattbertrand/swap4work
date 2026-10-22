@@ -22,10 +22,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { formatDistanceToNow } from "date-fns";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function MyListings() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { t } = useLanguage();
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [deleteItemId, setDeleteItemId] = useState(null);
@@ -85,28 +87,28 @@ export default function MyListings() {
           <div className="max-w-6xl mx-auto">
             <div className="flex justify-between items-center mb-8">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">My Listings</h1>
-                <p className="text-gray-500 mt-1">Manage your item listings</p>
+                <h1 className="text-3xl font-bold text-gray-900">{t("nav.my_listings")}</h1>
+                <p className="text-gray-500 mt-1">{t("listings.manage_sub")}</p>
               </div>
               <Button
                 onClick={() => setAuthModalOpen(true)}
                 className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"
               >
                 <Plus className="w-5 h-5 mr-2" />
-                New Listing
+                {t("listings.new_listing")}
               </Button>
             </div>
             <div className="text-center py-24">
               <Package className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Log in to manage your listings</h2>
-              <p className="text-gray-500 mb-6">Create an account or log in to list your items for trade.</p>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">{t("listings.login_to_manage")}</h2>
+              <p className="text-gray-500 mb-6">{t("listings.login_to_manage_sub")}</p>
               <Button onClick={() => setAuthModalOpen(true)} className="bg-gradient-to-r from-orange-500 to-amber-600">
-                Get Started
+                {t("common.create_free_account")}
               </Button>
             </div>
           </div>
         </div>
-        <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} message="Create an account or log in to continue" />
+        <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} message={t("listings.auth_continue")} />
       </>
     );
   }
@@ -138,7 +140,7 @@ export default function MyListings() {
                   item.status === 'locked' ? 'bg-purple-100 text-purple-700' :
                   'bg-gray-100 text-gray-700'
                 }>
-                  {item.status.replace('_', ' ')}
+                  {t(`status.${item.status}`)}
                 </Badge>
               </div>
               <p className="text-sm text-gray-600 mb-2 line-clamp-2">{item.description}</p>
@@ -164,7 +166,7 @@ export default function MyListings() {
                 <div className="flex items-center gap-2">
                   <MessageSquare className="w-4 h-4 text-blue-600" />
                   <span className="text-sm font-semibold text-blue-900">
-                    {activeNegotiations.length} Active Negotiation{activeNegotiations.length > 1 ? 's' : ''}
+                    {t("listings.n_active_negotiations", { n: activeNegotiations.length })}
                   </span>
                 </div>
               </div>
@@ -190,7 +192,7 @@ export default function MyListings() {
                 ))}
                 {activeNegotiations.length > 3 && (
                   <p className="text-xs text-blue-600 text-center">
-                    +{activeNegotiations.length - 3} more
+                    {t("listings.more", { n: activeNegotiations.length - 3 })}
                   </p>
                 )}
               </div>
@@ -201,14 +203,14 @@ export default function MyListings() {
             <Link to={createPageUrl(`ItemDetail?id=${item.id}`)} className="flex-1">
               <Button variant="outline" className="w-full">
                 <Eye className="w-4 h-4 mr-2" />
-                View
+                {t("listings.view")}
               </Button>
             </Link>
             {canEdit && (
               <Link to={createPageUrl(`${item.listing_type === 'service' ? 'EditService' : 'EditItem'}?id=${item.id}`)} className="flex-1">
                 <Button className="w-full bg-orange-600 hover:bg-orange-700">
                   <Edit className="w-4 h-4 mr-2" />
-                  Edit
+                  {t("common.edit")}
                 </Button>
               </Link>
             )}
@@ -230,23 +232,23 @@ export default function MyListings() {
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">My Listings</h1>
-            <p className="text-gray-500 mt-1">Manage your item listings</p>
+            <h1 className="text-3xl font-bold text-gray-900">{t("nav.my_listings")}</h1>
+            <p className="text-gray-500 mt-1">{t("listings.manage_sub")}</p>
           </div>
           <Link to={createPageUrl("CreateItem")}>
             <Button className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700">
               <Plus className="w-5 h-5 mr-2" />
-              New Listing
+              {t("listings.new_listing")}
             </Button>
           </Link>
         </div>
-        <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} message="Create an account or log in to create a listing." />
+        <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} message={t("listings.auth_create")} />
 
         <Tabs defaultValue="active" className="w-full">
           <TabsList className="mb-6">
-            <TabsTrigger value="active">Active ({activeItems.length})</TabsTrigger>
-            <TabsTrigger value="in_progress">In Progress ({inProgressItems.length})</TabsTrigger>
-            <TabsTrigger value="completed">Completed ({completedItems.length})</TabsTrigger>
+            <TabsTrigger value="active">{t("listings.tab_active", { n: activeItems.length })}</TabsTrigger>
+            <TabsTrigger value="in_progress">{t("listings.tab_in_progress", { n: inProgressItems.length })}</TabsTrigger>
+            <TabsTrigger value="completed">{t("listings.tab_completed", { n: completedItems.length })}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="active">
@@ -259,10 +261,10 @@ export default function MyListings() {
             ) : activeItems.length === 0 ? (
               <div className="text-center py-16">
                 <Package className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No active listings</h3>
-                <p className="text-gray-500 mb-4">Create your first listing to get started</p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">{t("listings.no_active")}</h3>
+                <p className="text-gray-500 mb-4">{t("listings.no_active_sub")}</p>
                 <Link to={createPageUrl("CreateItem")}>
-                  <Button>Create Listing</Button>
+                  <Button>{t("listings.create_listing")}</Button>
                 </Link>
               </div>
             ) : (
@@ -278,8 +280,8 @@ export default function MyListings() {
             {inProgressItems.length === 0 ? (
               <div className="text-center py-16">
                 <Clock className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No items in progress</h3>
-                <p className="text-gray-500">Items being negotiated or worked on will appear here</p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">{t("listings.no_in_progress")}</h3>
+                <p className="text-gray-500">{t("listings.no_in_progress_sub")}</p>
               </div>
             ) : (
               <div className="grid gap-4">
@@ -294,8 +296,8 @@ export default function MyListings() {
             {completedItems.length === 0 ? (
               <div className="text-center py-16">
                 <Package className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No completed items</h3>
-                <p className="text-gray-500">Completed trades will appear here</p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">{t("listings.no_completed")}</h3>
+                <p className="text-gray-500">{t("listings.no_completed_sub")}</p>
               </div>
             ) : (
               <div className="grid gap-4">
@@ -311,18 +313,18 @@ export default function MyListings() {
         <AlertDialog open={!!deleteItemId} onOpenChange={() => setDeleteItemId(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete Item</AlertDialogTitle>
+              <AlertDialogTitle>{t("listings.delete_title")}</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete this item? This action cannot be undone.
+                {t("listings.delete_confirm")}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDeleteItem}
                 className="bg-red-600 hover:bg-red-700"
               >
-                Delete
+                {t("common.delete")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

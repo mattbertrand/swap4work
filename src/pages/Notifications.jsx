@@ -11,10 +11,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Bell, MessageSquare, Clock, CheckCircle2, AlertCircle, Package } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function Notifications() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { t } = useLanguage();
   // Session is shared and already resolved by AuthProvider before routes
   // render, so an authenticated user never briefly sees the sign-in prompt.
   const { user, isLoadingAuth } = useAuth();
@@ -127,9 +129,9 @@ export default function Notifications() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">Please sign in to view notifications</p>
+          <p className="text-gray-600 mb-4">{t("notif.sign_in_prompt")}</p>
           <Button onClick={() => navigate(authLoginUrl(window.location.pathname + window.location.search))}>
-            Sign In
+            {t("nav.sign_in")}
           </Button>
         </div>
       </div>
@@ -144,9 +146,9 @@ export default function Notifications() {
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{t("nav.notifications")}</h1>
             <p className="text-gray-500 mt-1">
-              {unreadNotifications.length} unread notification{unreadNotifications.length !== 1 ? 's' : ''}
+              {t("notif.unread_count", { n: unreadNotifications.length })}
             </p>
           </div>
           {unreadNotifications.length > 0 && (
@@ -155,7 +157,7 @@ export default function Notifications() {
               variant="outline"
               disabled={markAllAsReadMutation.isLoading}
             >
-              Mark All as Read
+              {t("notif.mark_all_read")}
             </Button>
           )}
         </div>
@@ -168,9 +170,9 @@ export default function Notifications() {
           <Card className="border-orange-100">
             <CardContent className="p-16 text-center">
               <Bell className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No notifications yet</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{t("notif.no_notifications")}</h3>
               <p className="text-gray-500">
-                You'll see notifications here when you have activity on your items and agreements
+                {t("notif.no_notifications_sub")}
               </p>
             </CardContent>
           </Card>
@@ -181,7 +183,7 @@ export default function Notifications() {
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <Bell className="w-5 h-5" />
-                  New ({unreadNotifications.length})
+                  {t("notif.new_section", { n: unreadNotifications.length })}
                 </h2>
                 <div className="space-y-3">
                   {unreadNotifications.map((notification) => (
@@ -198,7 +200,7 @@ export default function Notifications() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between mb-1">
                               <h3 className="font-semibold text-gray-900">{notification.title}</h3>
-                              <Badge className="bg-orange-500 text-white ml-2">New</Badge>
+                              <Badge className="bg-orange-500 text-white ml-2">{t("notif.new_badge")}</Badge>
                             </div>
                             <p className="text-sm text-gray-700 mb-2">{notification.message}</p>
                             <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -206,7 +208,7 @@ export default function Notifications() {
                               {notification.from_user_name && (
                                 <>
                                   <span>•</span>
-                                  <span>from {displayName(notification.from_user_name)}</span>
+                                  <span>{t("notif.from", { name: displayName(notification.from_user_name) })}</span>
                                 </>
                               )}
                             </div>
@@ -224,7 +226,7 @@ export default function Notifications() {
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-gray-500" />
-                  Earlier ({readNotifications.length})
+                  {t("notif.earlier", { n: readNotifications.length })}
                 </h2>
                 <div className="space-y-3">
                   {readNotifications.map((notification) => (
@@ -246,7 +248,7 @@ export default function Notifications() {
                               {notification.from_user_name && (
                                 <>
                                   <span>•</span>
-                                  <span>from {displayName(notification.from_user_name)}</span>
+                                  <span>{t("notif.from", { name: displayName(notification.from_user_name) })}</span>
                                 </>
                               )}
                             </div>
