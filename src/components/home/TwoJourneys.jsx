@@ -4,20 +4,24 @@ import { createPageUrl } from "@/utils";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Package, Briefcase, ArrowRight } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageContext";
 
-const journeys = [
+export default function TwoJourneys() {
+  const { t } = useLanguage();
+
+  const journeys = [
   {
     icon: Package,
-    title: "I Have Something to Trade",
-    sub: "Turn unused items into useful help.",
+    title: t("home.journey_have_title"),
+    sub: t("home.journey_have_sub"),
     steps: [
-      "List your item",
-      "Describe the service or help you'd accept",
-      "Receive offers from people nearby",
-      "Choose the offer that works for you",
-      "Complete the exchange",
+      t("home.journey_have_step1"),
+      t("home.journey_have_step2"),
+      t("home.journey_have_step3"),
+      t("home.journey_have_step4"),
+      t("home.journey_have_step5"),
     ],
-    cta: { label: "List an Item", url: createPageUrl("CreateItem") },
+    cta: { label: t("nav.list_an_item"), url: createPageUrl("CreateItem") },
     theme: {
       gradient: "from-orange-50 to-amber-50",
       border: "border-orange-200 hover:border-orange-400",
@@ -28,16 +32,16 @@ const journeys = [
   },
   {
     icon: Briefcase,
-    title: "I Have Skills to Offer",
-    sub: "Use your skills and time to get things you need.",
+    title: t("home.journey_skills_title"),
+    sub: t("home.journey_skills_sub"),
     steps: [
-      "Browse available items",
-      "Find something you want",
-      "Offer your skills or time in exchange",
-      "Negotiate the details",
-      "Complete the exchange",
+      t("home.journey_skills_step1"),
+      t("home.journey_skills_step2"),
+      t("home.journey_skills_step3"),
+      t("home.journey_skills_step4"),
+      t("home.journey_skills_step5"),
     ],
-    cta: { label: "Browse Items", url: createPageUrl("Browse") },
+    cta: { label: t("nav.browse_items"), url: createPageUrl("Browse") },
     theme: {
       gradient: "from-blue-50 to-cyan-50",
       border: "border-blue-200 hover:border-blue-400",
@@ -48,16 +52,15 @@ const journeys = [
   },
 ];
 
-export default function TwoJourneys() {
   return (
     <div className="py-16 px-4 bg-white">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-            How Can You Use Swap4Work?
+            {t("home.journeys_title")}
           </h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Every exchange needs two sides — pick the one that sounds like you.
+            {t("home.journeys_sub")}
           </p>
         </div>
 

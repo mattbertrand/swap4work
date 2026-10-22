@@ -1,15 +1,18 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Bike, Clock, Hammer, ArrowLeftRight } from "lucide-react";
-
-const steps = [
-  { icon: Bike, color: "bg-orange-100 text-orange-600", title: "Used bicycle", sub: "Sarah has one she no longer uses" },
-  { icon: Clock, color: "bg-blue-100 text-blue-600", title: "3 hours of yard work", sub: "What Alex offers in exchange" },
-  { icon: Hammer, color: "bg-amber-100 text-amber-600", title: "Yard work completed", sub: "Saturday morning, as agreed" },
-  { icon: ArrowLeftRight, color: "bg-green-100 text-green-600", title: "Bicycle exchanged", sub: "Both leave a review" },
-];
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function ExchangeExample() {
+  const { t } = useLanguage();
+
+  const steps = [
+    { icon: Bike, color: "bg-orange-100 text-orange-600", title: t("home.example_bike_title"), sub: t("home.example_bike_sub") },
+    { icon: Clock, color: "bg-blue-100 text-blue-600", title: t("home.example_hours_title"), sub: t("home.example_hours_sub") },
+    { icon: Hammer, color: "bg-amber-100 text-amber-600", title: t("home.example_done_title"), sub: t("home.example_done_sub") },
+    { icon: ArrowLeftRight, color: "bg-green-100 text-green-600", title: t("home.example_swap_title"), sub: t("home.example_swap_sub") },
+  ];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
@@ -18,7 +21,7 @@ export default function ExchangeExample() {
       className="bg-white rounded-3xl border-2 border-orange-100 shadow-xl p-6 md:p-8 max-w-md mx-auto w-full"
     >
       <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-6 text-center">
-        Example exchange
+        {t("home.example_label")}
       </p>
       <div>
         {steps.map((s, i) => (

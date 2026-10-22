@@ -4,29 +4,32 @@ import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { ArrowRight, BookOpen } from "lucide-react";
-
-const steps = [
-  {
-    title: "Browse or List",
-    text: "Find items you need or list what you no longer use — with the work you'd accept in return.",
-  },
-  {
-    title: "Negotiate & Agree",
-    text: "Message the other person, exchange offers, and lock in the terms you both accept.",
-  },
-  {
-    title: "Work, Exchange, Review",
-    text: "The work gets done and logged, the item changes hands, and you both leave a review.",
-  },
-];
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function HowItWorksPreview() {
+  const { t } = useLanguage();
+
+  const steps = [
+    {
+      title: t("home.hiw_step1_title"),
+      text: t("home.hiw_step1_text"),
+    },
+    {
+      title: t("home.hiw_step2_title"),
+      text: t("home.hiw_step2_text"),
+    },
+    {
+      title: t("home.hiw_step3_title"),
+      text: t("home.hiw_step3_text"),
+    },
+  ];
+
   return (
     <div className="py-16 px-4 bg-white">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">How Swap4Work Works</h2>
-          <p className="text-gray-600">The whole exchange in three steps</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">{t("home.hiw_title")}</h2>
+          <p className="text-gray-600">{t("home.hiw_sub")}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
@@ -52,12 +55,12 @@ export default function HowItWorksPreview() {
           <Link to={createPageUrl("HowItWorks")}>
             <Button variant="outline" size="lg" className="border-orange-300 text-orange-600 hover:bg-orange-50 px-8 py-6 h-auto">
               <BookOpen className="w-5 h-5 mr-2" />
-              See the Full Guide
+              {t("home.hiw_see_guide")}
             </Button>
           </Link>
           <Link to={createPageUrl("Browse")}>
             <Button size="lg" className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-lg px-8 py-6 h-auto">
-              Start Browsing
+              {t("home.start_browsing")}
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </Link>

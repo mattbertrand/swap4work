@@ -8,11 +8,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Briefcase, Camera, Clock, MapPin } from "lucide-react";
 import OwnerReputation from "@/components/browse/OwnerReputation";
 import { formatPublicLocation } from "@/lib/location";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 // Shared service listing card — used by Browse Services and the homepage
 // Explore Services section. Shows real work photos when present, otherwise
 // the auto-assigned category cover.
 export default function ServiceCard({ service }) {
+  const { t } = useLanguage();
   const publicLocation = formatPublicLocation(service.location);
   const hasRealPhotos = service.photos?.length > 0;
   const displayImage = hasRealPhotos ? service.photos[0] : service.cover_image;
@@ -32,7 +34,7 @@ export default function ServiceCard({ service }) {
             {hasRealPhotos && (
               <Badge className="absolute top-3 right-3 bg-emerald-600 text-white shadow-sm">
                 <Camera className="w-3 h-3 mr-1" />
-                Real photos
+                {t("listing.real_photos")}
               </Badge>
             )}
           </div>
@@ -50,7 +52,7 @@ export default function ServiceCard({ service }) {
                 {service.title}
               </h3>
               <Badge className="bg-blue-100 text-blue-700">
-                {service.category}
+                {t(`cat.${service.category}`)}
               </Badge>
             </div>
           </div>
@@ -63,25 +65,25 @@ export default function ServiceCard({ service }) {
             <div className="flex items-center justify-between pb-3 border-b border-gray-200">
               <div className="flex items-center gap-2 text-blue-600 font-bold">
                 <Clock className="w-5 h-5" />
-                <span>{formatDuration(service.required_hours)} offered</span>
+                <span>{t("listing.hours_offered", { hours: formatDuration(service.required_hours) })}</span>
               </div>
             </div>
 
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">Wants in exchange:</span>
+              <span className="text-gray-500">{t("listing.wants_in_exchange")}</span>
               <Badge variant="outline" className={
                 service.accepts === "item" ? "border-orange-300 text-orange-700" :
                 service.accepts === "service" ? "border-blue-300 text-blue-700" :
                 "border-purple-300 text-purple-700"
               }>
-                {service.accepts === "both" ? "Items & Services" : service.accepts === "item" ? "Items" : "Services"}
+                {service.accepts === "both" ? t("prefs.items_services") : service.accepts === "item" ? t("prefs.items") : t("prefs.services")}
               </Badge>
             </div>
 
             <div className="flex items-center gap-1 text-sm text-gray-500">
               <MapPin className="w-4 h-4" />
               <span className="truncate">
-                {service.distance ? `${service.distance} mi away` : (publicLocation || "Location not specified")}
+                {service.distance ? t("listing.mi_away_long", { mi: service.distance }) : (publicLocation || t("listing.location_not_specified"))}
               </span>
             </div>
 

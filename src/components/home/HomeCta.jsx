@@ -4,8 +4,10 @@ import { createPageUrl } from "@/utils";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Package, Plus } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function HomeCta() {
+  const { t } = useLanguage();
   return (
     <div className="bg-gradient-to-br from-orange-600 to-amber-600 text-white py-16 px-4">
       <div className="max-w-4xl mx-auto text-center">
@@ -16,7 +18,7 @@ export default function HomeCta() {
           transition={{ duration: 0.45 }}
           className="text-3xl md:text-5xl font-bold mb-4"
         >
-          Ready to Make Your First Swap?
+          {t("home.cta_title")}
         </motion.h2>
         <motion.p
           initial={{ opacity: 0, y: 16 }}
@@ -25,8 +27,7 @@ export default function HomeCta() {
           transition={{ duration: 0.45, delay: 0.1 }}
           className="text-lg text-orange-50 mb-8"
         >
-          List something you no longer need, or find an item you can earn with
-          your skills.
+          {t("home.cta_sub")}
         </motion.p>
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -38,7 +39,7 @@ export default function HomeCta() {
           <Link to={createPageUrl("Browse")}>
             <Button size="lg" className="bg-white text-orange-600 hover:bg-orange-50 text-lg px-8 py-6 h-auto w-full sm:w-auto">
               <Package className="w-5 h-5 mr-2" />
-              Browse Items
+              {t("nav.browse_items")}
             </Button>
           </Link>
           <Link to={createPageUrl("CreateItem")}>
@@ -48,7 +49,7 @@ export default function HomeCta() {
               className="border-2 border-white bg-transparent text-white hover:bg-white hover:text-orange-600 text-lg px-8 py-6 h-auto w-full sm:w-auto"
             >
               <Plus className="w-5 h-5 mr-2" />
-              List an Item
+              {t("nav.list_an_item")}
             </Button>
           </Link>
         </motion.div>

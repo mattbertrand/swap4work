@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Clock, MapPin, Star, CheckCircle2, Users } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 // Calculate distance between two coordinates using Haversine formula
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -26,6 +27,7 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
 
 export default function NearbyWorkers() {
   const [user, setUser] = React.useState(null);
+  const { t } = useLanguage();
 
   React.useEffect(() => {
     base44.auth.me()
@@ -73,17 +75,17 @@ export default function NearbyWorkers() {
         <div className="flex flex-col md:flex-row justify-between md:items-center mb-12 gap-4">
           <div className="text-center md:text-left">
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              Skilled People {user?.latitude && user?.longitude ? "Near You" : "in Your Area"}
+              {t("nav.find_people")} {user?.latitude && user?.longitude ? t("home.nearby_title_near") : t("home.nearby_title_area")}
             </h2>
             <p className="text-gray-600">
               {user?.latitude && user?.longitude
-                ? "Members within 100 miles offering their skills and time"
-                : "People offering their skills and time for items they need"}
+                ? t("home.nearby_sub_near")
+                : t("home.nearby_sub_general")}
             </p>
           </div>
           <Link to={createPageUrl("BrowseUsers")} className="hidden md:block">
             <Button variant="outline" className="bg-white hover:bg-gray-50 text-blue-600 border-blue-200 hover:border-blue-300">
-              View All People
+              {t("home.view_all_people")}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </Link>
@@ -100,18 +102,18 @@ export default function NearbyWorkers() {
             <Users className="w-16 h-16 mx-auto mb-4 text-gray-300" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               {user?.latitude && user?.longitude
-                ? "No members found within 100 miles"
-                : "No visible member profiles yet"}
+                ? t("home.nearby_empty_near")
+                : t("home.nearby_empty_general")}
             </h3>
             <p className="text-gray-500 mb-4">
               {user?.latitude && user?.longitude
-                ? "Try browsing items — new people join as the community grows"
-                : "As members complete their profiles, their skills appear here"}
+                ? t("home.nearby_empty_near_sub")
+                : t("home.nearby_empty_general_sub")}
             </p>
             {user && !user.profile_completed && (
               <Link to={createPageUrl("Profile")}>
                 <Button className="bg-orange-600 hover:bg-orange-700">
-                  Complete Your Profile
+                  {t("profile.complete_your_profile")}
                 </Button>
               </Link>
             )}
@@ -150,7 +152,7 @@ export default function NearbyWorkers() {
                       </div>
                     </div>
 
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">{worker.bio || "No bio available"}</p>
+                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">{worker.bio || t("home.no_bio")}</p>
 
                     <div className="mb-4">
                       <div className="flex flex-wrap gap-1">
@@ -168,14 +170,14 @@ export default function NearbyWorkers() {
                           <Clock className="w-4 h-4" />
                           <span className="text-lg font-bold">{worker.hours_completed || 0}</span>
                         </div>
-                        <span className="text-xs text-gray-500">Hours Worked</span>
+                        <span className="text-xs text-gray-500">{t("home.hours_worked")}</span>
                       </div>
                       <div className="text-center">
                         <div className="flex items-center justify-center gap-1 text-blue-600 mb-1">
                           <Star className="w-4 h-4" />
                           <span className="text-lg font-bold">{worker.total_ratings || 0}</span>
                         </div>
-                        <span className="text-xs text-gray-500">Reviews</span>
+                        <span className="text-xs text-gray-500">{t("home.reviews_count")}</span>
                       </div>
                     </div>
 
@@ -185,7 +187,7 @@ export default function NearbyWorkers() {
                           <MapPin className="w-4 h-4 text-orange-600" />
                           <span className="font-medium">
                             {worker.distance
-                              ? `${worker.distance} miles away`
+                              ? t("home.miles_away", { miles: worker.distance })
                               : formatPublicLocation(worker.location)}
                           </span>
                         </div>
@@ -201,7 +203,7 @@ export default function NearbyWorkers() {
         <div className="text-center mt-8 md:hidden">
           <Link to={createPageUrl("BrowseUsers")}>
             <Button variant="outline" className="bg-white text-blue-600 border-blue-200">
-              View All People
+              {t("home.view_all_people")}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </Link>

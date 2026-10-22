@@ -3,29 +3,31 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion } from "framer-motion";
 import { ArrowRight, Scale } from "lucide-react";
-
-const examples = [
-  { emoji: "🚲", item: "Bicycle", service: "Yard work" },
-  { emoji: "🪑", item: "Furniture", service: "Moving help" },
-  { emoji: "💻", item: "Electronics", service: "Computer help" },
-  { emoji: "🛠️", item: "Tools", service: "Home improvement" },
-  { emoji: "🎸", item: "Instrument", service: "Music lessons" },
-  { emoji: "📷", item: "Camera", service: "Car cleaning & detailing" },
-  { emoji: "🏕️", item: "Camping gear", service: "Help with a project" },
-  { emoji: "📚", item: "Books", service: "Tutoring" },
-];
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function WhatCouldYouTrade() {
+  const { t } = useLanguage();
+
+  const examples = [
+    { emoji: "🚲", item: t("home.wct_bicycle"), service: t("home.wct_yard_work") },
+    { emoji: "🪑", item: t("home.wct_furniture"), service: t("home.wct_moving") },
+    { emoji: "💻", item: t("home.wct_electronics"), service: t("home.wct_computer") },
+    { emoji: "🛠️", item: t("home.wct_tools"), service: t("home.wct_home_improvement") },
+    { emoji: "🎸", item: t("home.wct_instrument"), service: t("home.wct_music_lessons") },
+    { emoji: "📷", item: t("home.wct_camera"), service: t("home.wct_car_cleaning") },
+    { emoji: "🏕️", item: t("home.wct_camping"), service: t("home.wct_project") },
+    { emoji: "📚", item: t("home.wct_books"), service: t("home.wct_tutoring") },
+  ];
+
   return (
     <div className="py-16 px-4 bg-white">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-            What Could You Trade?
+            {t("home.wct_title")}
           </h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Almost any item can become useful help — here are a few ideas to
-            get you thinking.
+            {t("home.wct_sub")}
           </p>
         </div>
 
@@ -52,12 +54,11 @@ export default function WhatCouldYouTrade() {
         <p className="text-sm text-gray-500 text-center mt-8 max-w-2xl mx-auto flex items-start justify-center gap-2">
           <Scale className="w-4 h-4 mt-0.5 flex-shrink-0" />
           <span>
-            What's actually available depends on what members list and offer
-            nearby. All exchanges must follow our{" "}
+            {t("home.wct_disclaimer_a")}{" "}
             <Link to={createPageUrl("Terms")} className="text-orange-600 underline hover:text-orange-700">
-              Terms of Service
+              {t("home.terms_of_service")}
             </Link>{" "}
-            and applicable laws.
+            {t("home.wct_disclaimer_b")}
           </span>
         </p>
       </div>

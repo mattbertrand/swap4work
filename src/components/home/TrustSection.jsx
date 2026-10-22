@@ -5,11 +5,13 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star, CheckCircle2, Package, Users, TrendingUp } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 // Every metric on this page comes from live database records, and every
 // sample/demo record (marked is_hidden) is excluded. Nothing is hardcoded,
 // and no placeholder rating is shown when genuine data doesn't exist yet.
 export default function TrustSection() {
+  const { t } = useLanguage();
   // Active, genuine item listings (sample listings are hidden and excluded)
   const { data: activeItemCount = 0 } = useQuery({
     queryKey: ["statsActiveItems"],
@@ -62,14 +64,14 @@ export default function TrustSection() {
   }, [genuineRatings]);
 
   const stats = [
-    { icon: Package, color: "bg-orange-100 text-orange-600", value: activeItemCount, label: "Active Items" },
-    { icon: Users, color: "bg-blue-100 text-blue-600", value: members.length, label: "Community Members" },
-    { icon: CheckCircle2, color: "bg-green-100 text-green-600", value: completedExchanges.length, label: "Completed Trades" },
+    { icon: Package, color: "bg-orange-100 text-orange-600", value: activeItemCount, label: t("home.stat_active_items") },
+    { icon: Users, color: "bg-blue-100 text-blue-600", value: members.length, label: t("home.stat_members") },
+    { icon: CheckCircle2, color: "bg-green-100 text-green-600", value: completedExchanges.length, label: t("home.stat_completed") },
     {
       icon: TrendingUp,
       color: "bg-purple-100 text-purple-600",
-      value: avgRating ?? "Not yet rated",
-      label: "Average Rating",
+      value: avgRating ?? t("home.not_yet_rated"),
+      label: t("home.stat_rating"),
     },
   ];
 
@@ -78,11 +80,10 @@ export default function TrustSection() {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-            Built on Real Exchanges
+            {t("home.trust_title")}
           </h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            These numbers come straight from the marketplace — only real
-            listings, members, and finished exchanges are counted.
+            {t("home.trust_sub")}
           </p>
         </div>
 
@@ -98,15 +99,14 @@ export default function TrustSection() {
           ))}
         </div>
 
-        <h3 className="text-2xl font-bold text-gray-900 mb-2 text-center">What Our Community Says</h3>
-        <p className="text-gray-600 text-center mb-8">Reviews from completed exchanges</p>
+        <h3 className="text-2xl font-bold text-gray-900 mb-2 text-center">{t("home.community_says")}</h3>
+        <p className="text-gray-600 text-center mb-8">{t("home.reviews_from")}</p>
 
         {genuineRatings.length === 0 ? (
           <div className="text-center py-10 bg-white rounded-2xl border border-orange-100 max-w-xl mx-auto">
             <Star className="w-12 h-12 mx-auto mb-3 text-orange-200" />
             <p className="text-gray-600 text-sm">
-              Reviews appear here as members complete their first exchanges.
-              Every finished exchange builds a member's reputation.
+              {t("home.reviews_empty")}
             </p>
           </div>
         ) : (
@@ -126,7 +126,7 @@ export default function TrustSection() {
                       ))}
                     </div>
                     <Badge className="bg-green-100 text-green-700 border-0">
-                      Completed exchange
+                      {t("home.completed_exchange")}
                     </Badge>
                   </div>
 
@@ -135,7 +135,7 @@ export default function TrustSection() {
                   <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                     <div>
                       <p className="font-semibold text-gray-900 text-sm">{displayName(rating.from_user_name)}</p>
-                      <p className="text-xs text-gray-500">reviewed {displayName(rating.to_user_name)}</p>
+                      <p className="text-xs text-gray-500">{t("home.reviewed", { name: displayName(rating.to_user_name) })}</p>
                     </div>
                     <CheckCircle2 className="w-5 h-5 text-green-500" />
                   </div>

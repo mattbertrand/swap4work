@@ -10,8 +10,10 @@ import { formatDistanceToNow, parseISO } from "date-fns";
 import OwnerReputation from "@/components/browse/OwnerReputation";
 import ReturnPrefsSummary from "@/components/listing/ReturnPrefsSummary";
 import { formatPublicLocation } from "@/lib/location";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function ItemCard({ item, showDistance, userAgreements = [] }) {
+  const { t } = useLanguage();
   // Find agreement related to this item
   const relatedAgreement = userAgreements.find(a => a.item_id === item.id);
 
@@ -20,12 +22,12 @@ export default function ItemCard({ item, showDistance, userAgreements = [] }) {
     if (!relatedAgreement) return null;
 
     const statusConfig = {
-      proposed: { color: 'bg-yellow-500', icon: AlertCircle, label: 'Pending' },
-      locked: { color: 'bg-blue-500', icon: Clock, label: 'In Progress' },
-      in_progress: { color: 'bg-purple-500', icon: Clock, label: 'In Progress' },
-      completed: { color: 'bg-green-500', icon: CheckCircle2, label: 'Completed' },
-      cancelled: { color: 'bg-red-500', icon: AlertCircle, label: 'Cancelled' },
-      disputed: { color: 'bg-red-500', icon: AlertCircle, label: 'Disputed' }
+      proposed: { color: 'bg-yellow-500', icon: AlertCircle, label: t('status.pending') },
+      locked: { color: 'bg-blue-500', icon: Clock, label: t('status.in_progress') },
+      in_progress: { color: 'bg-purple-500', icon: Clock, label: t('status.in_progress') },
+      completed: { color: 'bg-green-500', icon: CheckCircle2, label: t('status.completed') },
+      cancelled: { color: 'bg-red-500', icon: AlertCircle, label: t('status.cancelled') },
+      disputed: { color: 'bg-red-500', icon: AlertCircle, label: t('status.disputed') }
     };
 
     const config = statusConfig[relatedAgreement.status];
@@ -64,7 +66,7 @@ export default function ItemCard({ item, showDistance, userAgreements = [] }) {
           {!relatedAgreement && (
             <div className="absolute top-3 left-3">
               <Badge className="bg-white/90 text-gray-900 border-0 shadow-md">
-                {item.category}
+                {t(`cat.${item.category}`)}
               </Badge>
             </div>
           )}
@@ -73,7 +75,7 @@ export default function ItemCard({ item, showDistance, userAgreements = [] }) {
           {item.condition && (
             <div className="absolute top-3 right-3">
               <Badge className="bg-green-500 text-white border-0 shadow-md">
-                {item.condition}
+                {t(`cond.${item.condition}`)}
               </Badge>
             </div>
           )}
@@ -83,7 +85,7 @@ export default function ItemCard({ item, showDistance, userAgreements = [] }) {
             <div className="absolute bottom-3 right-3">
               <Badge className="bg-orange-500 text-white border-0 shadow-md">
                 <MapPin className="w-3 h-3 mr-1" />
-                {item.distance} mi
+                {t("listing.mi_away", { mi: item.distance })}
               </Badge>
             </div>
           )}
@@ -101,12 +103,14 @@ export default function ItemCard({ item, showDistance, userAgreements = [] }) {
           {/* The exchange: what this listing provides and what the owner wants back */}
           <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-100 rounded-xl px-3 py-2.5 mb-2">
             <p className="text-[11px] uppercase tracking-wide text-gray-500 font-semibold mb-0.5">
-              {item.listing_type === "service" ? "Service offered" : "Work wanted"}
+              {item.listing_type === "service" ? t("prefs.service_offered") : t("prefs.work_wanted")}
             </p>
             <div className="flex items-center gap-2 text-orange-600 font-bold">
               <Clock className="w-4 h-4 flex-shrink-0" />
               <span className="text-sm">
-                {formatDuration(item.required_hours)}{item.listing_type === "service" ? " of service" : " of work"}
+                {item.listing_type === "service"
+                  ? t("prefs.service_hours_offered", { hours: formatDuration(item.required_hours) })
+                  : t("prefs.item_work_wanted", { hours: formatDuration(item.required_hours) })}
               </span>
             </div>
           </div>
@@ -116,7 +120,7 @@ export default function ItemCard({ item, showDistance, userAgreements = [] }) {
           <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
             <div className="flex items-center gap-1 min-w-0">
               <MapPin className="w-4 h-4 flex-shrink-0" />
-              <span className="truncate">{formatPublicLocation(item.location) || "Location not specified"}</span>
+              <span className="truncate">{formatPublicLocation(item.location) || t("listing.location_not_specified")}</span>
             </div>
             {item.created_date && (
               <div className="flex items-center gap-1 flex-shrink-0">
@@ -136,7 +140,7 @@ export default function ItemCard({ item, showDistance, userAgreements = [] }) {
               <OwnerReputation rating={item.offerer_rating} totalRatings={item.offerer_total_ratings} />
             </div>
             <span className="text-sm font-semibold text-orange-600 flex items-center gap-1 transition-all">
-              View Listing
+              {t("listing.view_listing")}
               <ArrowRight className="w-4 h-4" />
             </span>
           </div>
