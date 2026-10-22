@@ -6,6 +6,7 @@ import PasswordField from "@/components/auth/PasswordField";
 import SocialSignInButtons from "@/components/auth/SocialSignInButtons";
 import { normalizeEmail, isValidEmailFormat, maskEmail } from "@/lib/emailValidation";
 import { getAuthErrorMessage, isUnverifiedError } from "@/lib/authErrors";
+import { useLanguage } from "@/i18n/LanguageContext";
 import { AlertCircle, Loader2, Info } from "lucide-react";
 
 /**
@@ -14,6 +15,7 @@ import { AlertCircle, Loader2, Info } from "lucide-react";
  * the verification/recovery flow instead of a dead end.
  */
 export default function LogInForm({ onLoggedIn, onUnverified, onSwitchToSignUp, notice, initialEmail = "", returnPath }) {
+  const { t } = useLanguage();
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,7 +27,7 @@ export default function LogInForm({ onLoggedIn, onUnverified, onSwitchToSignUp, 
     e.preventDefault();
     const normEmail = normalizeEmail(email);
     if (!isValidEmailFormat(normEmail)) {
-      setError("Please enter a valid email address.");
+      setError(t("auth.err_invalid_email"));
       return;
     }
 
@@ -38,7 +40,7 @@ export default function LogInForm({ onLoggedIn, onUnverified, onSwitchToSignUp, 
       if (isUnverifiedError(err)) {
         onUnverified({ email: normEmail, password });
       } else {
-        setError(getAuthErrorMessage(err, "Invalid email or password. Please try again."));
+        setError(getAuthErrorMessage(err, t("auth.err_login")));
       }
     } finally {
       setLoading(false);
@@ -49,7 +51,7 @@ export default function LogInForm({ onLoggedIn, onUnverified, onSwitchToSignUp, 
     const normEmail = normalizeEmail(email);
     setResetInfo("");
     if (!isValidEmailFormat(normEmail)) {
-      setError("Enter your email address above first, then tap Forgot password again.");
+      setError(t("auth.forgot_needs_email"));
       return;
     }
 
@@ -57,9 +59,7 @@ export default function LogInForm({ onLoggedIn, onUnverified, onSwitchToSignUp, 
     setError("");
     try {
       await base44.auth.resetPasswordRequest(normEmail);
-      setResetInfo(
-        `If an account exists for ${maskEmail(normEmail)}, you'll receive an email with password reset instructions.`
-      );
+      setResetInfo(t("auth.reset_sent", { email: maskEmail(normEmail) }));
     } catch (err) {
       setError(getAuthErrorMessage(err));
     } finally {
@@ -70,8 +70,8 @@ export default function LogInForm({ onLoggedIn, onUnverified, onSwitchToSignUp, 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-5">
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
-        <p className="text-sm text-gray-500 mt-1">Log in to continue your exchanges.</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t("auth.login_title")}</h1>
+        <p className="text-sm text-gray-500 mt-1">{t("auth.login_sub")}</p>
       </div>
 
       {notice && (
@@ -81,8 +81,8 @@ export default function LogInForm({ onLoggedIn, onUnverified, onSwitchToSignUp, 
         </div>
       )}
 
-      <EmailField id="login-email" label="Email" value={email} onChange={setEmail} autoComplete="email" />
-      <PasswordField id="login-password" label="Password" value={password} onChange={setPassword} autoComplete="current-password" />
+      <EmailField id="login-email" label={t("auth.email")} value={email} onChange={setEmail} autoComplete="email" />
+      <PasswordField id="login-password" label={t("auth.password")} value={password} onChange={setPassword} autoComplete="current-password" />
 
       {error && (
         <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-sm text-red-700 flex items-start gap-2">
@@ -103,10 +103,10 @@ export default function LogInForm({ onLoggedIn, onUnverified, onSwitchToSignUp, 
       >
         {loading ? (
           <>
-            <Loader2 className="w-4 h-4 animate-spin" /> Logging in…
+            <Loader2 className="w-4 h-4 animate-spin" /> {t("auth.logging_in")}
           </>
         ) : (
-          "Log in"
+          t("auth.login_btn")
         )}
       </Button>
 
@@ -119,12 +119,12 @@ export default function LogInForm({ onLoggedIn, onUnverified, onSwitchToSignUp, 
           disabled={resetLoading}
           className="text-gray-600 hover:text-gray-800 underline underline-offset-2"
         >
-          {resetLoading ? "Sending instructions…" : "Forgot password?"}
+          {resetLoading ? t("auth.sending_instructions") : t("auth.forgot")}
         </button>
         <p className="text-gray-600">
-          New to Swap4Work?{" "}
+          {t("auth.new_here")}{" "}
           <button type="button" onClick={onSwitchToSignUp} className="font-semibold text-orange-600 hover:text-orange-700 underline underline-offset-2">
-            Create an account
+            {t("auth.create_one")}
           </button>
         </p>
       </div>

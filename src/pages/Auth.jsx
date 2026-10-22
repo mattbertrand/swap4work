@@ -3,6 +3,8 @@ import { useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { sanitizeNextPath } from "@/lib/authNavigation";
+import { useLanguage } from "@/i18n/LanguageContext";
+import LanguageSelector from "@/components/i18n/LanguageSelector";
 import SignUpForm from "@/components/auth/SignUpForm";
 import LogInForm from "@/components/auth/LogInForm";
 import VerifyEmailPanel from "@/components/auth/VerifyEmailPanel";
@@ -17,6 +19,7 @@ const LOGO_URL = "https://media.base44.com/images/public/690d293b21b2ce5e9a6db7c
  * verification step can auto-log the user in once their email is verified.
  */
 export default function Auth() {
+  const { t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const nextPath = useMemo(() => sanitizeNextPath(searchParams.get("next")), [searchParams]);
   const [mode, setMode] = useState(searchParams.get("mode") === "signup" ? "signup" : "login");
@@ -62,7 +65,7 @@ export default function Auth() {
       redirectAfterLogin();
     } catch {
       switchMode("login", {
-        notice: "Your email is verified. Please log in to continue.",
+        notice: t("auth.verified_notice"),
         prefillEmail: pending.email,
       });
     }
@@ -70,6 +73,9 @@ export default function Auth() {
 
   return (
     <div className="max-w-md mx-auto px-4 py-10 md:py-14">
+      <div className="flex items-center justify-end mb-8">
+        <LanguageSelector />
+      </div>
       <div className="text-center mb-8">
         <img src={LOGO_URL} alt="Swap4Work" className="h-12 w-auto mx-auto object-contain" />
       </div>

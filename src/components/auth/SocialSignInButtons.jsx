@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Loader2 } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const GoogleMark = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5 flex-shrink-0" aria-hidden="true">
@@ -39,10 +40,10 @@ const MicrosoftMark = () => (
 );
 
 const PROVIDERS = [
-  { id: "google", label: "Continue with Google", Mark: GoogleMark },
-  { id: "facebook", label: "Continue with Facebook", Mark: FacebookMark },
-  { id: "apple", label: "Continue with Apple", Mark: AppleMark },
-  { id: "microsoft", label: "Continue with Microsoft", Mark: MicrosoftMark },
+  { id: "google", labelKey: "Google", Mark: GoogleMark },
+  { id: "facebook", labelKey: "Facebook", Mark: FacebookMark },
+  { id: "apple", labelKey: "Apple", Mark: AppleMark },
+  { id: "microsoft", labelKey: "Microsoft", Mark: MicrosoftMark },
 ];
 
 /**
@@ -51,6 +52,7 @@ const PROVIDERS = [
  */
 export default function SocialSignInButtons({ returnPath }) {
   const [loadingProvider, setLoadingProvider] = useState(null);
+  const { t } = useLanguage();
 
   const handleClick = async (id) => {
     setLoadingProvider(id);
@@ -72,12 +74,12 @@ export default function SocialSignInButtons({ returnPath }) {
           <span className="w-full border-t border-gray-200" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white px-2 text-gray-400">or</span>
+          <span className="bg-white px-2 text-gray-400">{t("auth.or")}</span>
         </div>
       </div>
 
       <div className="space-y-2.5">
-        {PROVIDERS.map(({ id, label, Mark }) => (
+        {PROVIDERS.map(({ id, labelKey, Mark }) => (
           <button
             key={id}
             type="button"
@@ -87,11 +89,11 @@ export default function SocialSignInButtons({ returnPath }) {
           >
             {loadingProvider === id ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" /> Redirecting…
+                <Loader2 className="w-4 h-4 animate-spin" /> {t("auth.redirecting")}
               </>
             ) : (
               <>
-                <Mark /> {label}
+                <Mark /> {t("auth.continue_with", { provider: labelKey })}
               </>
             )}
           </button>

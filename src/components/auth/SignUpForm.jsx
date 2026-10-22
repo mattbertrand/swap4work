@@ -7,6 +7,7 @@ import PasswordField from "@/components/auth/PasswordField";
 import SocialSignInButtons from "@/components/auth/SocialSignInButtons";
 import { normalizeEmail, isValidEmailFormat } from "@/lib/emailValidation";
 import { getAuthErrorMessage, isDuplicateAccountError } from "@/lib/authErrors";
+import { useLanguage } from "@/i18n/LanguageContext";
 import { AlertCircle, Loader2 } from "lucide-react";
 
 /**
@@ -16,6 +17,7 @@ import { AlertCircle, Loader2 } from "lucide-react";
  * the platform rejects an email that is already registered.
  */
 export default function SignUpForm({ onRegistered, onSwitchToLogin, returnPath }) {
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [confirmEmail, setConfirmEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,15 +31,15 @@ export default function SignUpForm({ onRegistered, onSwitchToLogin, returnPath }
     setDuplicate(false);
 
     if (!isValidEmailFormat(normEmail)) {
-      setError("Please enter a valid email address.");
+      setError(t("auth.err_invalid_email"));
       return;
     }
     if (normalizeEmail(confirmEmail) !== normEmail) {
-      setError("Email addresses don't match. Please check both fields.");
+      setError(t("auth.email_mismatch"));
       return;
     }
     if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+      setError(t("auth.err_password_short"));
       return;
     }
 
@@ -49,7 +51,7 @@ export default function SignUpForm({ onRegistered, onSwitchToLogin, returnPath }
     } catch (err) {
       if (isDuplicateAccountError(err)) {
         setDuplicate(true);
-        setError("An account with this email already exists. Try logging in instead.");
+        setError(t("auth.err_duplicate"));
       } else {
         setError(getAuthErrorMessage(err));
       }
@@ -61,19 +63,19 @@ export default function SignUpForm({ onRegistered, onSwitchToLogin, returnPath }
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-5">
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900">Create your account</h1>
-        <p className="text-sm text-gray-500 mt-1">Sign up free to start trading skills for items.</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t("auth.create_account_title")}</h1>
+        <p className="text-sm text-gray-500 mt-1">{t("auth.signup_sub")}</p>
       </div>
 
-      <EmailField id="signup-email" label="Email" value={email} onChange={setEmail} autoComplete="email" />
+      <EmailField id="signup-email" label={t("auth.email")} value={email} onChange={setEmail} autoComplete="email" />
       <EmailConfirmField id="signup-confirm-email" email={email} value={confirmEmail} onChange={setConfirmEmail} />
       <PasswordField
         id="signup-password"
-        label="Password"
+        label={t("auth.password")}
         value={password}
         onChange={setPassword}
         autoComplete="new-password"
-        hint="At least 8 characters."
+        hint={t("auth.password_hint")}
       />
 
       {error && (
@@ -87,7 +89,7 @@ export default function SignUpForm({ onRegistered, onSwitchToLogin, returnPath }
                 onClick={onSwitchToLogin}
                 className="block mt-1.5 font-semibold underline underline-offset-2 text-left"
               >
-                Go to the login page
+                {t("auth.go_login")}
               </button>
             )}
           </div>
@@ -101,25 +103,24 @@ export default function SignUpForm({ onRegistered, onSwitchToLogin, returnPath }
       >
         {loading ? (
           <>
-            <Loader2 className="w-4 h-4 animate-spin" /> Creating your account…
+            <Loader2 className="w-4 h-4 animate-spin" /> {t("auth.creating")}
           </>
         ) : (
-          "Create account"
+          t("auth.create_account_btn")
         )}
       </Button>
 
       <SocialSignInButtons returnPath={returnPath} />
 
       <p className="text-sm text-center text-gray-600">
-        Already have an account?{" "}
+        {t("auth.have_account")}{" "}
         <button type="button" onClick={onSwitchToLogin} className="font-semibold text-orange-600 hover:text-orange-700 underline underline-offset-2">
-          Log in
+          {t("auth.login_btn")}
         </button>
       </p>
 
       <p className="text-xs text-center text-gray-500">
-        By signing up, you agree to our rules for fair exchanges and safe
-        interactions. You must be at least 18 years old to use this platform.
+        {t("auth.signup_terms")}
       </p>
     </form>
   );

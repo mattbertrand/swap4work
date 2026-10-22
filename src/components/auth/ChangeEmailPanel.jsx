@@ -6,6 +6,7 @@ import EmailConfirmField from "@/components/auth/EmailConfirmField";
 import PasswordField from "@/components/auth/PasswordField";
 import { normalizeEmail, isValidEmailFormat } from "@/lib/emailValidation";
 import { getAuthErrorMessage, isDuplicateAccountError } from "@/lib/authErrors";
+import { useLanguage } from "@/i18n/LanguageContext";
 import { AlertCircle, Loader2, ArrowLeft } from "lucide-react";
 
 /**
@@ -17,6 +18,7 @@ import { AlertCircle, Loader2, ArrowLeft } from "lucide-react";
  * flow when available.
  */
 export default function ChangeEmailPanel({ password, onEmailRegistered, onCancel, onSwitchToLogin }) {
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [confirmEmail, setConfirmEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -30,16 +32,16 @@ export default function ChangeEmailPanel({ password, onEmailRegistered, onCancel
     setDuplicate(false);
 
     if (!isValidEmailFormat(normEmail)) {
-      setError("Please enter a valid email address.");
+      setError(t("auth.err_invalid_email"));
       return;
     }
     if (normalizeEmail(confirmEmail) !== normEmail) {
-      setError("Email addresses don't match. Please check both fields.");
+      setError(t("auth.email_mismatch"));
       return;
     }
     const effectivePassword = password || newPassword;
     if (!effectivePassword || effectivePassword.length < 8) {
-      setError("Password must be at least 8 characters.");
+      setError(t("auth.err_password_short"));
       return;
     }
 
@@ -51,7 +53,7 @@ export default function ChangeEmailPanel({ password, onEmailRegistered, onCancel
     } catch (err) {
       if (isDuplicateAccountError(err)) {
         setDuplicate(true);
-        setError("An account with this email already exists. Try logging in with it.");
+        setError(t("auth.err_duplicate_login"));
       } else {
         setError(getAuthErrorMessage(err));
       }
@@ -63,28 +65,27 @@ export default function ChangeEmailPanel({ password, onEmailRegistered, onCancel
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-5">
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900">Change email address</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t("auth.change_title")}</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Enter the correct email address — we'll send a new verification code
-          to it, and your account will use the new address.
+          {t("auth.change_sub")}
         </p>
       </div>
 
-      <EmailField id="change-email" label="New email" value={email} onChange={setEmail} autoComplete="email" />
+      <EmailField id="change-email" label={t("auth.new_email")} value={email} onChange={setEmail} autoComplete="email" />
       <EmailConfirmField id="change-confirm-email" email={email} value={confirmEmail} onChange={setConfirmEmail} />
 
       {password ? (
         <p className="text-xs text-gray-500 rounded-xl bg-gray-50 border border-gray-200 p-3">
-          You'll keep the same password.
+          {t("auth.keep_password")}
         </p>
       ) : (
         <PasswordField
           id="change-password"
-          label="Create a password"
+          label={t("auth.create_password")}
           value={newPassword}
           onChange={setNewPassword}
           autoComplete="new-password"
-          hint="At least 8 characters."
+          hint={t("auth.password_hint")}
         />
       )}
 
@@ -99,7 +100,7 @@ export default function ChangeEmailPanel({ password, onEmailRegistered, onCancel
                 onClick={onSwitchToLogin}
                 className="block mt-1.5 font-semibold underline underline-offset-2 text-left"
               >
-                Go to the login page
+                {t("auth.go_login")}
               </button>
             )}
           </div>
@@ -113,10 +114,10 @@ export default function ChangeEmailPanel({ password, onEmailRegistered, onCancel
       >
         {loading ? (
           <>
-            <Loader2 className="w-4 h-4 animate-spin" /> Sending a new code…
+            <Loader2 className="w-4 h-4 animate-spin" /> {t("auth.sending")}
           </>
         ) : (
-          "Send a new code"
+          t("auth.send_new_code")
         )}
       </Button>
 
@@ -126,7 +127,7 @@ export default function ChangeEmailPanel({ password, onEmailRegistered, onCancel
         className="w-full text-sm text-gray-600 hover:text-gray-800 flex items-center justify-center gap-1.5"
       >
         <ArrowLeft className="w-4 h-4" />
-        Back to the verification code
+        {t("auth.back_code")}
       </button>
     </form>
   );

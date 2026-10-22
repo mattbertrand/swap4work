@@ -2,10 +2,12 @@ import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 /** Password input with a show/hide toggle. */
 export default function PasswordField({ id, label, value, onChange, autoComplete = "current-password", hint }) {
   const [visible, setVisible] = useState(false);
+  const { t } = useLanguage();
 
   return (
     <div>
@@ -23,7 +25,7 @@ export default function PasswordField({ id, label, value, onChange, autoComplete
           type="button"
           onClick={() => setVisible(!visible)}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-          aria-label={visible ? "Hide password" : "Show password"}
+          aria-label={visible ? t("auth.hide_password") : t("auth.show_password")}
         >
           {visible ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
         </button>
