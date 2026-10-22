@@ -16,6 +16,7 @@ import AuthModal from "@/components/auth/AuthModal";
 import ServicePhotosSection from "@/components/forms/ServicePhotosSection";
 import ServiceDetailsFields from "@/components/forms/ServiceDetailsFields";
 import HoursMinutesInput from "@/components/forms/HoursMinutesInput";
+import ReturnPreferencesFields from "@/components/listing/ReturnPreferencesFields";
 import { getServiceCover } from "@/lib/serviceCovers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -36,7 +37,13 @@ export default function CreateItem() {
 
   const [formData, setFormData] = useState({
     listing_type: "item",
-    accepts: "service",
+    accepts: "both",
+    desired_item_categories: [],
+    desired_item_custom: "",
+    desired_items_any: false,
+    desired_service_categories: [],
+    desired_service_custom: "",
+    desired_services_any: false,
     title: "",
     description: "",
     category: "Electronics",
@@ -248,7 +255,7 @@ export default function CreateItem() {
                 <div className="grid grid-cols-2 gap-4">
                   <button
                     type="button"
-                    onClick={() => { setListingType("item"); setFormData(p => ({...p, listing_type: "item", accepts: "service", category: "Electronics"})); }}
+                    onClick={() => { setListingType("item"); setFormData(p => ({...p, listing_type: "item", category: "Electronics"})); }}
                     className={`p-4 rounded-lg border-2 transition-all ${listingType === "item" ? "border-orange-500 bg-orange-50" : "border-gray-300 bg-white hover:border-gray-400"}`}
                   >
                     <Package className={`w-8 h-8 mx-auto mb-2 ${listingType === "item" ? "text-orange-600" : "text-gray-400"}`} />
@@ -256,7 +263,7 @@ export default function CreateItem() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setListingType("service"); setFormData(p => ({...p, listing_type: "service", accepts: "both", category: "Home Repairs"})); }}
+                    onClick={() => { setListingType("service"); setFormData(p => ({...p, listing_type: "service", category: "Home Repairs"})); }}
                     className={`p-4 rounded-lg border-2 transition-all ${listingType === "service" ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-white hover:border-gray-400"}`}
                   >
                     <Briefcase className={`w-8 h-8 mx-auto mb-2 ${listingType === "service" ? "text-blue-600" : "text-gray-400"}`} />
@@ -265,33 +272,11 @@ export default function CreateItem() {
                 </div>
               </div>
 
-              {/* What do you accept */}
-              <div>
-                <Label className="text-base font-semibold mb-3 block">
-                  What do you accept in exchange? <span className="text-red-500">*</span>
-                </Label>
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { value: "item", label: "Items Only", icon: <Package className="w-5 h-5 mx-auto mb-1" />, color: "orange" },
-                    { value: "service", label: "Services Only", icon: <Briefcase className="w-5 h-5 mx-auto mb-1" />, color: "blue" },
-                    { value: "both", label: "Both", icon: <div className="flex gap-1 justify-center mb-1"><Package className="w-4 h-4" /><Briefcase className="w-4 h-4" /></div>, color: "purple" },
-                  ].map(opt => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setFormData(p => ({...p, accepts: opt.value}))}
-                      className={`p-3 rounded-lg border-2 transition-all ${
-                        formData.accepts === opt.value
-                          ? `border-${opt.color}-500 bg-${opt.color}-50 text-${opt.color}-700`
-                          : "border-gray-300 bg-white text-gray-600 hover:border-gray-400"
-                      }`}
-                    >
-                      {opt.icon}
-                      <p className="text-sm font-semibold">{opt.label}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              {/* Return preferences: what the owner wants in exchange */}
+              <ReturnPreferencesFields
+                value={formData}
+                onChange={(prefs) => setFormData(p => ({ ...p, ...prefs }))}
+              />
 
               {/* Photos */}
               {listingType === "service" && (

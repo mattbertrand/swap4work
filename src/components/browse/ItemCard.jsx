@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import OwnerReputation from "@/components/browse/OwnerReputation";
+import ReturnPrefsSummary from "@/components/listing/ReturnPrefsSummary";
 import { formatPublicLocation } from "@/lib/location";
 
 export default function ItemCard({ item, showDistance, userAgreements = [] }) {
@@ -97,18 +98,20 @@ export default function ItemCard({ item, showDistance, userAgreements = [] }) {
             {item.description}
           </p>
 
-          {/* The exchange: what the owner is looking for */}
-          <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-100 rounded-xl px-3 py-2.5 mb-3">
+          {/* The exchange: what this listing provides and what the owner wants back */}
+          <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-100 rounded-xl px-3 py-2.5 mb-2">
             <p className="text-[11px] uppercase tracking-wide text-gray-500 font-semibold mb-0.5">
-              Looking for
+              {item.listing_type === "service" ? "Service offered" : "Work wanted"}
             </p>
             <div className="flex items-center gap-2 text-orange-600 font-bold">
               <Clock className="w-4 h-4 flex-shrink-0" />
               <span className="text-sm">
-                {formatDuration(item.required_hours)} of work
+                {formatDuration(item.required_hours)}{item.listing_type === "service" ? " of service" : " of work"}
               </span>
             </div>
           </div>
+
+          <ReturnPrefsSummary item={item} className="mb-3" />
 
           <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
             <div className="flex items-center gap-1 min-w-0">

@@ -14,6 +14,8 @@ import LocationFields, { parseLocationString } from "@/components/location/Locat
 import { normalizeCityName, isValidCityName } from "@/lib/location";
 import ServicePhotosSection from "@/components/forms/ServicePhotosSection";
 import ServiceDetailsFields from "@/components/forms/ServiceDetailsFields";
+import ReturnPreferencesFields from "@/components/listing/ReturnPreferencesFields";
+import { prefsSignature } from "@/lib/exchangePrefs";
 import { getServiceCover } from "@/lib/serviceCovers";
 
 // Dedicated edit page for service listings — service-only categories and fields,
@@ -37,7 +39,14 @@ export default function EditService() {
     description: "",
     suggested_tasks: "",
     offerer_terms: "",
-    photos: []
+    photos: [],
+    accepts: "both",
+    desired_item_categories: [],
+    desired_item_custom: "",
+    desired_items_any: false,
+    desired_service_categories: [],
+    desired_service_custom: "",
+    desired_services_any: false
   });
 
   // Location state — same handling as the create form
@@ -92,7 +101,14 @@ export default function EditService() {
         description: item.description || "",
         suggested_tasks: item.suggested_tasks || "",
         offerer_terms: item.offerer_terms || "",
-        photos: item.photos || []
+        photos: item.photos || [],
+        accepts: item.accepts || "both",
+        desired_item_categories: item.desired_item_categories || [],
+        desired_item_custom: item.desired_item_custom || "",
+        desired_items_any: !!item.desired_items_any,
+        desired_service_categories: item.desired_service_categories || [],
+        desired_service_custom: item.desired_service_custom || "",
+        desired_services_any: !!item.desired_services_any
       });
 
       const parsed = parseLocationString(item.location || "");
@@ -198,6 +214,20 @@ export default function EditService() {
 
     setLoading(true);
     try {
+      // Return preferences go through the backend function: a real change
+      // pauses the listing's active negotiations for review.
+      if (item && prefsSignature(formData) !== prefsSignature(item)) {
+        await base44.functions.invoke('updateListingReturnPrefs', {
+          listing_id: itemId,
+          accepts: formData.accepts,
+          desired_item_categories: formData.desired_item_categories,
+          desired_item_custom: formData.desired_item_custom,
+          desired_items_any: formData.desired_items_any,
+          desired_service_categories: formData.desired_service_categories,
+          desired_service_custom: formData.desired_service_custom,
+          desired_services_any: formData.desired_services_any
+        });
+      }
       await base44.entities.Item.update(itemId, {
         title: formData.title,
         category: formData.category,
@@ -273,6 +303,12 @@ export default function EditService() {
 
               {/* Service fields */}
               <ServiceDetailsFields formData={formData} setFormData={setFormData} />
+
+              {/* Return preferences: what you want in exchange */}
+              <ReturnPreferencesFields
+                value={formData}
+                onChange={(prefs) => setFormData(p => ({ ...p, ...prefs }))}
+              />
 
               {/* Location */}
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">

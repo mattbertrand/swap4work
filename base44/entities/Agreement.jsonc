@@ -4,15 +4,39 @@
   "properties": {
     "item_id": {
       "type": "string",
-      "description": "Reference to the Item"
+      "description": "Reference to the target Item (the listing being provided)"
     },
     "item_title": {
       "type": "string",
-      "description": "Item title (denormalized)"
+      "description": "Target item title (denormalized)"
+    },
+    "target_listing_type": {
+      "type": "string",
+      "enum": [
+        "item",
+        "service"
+      ],
+      "description": "Type of the target listing (snapshot, so later edits don't change the record)"
+    },
+    "offered_listing_id": {
+      "type": "string",
+      "description": "Requester's own listing offered in exchange (snapshot of the negotiation's offered listing)"
+    },
+    "offered_listing_title": {
+      "type": "string",
+      "description": "Requester's offered listing title (snapshot)"
+    },
+    "offered_listing_type": {
+      "type": "string",
+      "enum": [
+        "item",
+        "service"
+      ],
+      "description": "Type of the requester's offered listing (snapshot)"
     },
     "offerer_id": {
       "type": "string",
-      "description": "User ID of the offerer"
+      "description": "User ID of the offerer (target listing owner)"
     },
     "offerer_name": {
       "type": "string",
@@ -20,7 +44,7 @@
     },
     "worker_id": {
       "type": "string",
-      "description": "User ID of the worker"
+      "description": "User ID of the worker (requester)"
     },
     "worker_name": {
       "type": "string",

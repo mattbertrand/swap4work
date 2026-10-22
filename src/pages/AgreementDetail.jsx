@@ -228,6 +228,25 @@ export default function AgreementDetail() {
                 </div>
               </div>
 
+              {(agreement.offered_listing_title || agreement.target_listing_type) && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-gray-200">
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">
+                      {displayName(agreement.offerer_name)} provides ({agreement.target_listing_type === 'service' ? 'service' : 'item'})
+                    </p>
+                    <p className="font-semibold text-gray-900">{agreement.item_title}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">
+                      {displayName(agreement.worker_name)} offers{agreement.offered_listing_type ? ` (${agreement.offered_listing_type})` : ''}
+                    </p>
+                    <p className="font-semibold text-gray-900">
+                      {agreement.offered_listing_title || `${formatDuration(agreement.agreed_hours)} of work`}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {agreement.task_description && (
                 <div>
                   <p className="text-sm text-gray-500 mb-1">Work Description</p>

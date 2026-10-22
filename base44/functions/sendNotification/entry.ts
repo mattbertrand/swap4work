@@ -12,7 +12,7 @@ const MEMBER_TYPES = [
   'new_negotiation', 'new_message', 'new_offer', 'counter_offer',
   'offer_accepted', 'offer_declined', 'agreement_created',
   'agreement_confirmed', 'work_completed', 'rating_received',
-  'negotiation_closed', 'item_available'
+  'negotiation_closed', 'item_available', 'listing_prefs_changed'
 ];
 const SYSTEM_TYPES = ['moderation_resolved', 'moderation_warning'];
 const RELATED_TYPES = ['negotiation', 'agreement', 'item', 'message'];

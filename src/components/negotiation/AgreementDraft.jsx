@@ -74,6 +74,15 @@ export default function AgreementDraft({
             </div>
           </div>
 
+          {negotiation.offered_listing_title && (
+            <div className="flex items-start justify-between text-sm pt-1">
+              <span className="text-gray-600">
+                {displayName(negotiation.bidder_name)} offers their {negotiation.offered_listing_type === 'service' ? 'service' : 'item'}:
+              </span>
+              <span className="font-semibold text-gray-900 text-right">{negotiation.offered_listing_title}</span>
+            </div>
+          )}
+
           {isEditing ? (
             <div className="space-y-3 pt-3">
               <div>

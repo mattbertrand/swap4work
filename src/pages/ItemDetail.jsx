@@ -20,6 +20,7 @@ import AuthModal from "@/components/auth/AuthModal";
 import { useAuth } from "@/lib/AuthContext";
 import StartNegotiationModal from "@/components/negotiation/StartNegotiationModal";
 import OwnerReputation from "@/components/browse/OwnerReputation";
+import ReturnPrefsSummary from "@/components/listing/ReturnPrefsSummary";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 // Calculate distance between two coordinates
@@ -98,6 +99,24 @@ export default function ItemDetail() {
       return negotiations;
     },
     enabled: !!itemId
+  });
+
+  // The requester's own active listings — items and services — used by the
+  // start-negotiation dialog to pick an eligible offer.
+  const { data: myOfferableItems = [] } = useQuery({
+    queryKey: ['myOfferableItems', user?.id],
+    queryFn: () => base44.entities.Item.filter({
+      offerer_id: user.id, status: 'active', listing_type: 'item'
+    }),
+    enabled: !!user
+  });
+
+  const { data: myOfferableServices = [] } = useQuery({
+    queryKey: ['myOfferableServices', user?.id],
+    queryFn: () => base44.entities.Item.filter({
+      offerer_id: user.id, status: 'active', listing_type: 'service'
+    }),
+    enabled: !!user
   });
 
   // Check if user is on waitlist
@@ -282,56 +301,22 @@ export default function ItemDetail() {
     setStartNegModalOpen(true);
   };
 
-  const handleConfirmOffer = async ({ hours, work_type, message }) => {
+  // Negotiation creation runs server-side so eligibility, ownership, blocks
+  // and the negotiation limits are enforced in the backend, not just the UI.
+  const handleConfirmOffer = async ({ targetListing, offeredListing, hours, work_type, message }) => {
     setStartNegLoading(true);
     try {
-      const negotiation = await base44.entities.Negotiation.create({
-        item_id: item.id,
-        item_title: item.title,
-        offerer_id: item.offerer_id,
-        offerer_name: item.offerer_name,
-        bidder_id: user.id,
-        bidder_name: user.full_name,
-        initial_offer_hours: hours,
+      const res = await base44.functions.invoke('startNegotiation', {
+        target_listing_id: targetListing.id,
+        offered_listing_id: offeredListing.id,
+        hours,
         work_type: work_type || "",
-        status: "active",
-        current_offer_by: user.id,
-        offer_history: [{
-          offered_by: user.id,
-          offered_by_name: user.full_name,
-          hours,
-          work_type: work_type || "",
-          message: message || "",
-          timestamp: new Date().toISOString()
-        }],
-        last_activity: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
+        message: message || ""
       });
-
-      const offerText = `${displayName(user.full_name)} offered ${hours} hours${work_type ? ` for ${work_type}` : ''}${message ? `\n\n${message}` : ''}`;
-
-      await base44.entities.Message.create({
-        negotiation_id: negotiation.id,
-        from_user_id: user.id,
-        from_user_name: user.full_name,
-        to_user_id: item.offerer_id,
-        text: offerText,
-        message_type: "offer",
-        proposal_hours: hours
-      });
-
-      await base44.functions.invoke('sendNotification', {
-        user_id: item.offerer_id,
-        type: 'new_negotiation',
-        title: 'New negotiation started',
-        message: `${displayName(user.full_name)} wants to trade work for your ${item.title}`,
-        related_id: negotiation.id,
-        related_type: 'negotiation',
-        link_url: createPageUrl(`Negotiation?id=${negotiation.id}`)
-      });
-
       setStartNegModalOpen(false);
-      navigate(createPageUrl(`Negotiation?id=${negotiation.id}`));
+      navigate(createPageUrl(`Negotiation?id=${res.data.negotiation.id}`));
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Failed to start negotiation');
     } finally {
       setStartNegLoading(false);
     }
@@ -551,6 +536,11 @@ export default function ItemDetail() {
                   )}
                 </div>
 
+                <ReturnPrefsSummary
+                  item={item}
+                  className="bg-gray-50 border border-gray-200 rounded-xl p-4"
+                />
+
                 <div className="space-y-3">
                   <div className="flex items-center gap-3 text-gray-700">
                     <MapPin className="w-5 h-5 text-gray-400" />
@@ -728,7 +718,9 @@ export default function ItemDetail() {
       <StartNegotiationModal
         open={startNegModalOpen}
         onClose={() => setStartNegModalOpen(false)}
-        item={item}
+        targetItem={item}
+        myItems={myOfferableItems}
+        myServices={myOfferableServices}
         onConfirm={handleConfirmOffer}
         loading={startNegLoading}
       />

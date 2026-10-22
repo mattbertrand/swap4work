@@ -21,6 +21,7 @@
         "rating_received",
         "negotiation_closed",
         "item_available",
+        "listing_prefs_changed",
         "moderation_resolved",
         "moderation_warning"
       ],

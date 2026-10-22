@@ -22,6 +22,7 @@ import confetti from "canvas-confetti";
 import OfferCard from "../components/negotiation/OfferCard";
 import CounterOfferModal from "../components/negotiation/CounterOfferModal";
 import AgreementDraft from "../components/negotiation/AgreementDraft";
+import ReturnPrefsSummary from "@/components/listing/ReturnPrefsSummary";
 
 export default function Negotiation() {
   const navigate = useNavigate();
@@ -467,7 +468,12 @@ export default function Negotiation() {
         task_description: negotiation.work_type || "",
         status: 'proposed',
         offerer_agreed: isOfferer,
-        worker_agreed: !isOfferer
+        worker_agreed: !isOfferer,
+        // Exchange snapshot — survives later listing edits
+        target_listing_type: item?.listing_type || null,
+        offered_listing_id: negotiation.offered_listing_id || null,
+        offered_listing_title: negotiation.offered_listing_title || null,
+        offered_listing_type: negotiation.offered_listing_type || null
       });
       console.log('✅ [CONFIRM] Agreement created:', agreement);
       console.log('🆔 [CONFIRM] Agreement ID:', agreement?.id);
@@ -617,11 +623,61 @@ export default function Negotiation() {
     });
   };
 
+  const handleConfirmReview = async () => {
+    if (!user || !negotiation) return;
+    const myField = isOfferer ? 'review_confirmed_offerer' : 'review_confirmed_bidder';
+    await updateNegotiationMutation.mutateAsync({
+      id: negotiationId,
+      data: { [myField]: true }
+    });
+    const bothNow = isOfferer ? negotiation.review_confirmed_bidder : negotiation.review_confirmed_offerer;
+    if (bothNow) {
+      await updateNegotiationMutation.mutateAsync({
+        id: negotiationId,
+        data: { review_status: 'none' }
+      });
+      await sendMessageMutation.mutateAsync({
+        negotiation_id: negotiationId,
+        from_user_id: user.id,
+        from_user_name: displayName(user.full_name),
+        to_user_id: otherUserId,
+        text: `✅ Both parties confirmed the updated listing preferences. Negotiation continues.`,
+        message_type: "system"
+      });
+      toast.success("Negotiation resumed");
+    } else {
+      toast.success("Confirmed. Waiting for the other party.");
+    }
+  };
+
+  const handleCloseDuringReview = async () => {
+    if (!user || !negotiation) return;
+    await updateNegotiationMutation.mutateAsync({
+      id: negotiationId,
+      data: { status: 'closed' }
+    });
+    await createNotificationMutation.mutateAsync({
+      user_id: otherUserId,
+      type: 'negotiation_closed',
+      title: 'Negotiation closed',
+      message: `${displayName(user.full_name)} closed the negotiation after the listing's return preferences changed.`,
+      related_id: negotiationId,
+      related_type: 'negotiation',
+      link_url: createPageUrl("Browse"),
+      from_user_id: user.id,
+      from_user_name: user.full_name
+    });
+    toast.info('Negotiation closed');
+  };
+
   const isOfferer = useMemo(() => user?.id === negotiation?.offerer_id, [user?.id, negotiation?.offerer_id]);
   const isBidder = useMemo(() => user?.id === negotiation?.bidder_id, [user?.id, negotiation?.bidder_id]);
   const otherParty = useMemo(() => displayName(isOfferer ? negotiation?.bidder_name : negotiation?.offerer_name), [isOfferer, negotiation?.bidder_name, negotiation?.offerer_name]);
   const currentOfferHours = useMemo(() => negotiation?.counter_offer_hours || negotiation?.initial_offer_hours, [negotiation?.counter_offer_hours, negotiation?.initial_offer_hours]);
   const isNegotiationClosed = negotiation?.status === 'closed';
+  // Paused after the listing owner changed their return preferences
+  const isPendingReview = negotiation?.review_status === 'pending' && negotiation?.status === 'active';
+  const myReviewConfirmed = isOfferer ? negotiation?.review_confirmed_offerer : negotiation?.review_confirmed_bidder;
   const otherUserId = isOfferer ? negotiation?.bidder_id : negotiation?.offerer_id;
   const isBlocked = otherUserId ? hasRelationship(otherUserId) : false;
 
@@ -744,6 +800,71 @@ export default function Negotiation() {
           </CardHeader>
 
           <CardContent className="p-6">
+            {/* The exchange: what each side provides */}
+            <div className="bg-white border border-gray-200 rounded-xl p-4 mb-4 grid sm:grid-cols-2 gap-4">
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-gray-500 font-semibold mb-1">
+                  {displayName(negotiation.offerer_name)} provides
+                </p>
+                <p className="text-sm font-semibold text-gray-900 truncate">{item.title}</p>
+                <div className="mt-1 flex items-center gap-2">
+                  <Badge className={item.listing_type === 'service' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}>
+                    {item.listing_type === 'service' ? 'Service' : 'Item'}
+                  </Badge>
+                  {item.listing_type === 'service' && (
+                    <span className="text-xs text-gray-500">Up to {formatDuration(item.required_hours)}</span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-gray-500 font-semibold mb-1">
+                  {displayName(negotiation.bidder_name)} offers
+                </p>
+                {negotiation.offered_listing_title ? (
+                  <>
+                    <p className="text-sm font-semibold text-gray-900 truncate">{negotiation.offered_listing_title}</p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <Badge className={negotiation.offered_listing_type === 'service' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}>
+                        {negotiation.offered_listing_type === 'service' ? 'Service' : 'Item'}
+                      </Badge>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-600">
+                    {formatDuration(currentOfferHours)} of work{negotiation.work_type ? ` — ${negotiation.work_type}` : ''}
+                  </p>
+                )}
+              </div>
+              <div className="sm:col-span-2 border-t border-gray-100 pt-2">
+                <ReturnPrefsSummary item={item} />
+              </div>
+            </div>
+
+            {/* Paused for review after a preference change */}
+            {isPendingReview && (
+              <Alert className="mb-4 bg-amber-50 border-amber-200">
+                <AlertTriangle className="w-4 h-4 text-amber-600" />
+                <AlertDescription className="text-amber-900">
+                  <p className="font-semibold mb-1">Paused for review — return preferences changed</p>
+                  <p className="text-sm mb-1">
+                    The listing owner updated what they want in return{negotiation.review_note ? `: ${negotiation.review_note}` : ''}.
+                  </p>
+                  {myReviewConfirmed ? (
+                    <p className="text-sm font-medium">You've confirmed. Waiting for {otherParty} to respond.</p>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row gap-2 mt-2">
+                      <Button size="sm" className="bg-amber-600 hover:bg-amber-700" onClick={handleConfirmReview}>
+                        Continue under updated preferences
+                      </Button>
+                      <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={handleCloseDuringReview}>
+                        Close negotiation
+                      </Button>
+                    </div>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Blocked User Alert */}
             {isBlocked && (
               <Alert className="mb-4 bg-gray-100 border-gray-300">
@@ -871,7 +992,7 @@ export default function Negotiation() {
                             setShowCounterModal(true);
                           }}
                           onDecline={handleDeclineOffer}
-                          canRespond={!isOwnMessage && negotiation.status === 'active' && !isNegotiationClosed}
+                          canRespond={!isOwnMessage && negotiation.status === 'active' && !isNegotiationClosed && !isPendingReview}
                         />
                       );
                     } else {
@@ -923,7 +1044,7 @@ export default function Negotiation() {
                   }}
                   className="flex-1"
                 />
-                {negotiation.status === 'active' && (
+                {negotiation.status === 'active' && !isPendingReview && (
                   <Button
                     onClick={() => {
                       setShowCounterModal(true);

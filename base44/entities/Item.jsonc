@@ -18,8 +18,40 @@
         "service",
         "both"
       ],
-      "default": "item",
-      "description": "What the offerer accepts in exchange (items, services, or both)"
+      "default": "both",
+      "description": "What the owner wants in return: items, services, or either. Legacy listings without a value are treated as 'both'."
+    },
+    "desired_item_categories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Item categories the owner would prefer to receive (only when accepts includes items)"
+    },
+    "desired_item_custom": {
+      "type": "string",
+      "description": "Free-text description of a desired item not covered by the standard categories"
+    },
+    "desired_items_any": {
+      "type": "boolean",
+      "default": false,
+      "description": "True when the owner is open to any item in return (mutually exclusive with specific item preferences)"
+    },
+    "desired_service_categories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Service categories the owner would prefer to receive (only when accepts includes services)"
+    },
+    "desired_service_custom": {
+      "type": "string",
+      "description": "Free-text description of a desired service not covered by the standard categories"
+    },
+    "desired_services_any": {
+      "type": "boolean",
+      "default": false,
+      "description": "True when the owner is open to any service in return (mutually exclusive with specific service preferences)"
     },
     "title": {
       "type": "string",
@@ -83,6 +115,10 @@
     "offerer_name": {
       "type": "string",
       "description": "Name of the offerer (denormalized)"
+    },
+    "offerer_photo_url": {
+      "type": "string",
+      "description": "Owner photo URL (denormalized)"
     },
     "offerer_rating": {
       "type": "number",

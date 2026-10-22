@@ -4,27 +4,27 @@
   "properties": {
     "item_id": {
       "type": "string",
-      "description": "Reference to Item"
+      "description": "Reference to the target Item (the listing being requested)"
     },
     "item_title": {
       "type": "string",
-      "description": "Item title (denormalized)"
+      "description": "Target item title (denormalized)"
     },
     "offerer_id": {
       "type": "string",
-      "description": "Item owner user ID"
+      "description": "Target listing owner user ID"
     },
     "offerer_name": {
       "type": "string",
-      "description": "Item owner name"
+      "description": "Target listing owner name"
     },
     "bidder_id": {
       "type": "string",
-      "description": "Person interested in the item"
+      "description": "Requester user ID (person offering their listing in exchange)"
     },
     "bidder_name": {
       "type": "string",
-      "description": "Bidder name"
+      "description": "Requester name"
     },
     "initial_offer_hours": {
       "type": "number",
@@ -41,6 +41,53 @@
     "work_type": {
       "type": "string",
       "description": "Type of work being offered"
+    },
+    "offered_listing_id": {
+      "type": "string",
+      "description": "Requester's own listing offered in exchange (an Item record of either listing type)"
+    },
+    "offered_listing_title": {
+      "type": "string",
+      "description": "Requester's offered listing title (denormalized)"
+    },
+    "offered_listing_type": {
+      "type": "string",
+      "enum": [
+        "item",
+        "service"
+      ],
+      "description": "Type of the requester's offered listing (snapshot at negotiation start)"
+    },
+    "target_listing_type": {
+      "type": "string",
+      "enum": [
+        "item",
+        "service"
+      ],
+      "description": "Type of the target listing (snapshot at negotiation start)"
+    },
+    "review_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "pending"
+      ],
+      "default": "none",
+      "description": "'pending' when the listing owner changed return preferences and this active negotiation is paused for review"
+    },
+    "review_confirmed_offerer": {
+      "type": "boolean",
+      "default": false,
+      "description": "Listing owner confirmed continuing after a preference change"
+    },
+    "review_confirmed_bidder": {
+      "type": "boolean",
+      "default": false,
+      "description": "Requester confirmed continuing after a preference change"
+    },
+    "review_note": {
+      "type": "string",
+      "description": "Summary of the owner's updated return preferences when paused for review"
     },
     "location": {
       "type": "string",

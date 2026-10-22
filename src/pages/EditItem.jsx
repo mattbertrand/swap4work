@@ -14,6 +14,8 @@ import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import UnsavedChangesDialog from "@/components/forms/UnsavedChangesDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import HoursMinutesInput from "@/components/forms/HoursMinutesInput";
+import ReturnPreferencesFields from "@/components/listing/ReturnPreferencesFields";
+import { prefsSignature } from "@/lib/exchangePrefs";
 
 export default function EditItem() {
   const navigate = useNavigate();
@@ -39,7 +41,14 @@ export default function EditItem() {
     suggested_tasks: "",
     offerer_terms: "",
     estimated_value: "",
-    photos: []
+    photos: [],
+    accepts: "both",
+    desired_item_categories: [],
+    desired_item_custom: "",
+    desired_items_any: false,
+    desired_service_categories: [],
+    desired_service_custom: "",
+    desired_services_any: false
   });
 
   const { data: item, isLoading: itemLoading } = useQuery({
@@ -91,7 +100,14 @@ export default function EditItem() {
         suggested_tasks: item.suggested_tasks || "",
         offerer_terms: item.offerer_terms || "",
         estimated_value: item.estimated_value?.toString() || "",
-        photos: item.photos || []
+        photos: item.photos || [],
+        accepts: item.accepts || "both",
+        desired_item_categories: item.desired_item_categories || [],
+        desired_item_custom: item.desired_item_custom || "",
+        desired_items_any: !!item.desired_items_any,
+        desired_service_categories: item.desired_service_categories || [],
+        desired_service_custom: item.desired_service_custom || "",
+        desired_services_any: !!item.desired_services_any
       });
     }
   }, [item, user, navigate]);
@@ -255,6 +271,20 @@ export default function EditItem() {
 
     setLoading(true);
     try {
+      // Return preferences go through the backend function: a real change
+      // pauses the listing's active negotiations for review.
+      if (item && prefsSignature(formData) !== prefsSignature(item)) {
+        await base44.functions.invoke('updateListingReturnPrefs', {
+          listing_id: itemId,
+          accepts: formData.accepts,
+          desired_item_categories: formData.desired_item_categories,
+          desired_item_custom: formData.desired_item_custom,
+          desired_items_any: formData.desired_items_any,
+          desired_service_categories: formData.desired_service_categories,
+          desired_service_custom: formData.desired_service_custom,
+          desired_services_any: formData.desired_services_any
+        });
+      }
       await updateItemMutation.mutateAsync({
         ...formData,
         required_hours: formData.required_hours,
@@ -452,6 +482,12 @@ export default function EditItem() {
                   />
                 </div>
               </div>
+
+              {/* Return preferences: what you want in exchange */}
+              <ReturnPreferencesFields
+                value={formData}
+                onChange={(prefs) => setFormData(p => ({ ...p, ...prefs }))}
+              />
 
               <div>
                 <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>

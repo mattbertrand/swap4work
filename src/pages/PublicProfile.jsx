@@ -10,11 +10,9 @@ import { formatPublicLocation } from "@/lib/location";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Star, MapPin, Clock, Package, Briefcase, MessageSquare, Filter, MoreVertical, Flag, Ban } from "lucide-react";
+import StartNegotiationModal from "@/components/negotiation/StartNegotiationModal";
 import ReportModal from "@/components/moderation/ReportModal";
 import BlockUserDialog from "@/components/moderation/BlockUserDialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -207,8 +205,6 @@ export default function PublicProfile() {
   });
 
   const [serviceModalOpen, setServiceModalOpen] = useState(false);
-  const [selectedListingId, setSelectedListingId] = useState("");
-  const [serviceNote, setServiceNote] = useState("");
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [reviewSort, setReviewSort] = useState("newest");
   const [reviewFilter, setReviewFilter] = useState("all");
@@ -232,69 +228,32 @@ export default function PublicProfile() {
     return (ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length).toFixed(1);
   }, [ratings]);
 
-  // Whatever the requester selected to offer — an item or one of their services
-  const selectedListing = React.useMemo(
-    () => [...myItems, ...myServices].find(l => l.id === selectedListingId),
-    [myItems, myServices, selectedListingId]
+  // The member's active service listings — the requester picks which one to request
+  const theirServiceListings = React.useMemo(
+    () => userItems.filter(i => i.listing_type === 'service'),
+    [userItems]
   );
 
-  const createNegotiationMutation = useMutation({
-    mutationFn: async () => {
-      const offered = selectedListing;
-      if (!offered) throw new Error("Listing not found");
-      const offeredKind = offered.listing_type === 'service' ? 'service' : 'item';
-
-      const negotiation = await base44.entities.Negotiation.create({
-        item_id: offered.id,
-        item_title: offered.title,
-        offerer_id: currentUser.id,
-        offerer_name: currentUser.full_name,
-        bidder_id: userId, // The worker is the bidder (providing service)
-        bidder_name: userProfile.full_name,
-        initial_offer_hours: offered.required_hours, // Default to the offered listing's hours
-        status: "active",
-        current_offer_by: currentUser.id,
-        offer_history: [{
-          offered_by: currentUser.id,
-          offered_by_name: currentUser.full_name,
-          hours: offered.required_hours,
-          work_type: offeredKind === 'service' ? "Service Request (service offered)" : "Service Request",
-          message: `Offering my ${offeredKind}: ${offered.title}`,
-          timestamp: new Date().toISOString()
-        }],
-        last_activity: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
+  // Negotiation creation runs server-side (startNegotiation) so eligibility,
+  // ownership and limits are enforced in the backend.
+  const startNegotiationMutation = useMutation({
+    mutationFn: async ({ targetListing, offeredListing, hours, work_type, message }) => {
+      const res = await base44.functions.invoke('startNegotiation', {
+        target_listing_id: targetListing.id,
+        offered_listing_id: offeredListing.id,
+        hours,
+        work_type: work_type || "",
+        message: message || ""
       });
-
-      await base44.entities.Message.create({
-        negotiation_id: negotiation.id,
-        from_user_id: currentUser.id,
-        from_user_name: currentUser.full_name,
-        to_user_id: userId,
-        text: `I'd like to request your service in exchange for my ${offeredKind} "${offered.title}".\n\nNote: ${serviceNote}`,
-        message_type: "offer",
-        proposal_hours: offered.required_hours
-      });
-
-      await base44.functions.invoke('sendNotification', {
-        user_id: userId,
-        type: 'new_negotiation',
-        title: 'New service request',
-        message: `${displayName(currentUser.full_name)} requested your service in exchange for their ${offeredKind} ${offered.title}`,
-        related_id: negotiation.id,
-        related_type: 'negotiation',
-        link_url: createPageUrl(`Negotiation?id=${negotiation.id}`)
-      });
-
-      return negotiation;
+      return res.data.negotiation;
     },
     onSuccess: (negotiation) => {
-      toast.success("Service request sent!");
+      toast.success("Request sent!");
       setServiceModalOpen(false);
       navigate(createPageUrl(`Negotiation?id=${negotiation.id}`));
     },
-    onError: () => {
-      toast.error("Failed to send request");
+    onError: (error) => {
+      toast.error(error.response?.data?.error || "Failed to send request");
     }
   });
 
@@ -309,8 +268,8 @@ export default function PublicProfile() {
       navigate(createPageUrl(`CompleteProfile?returnUrl=${encodeURIComponent(currentUrl)}`));
       return;
     }
-    if (myItems.length === 0 && myServices.length === 0) {
-      toast.error("You need to list an item or a service to offer in exchange first.");
+    if (theirServiceListings.length === 0) {
+      toast.error("This member has no active service listings to request yet.");
       return;
     }
     setServiceModalOpen(true);
@@ -625,75 +584,15 @@ export default function PublicProfile() {
         blockedUserName={userProfile.full_name}
       />
 
-      <Dialog open={serviceModalOpen} onOpenChange={setServiceModalOpen}>
-        <DialogContent className="grid-cols-[minmax(0,1fr)]">
-          <DialogHeader>
-            <DialogTitle>Request Service from {displayName(userProfile.full_name)}</DialogTitle>
-            <DialogDescription>
-              Select one of your items or services to offer in exchange for their service.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div>
-              <Label>What you're offering</Label>
-              <Select value={selectedListingId} onValueChange={setSelectedListingId}>
-                <SelectTrigger className="w-full [&>span]:min-w-0">
-                  <SelectValue placeholder="Select a listing..." />
-                </SelectTrigger>
-                <SelectContent className="w-[var(--radix-select-trigger-width)]">
-                  {myItems.length > 0 && (
-                    <SelectGroup>
-                      <SelectLabel>My items</SelectLabel>
-                      {myItems.map(item => (
-                        <SelectItem key={item.id} value={item.id}>
-                          {item.title} ({formatDuration(item.required_hours)} wanted)
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  )}
-                  {myServices.length > 0 && (
-                    <SelectGroup>
-                      <SelectLabel>My services</SelectLabel>
-                      {myServices.map(service => (
-                        <SelectItem key={service.id} value={service.id}>
-                          {service.title} ({formatDuration(service.required_hours)} of service)
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  )}
-                </SelectContent>
-              </Select>
-              {myItems.length === 0 && myServices.length === 0 && (
-                <p className="text-xs text-red-500 mt-1">
-                  You have no active items or services. <Link to={createPageUrl("CreateItem")} className="underline">Create one first.</Link>
-                </p>
-              )}
-            </div>
-
-            <div>
-              <Label>Message / Details</Label>
-              <Textarea 
-                placeholder="Describe what you need help with..."
-                value={serviceNote}
-                onChange={(e) => setServiceNote(e.target.value)}
-                className="h-24"
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setServiceModalOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={() => createNegotiationMutation.mutate()}
-              disabled={!selectedListing || !serviceNote || createNegotiationMutation.isPending}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {createNegotiationMutation.isPending ? "Sending..." : "Send Request"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <StartNegotiationModal
+        open={serviceModalOpen}
+        onClose={() => setServiceModalOpen(false)}
+        targetOptions={theirServiceListings}
+        myItems={myItems}
+        myServices={myServices}
+        onConfirm={(payload) => startNegotiationMutation.mutate(payload)}
+        loading={startNegotiationMutation.isPending}
+      />
     </div>
   );
 }
