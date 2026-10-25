@@ -152,16 +152,24 @@ export default function NearbyWorkers() {
                       </div>
                     </div>
 
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">{worker.bio || t("home.no_bio")}</p>
-
-                    <div className="mb-4">
-                      <div className="flex flex-wrap gap-1">
-                        {parseSkills(worker.skills).slice(0, 3).map((skill, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
-                            {skill}
-                          </Badge>
-                        ))}
-                      </div>
+                    <div className="flex flex-wrap gap-1 mb-4">
+                      {(() => {
+                        const skills = parseSkills(worker.skills);
+                        return (
+                          <>
+                            {skills.slice(0, 3).map((skill, idx) => (
+                              <Badge key={idx} variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                {skill}
+                              </Badge>
+                            ))}
+                            {skills.length > 3 && (
+                              <Badge variant="outline" className="text-xs text-gray-500">
+                                {t("people.more_skills", { n: skills.length - 3 })}
+                              </Badge>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
 
                     <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-200">
