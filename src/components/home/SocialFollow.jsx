@@ -16,7 +16,11 @@ export default function SocialFollow() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <Button size="lg" className="bg-[#1877F2] hover:bg-[#1877F2]/90 text-white px-8 py-6 h-auto w-full sm:w-auto">
+            <Button 
+              size="lg"
+              variant="outline" 
+              className="bg-[#1877F2] hover:bg-[#1877F2]/90 text-white px-8 py-6 h-auto w-full sm:w-auto"
+            >
               <Facebook className="w-5 h-5 mr-2" />
               {t("home.follow_facebook")}
             </Button>
