@@ -160,7 +160,7 @@ export default function NearbyWorkers() {
                         return (
                           <>
                             {skills.slice(0, 3).map((skill, idx) => (
-                              <Badge key={idx} variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                              <Badge key={idx} variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
                                 {skill}
                               </Badge>
                             ))}
