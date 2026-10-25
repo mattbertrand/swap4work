@@ -152,6 +152,8 @@ export default function NearbyWorkers() {
                       </div>
                     </div>
 
+                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">{worker.bio || t("home.no_bio")}</p>
+                    
                     <div className="flex flex-wrap gap-1 mb-4">
                       {(() => {
                         const skills = parseSkills(worker.skills);
