@@ -37,7 +37,11 @@ export default function HomeCta() {
           className="flex flex-col sm:flex-row gap-4 justify-center"
         >
           <Link to={createPageUrl("Browse")}>
-            <Button size="lg" className="bg-white text-orange-600 hover:bg-orange-50 text-lg px-8 py-6 h-auto w-full sm:w-auto">
+            <Button 
+              size="lg" 
+              variant="outline"
+              className="bg-white text-orange-600 hover:bg-orange-50 text-lg px-8 py-6 h-auto w-full sm:w-auto"
+            >
               <Package className="w-5 h-5 mr-2" />
               {t("nav.browse_items")}
             </Button>
