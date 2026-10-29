@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Clock, MapPin, Star, CheckCircle2, Users } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
+import LocationCheckedBadge from "@/components/location/LocationCheckedBadge";
 
 // Calculate distance between two coordinates using Haversine formula
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -142,6 +143,9 @@ export default function NearbyWorkers() {
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="font-bold text-lg text-gray-900 truncate">{displayName(worker.full_name)}</h3>
                         </div>
+                      <div className="flex justify-center mb-4 -mt-2">
+                        <LocationCheckedBadge userId={resolvedUserId} location={userProfile.location} />
+                      </div>                        
                         {worker.rating > 0 && (
                           <div className="flex items-center gap-1">
                             <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
