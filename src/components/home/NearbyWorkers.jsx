@@ -144,7 +144,7 @@ export default function NearbyWorkers() {
                           <h3 className="font-bold text-lg text-gray-900 truncate">{displayName(worker.full_name)}</h3>
                         </div>
                       <div className="flex justify-center mb-4 -mt-2">
-                        <LocationCheckedBadge userID={worker.id} location={worker.location} />
+                        <LocationCheckedBadge userID={worker.user_id} location={worker.location} />
                       </div>                      
                         {worker.rating > 0 && (
                           <div className="flex items-center gap-1">
