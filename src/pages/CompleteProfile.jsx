@@ -427,7 +427,7 @@ export default function CompleteProfile() {
                     {Object.entries(SKILL_CATEGORIES).map(([category, skills]) => (
                       <AccordionItem key={category} value={category}>
                         <AccordionTrigger className="text-sm font-semibold hover:no-underline py-2">
-                          {category}
+                          {skillLabel(t, category)}
                         </AccordionTrigger>
                         <AccordionContent>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-2">

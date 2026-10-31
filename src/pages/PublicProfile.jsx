@@ -6,6 +6,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { formatDuration } from "@/lib/duration";
 import { createPageUrl } from "@/utils";
 import { parseSkills } from "@/lib/skills";
+import { skillLabel } from '@/i18n/skillLabels';
+import { formatDate } from '@/i18n/formatters';
 import { formatPublicLocation } from "@/lib/location";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,7 +30,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function PublicProfile() {
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const urlParams = new URLSearchParams(window.location.search);
   const userId = urlParams.get('userid') || urlParams.get('userId');
   const workerId = urlParams.get('workerid') || urlParams.get('workerId');
@@ -455,7 +457,7 @@ export default function PublicProfile() {
                       parseSkills(workerEntity?.skills || userProfile.skills)
                         .map((skill, i) => (
                           <Badge key={i} variant="secondary" className="px-3 py-1 bg-gray-100 text-gray-700">
-                            {skill}
+                            {skillLabel(t, skill)}
                           </Badge>
                         ))
                     ) : (
@@ -546,7 +548,7 @@ export default function PublicProfile() {
                             </div>
                           </div>
                           <span className="text-xs text-gray-500">
-                            {format(new Date(rating.created_date), 'MMM d, yyyy')}
+                            {formatDate(rating.created_date, locale)}
                           </span>
                         </div>
                         {rating.review && <p className="text-gray-600 text-sm">{rating.review}</p>}

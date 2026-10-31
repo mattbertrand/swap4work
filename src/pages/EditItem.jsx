@@ -16,8 +16,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import HoursMinutesInput from "@/components/forms/HoursMinutesInput";
 import ReturnPreferencesFields from "@/components/listing/ReturnPreferencesFields";
 import { prefsSignature } from "@/lib/exchangePrefs";
+import { useLanguage } from '@/i18n/LanguageContext';
 
 export default function EditItem() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
@@ -114,7 +116,7 @@ export default function EditItem() {
 
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser");
+      alert(t('location.unsupported'));
       return;
     }
 
@@ -143,13 +145,13 @@ export default function EditItem() {
             latitude,
             longitude
           }));
-          alert("Could not determine address from coordinates, but location data is saved.");
+          alert(t('edit.address_missing'));
         }
         setGettingLocation(false);
       },
       (error) => {
         console.error("Error getting location:", error);
-        alert("Unable to get your current location. Please enter it manually.");
+        alert(t('location.manual'));
         setGettingLocation(false);
       }
     );
@@ -217,7 +219,7 @@ export default function EditItem() {
       }));
     } catch (error) {
       console.error("Error uploading files:", error);
-      alert("Failed to upload photos. Please try again.");
+      alert(t('create.err_upload'));
     }
     setUploading(false);
   };
@@ -257,11 +259,11 @@ export default function EditItem() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.photos.length < 3) {
-      alert("Please upload at least 3 photos");
+      alert(t('create.err_photos'));
       return;
     }
     if (!formData.required_hours) {
-      alert("Please enter a valid work time (at least 5 minutes, e.g. 00:05).");
+      alert(t('create.err_hours'));
       return;
     }
 
@@ -292,7 +294,7 @@ export default function EditItem() {
       });
     } catch (error) {
       console.error("Error updating item:", error);
-      alert("Failed to update item. Please try again.");
+      alert(t('edit.error'));
     }
     setLoading(false);
   };
@@ -309,9 +311,9 @@ export default function EditItem() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Item not found</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('item.not_found')}</h2>
           <Button onClick={() => navigate(createPageUrl("MyListings"))}>
-            Back to My Listings
+            {t('edit.back')}
           </Button>
         </div>
       </div>
@@ -327,13 +329,13 @@ export default function EditItem() {
           className="mb-6 hover:bg-orange-100"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to My Listings
+          {t('edit.back')}
         </Button>
 
         <Card className="border-orange-100 shadow-xl">
           <CardHeader className="border-b border-orange-100">
-            <CardTitle className="text-2xl font-bold">Edit Item Listing</CardTitle>
-            <p className="text-gray-500">Update the details about your item</p>
+            <CardTitle className="text-2xl font-bold">{t('edit.item')}</CardTitle>
+            <p className="text-gray-500">{t('edit.item_sub')}</p>
           </CardHeader>
 
           <CardContent className="p-6">
@@ -341,15 +343,16 @@ export default function EditItem() {
               {/* Photos Upload */}
               <div>
                 <Label className="text-base font-semibold mb-3 block">
-                  Item Photos <span className="text-red-500">*</span> (minimum 3)
+                  {t('create.item_photos')} <span className="text-red-500">*</span> {t('create.min_photos')}
                 </Label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {formData.photos.map((photo, index) => (
                     <div key={index} className="relative aspect-square rounded-xl overflow-hidden border-2 border-orange-200">
-                      <img src={photo} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
+                      <img src={photo} alt={t('common.photo', { n: index + 1 })} className="w-full h-full object-cover" />
                       <button
                         type="button"
                         onClick={() => removePhoto(index)}
+                        aria-label={t('common.remove_photo', { n: index + 1 })}
                         className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
                       >
                         <X className="w-4 h-4" />
@@ -372,7 +375,7 @@ export default function EditItem() {
                       ) : (
                         <>
                           <Upload className="w-8 h-8 text-orange-400 mb-2" />
-                          <span className="text-sm text-gray-600">Upload</span>
+                          <span className="text-sm text-gray-600">{t('create.upload')}</span>
                         </>
                       )}
                     </label>
@@ -383,53 +386,47 @@ export default function EditItem() {
               {/* Basic Info */}
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="title">Item Title <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="title">{t('create.item_title')} <span className="text-red-500">*</span></Label>
                   <Input
                     id="title"
                     value={formData.title}
                     onChange={(e) => setFormData({...formData, title: e.target.value})}
-                    placeholder="e.g., MacBook Pro 2020"
+                    placeholder={t('create.title_ph')}
                     required
                     className="mt-2"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="category">Category <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="category">{t('create.category')} <span className="text-red-500">*</span></Label>
                   <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
                     <SelectTrigger className="mt-2">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Electronics">Electronics</SelectItem>
-                      <SelectItem value="Home Goods">Home Goods</SelectItem>
-                      <SelectItem value="Furniture">Furniture</SelectItem>
-                      <SelectItem value="Appliances">Appliances</SelectItem>
-                      <SelectItem value="Tools">Tools</SelectItem>
-                      <SelectItem value="Sports Equipment">Sports Equipment</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
+                      {["Electronics","Home Goods","Furniture","Appliances","Tools","Sports Equipment","Other"].map(value => (
+                        <SelectItem key={value} value={value}>{t(`category.${value}`)}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
-                  <Label htmlFor="condition">Condition <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="condition">{t('create.condition')} <span className="text-red-500">*</span></Label>
                   <Select value={formData.condition} onValueChange={(value) => setFormData({...formData, condition: value})}>
                     <SelectTrigger className="mt-2">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="New">New</SelectItem>
-                      <SelectItem value="Like New">Like New</SelectItem>
-                      <SelectItem value="Good">Good</SelectItem>
-                      <SelectItem value="Fair">Fair</SelectItem>
-                      <SelectItem value="Poor">Poor</SelectItem>
+                      {["New","Like New","Good","Fair","Poor"].map(value => (
+                        <SelectItem key={value} value={value}>{t(`condition.${value}`)}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
-                  <Label htmlFor="required_hours">Required Work Hours <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="required_hours">{t('create.work_hours_required')} <span className="text-red-500">*</span></Label>
                   <HoursMinutesInput
                     id="required_hours"
                     value={formData.required_hours}
@@ -438,19 +435,20 @@ export default function EditItem() {
                 </div>
 
                 <div>
-                  <Label htmlFor="location">Location <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="location">{t('create.location')} <span className="text-red-500">*</span></Label>
                   <div className="flex gap-2 mt-2">
                     <Input
                       id="location"
                       value={formData.location}
                       onChange={handleLocationChange}
-                      placeholder="City or ZIP code"
+                      placeholder={t('edit.city_ph')}
                       required
                       className="flex-1"
                     />
                     <Button
                       type="button"
                       onClick={getCurrentLocation}
+                      aria-label={t('location.locate')}
                       disabled={gettingLocation}
                       variant="outline"
                       className="whitespace-nowrap flex items-center justify-center"
@@ -463,21 +461,21 @@ export default function EditItem() {
                     </Button>
                   </div>
                   {formData.latitude && formData.longitude ? (
-                    <p className="text-xs text-green-600 mt-1 flex items-center"><MapPin className="w-3 h-3 mr-1" /> Coordinates detected</p>
+                    <p className="text-xs text-green-600 mt-1 flex items-center"><MapPin className="w-3 h-3 mr-1" /> {t('edit.coordinates')}</p>
                   ) : (
-                    formData.location && <p className="text-xs text-gray-500 mt-1">Geocoding location...</p>
+                    formData.location && <p className="text-xs text-gray-500 mt-1">{t('edit.geocoding')}</p>
                   )}
                 </div>
 
                 <div>
-                  <Label htmlFor="estimated_value">Estimated Value ($)</Label>
+                  <Label htmlFor="estimated_value">{t('create.estimated_value')}</Label>
                   <Input
                     id="estimated_value"
                     type="number"
                     min="0"
                     value={formData.estimated_value}
                     onChange={(e) => setFormData({...formData, estimated_value: e.target.value})}
-                    placeholder="e.g., 1200"
+                    placeholder={t('create.value_ph')}
                     className="mt-2"
                   />
                 </div>
@@ -490,12 +488,12 @@ export default function EditItem() {
               />
 
               <div>
-                <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
+                <Label htmlFor="description">{t('create.description')} <span className="text-red-500">*</span></Label>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  placeholder="Detailed description of the item..."
+                  placeholder={t('create.description_ph')}
                   rows={4}
                   required
                   className="mt-2"
@@ -503,24 +501,24 @@ export default function EditItem() {
               </div>
 
               <div>
-                <Label htmlFor="suggested_tasks">Suggested Tasks</Label>
+                <Label htmlFor="suggested_tasks">{t('create.suggested_tasks')}</Label>
                 <Textarea
                   id="suggested_tasks"
                   value={formData.suggested_tasks}
                   onChange={(e) => setFormData({...formData, suggested_tasks: e.target.value})}
-                  placeholder="e.g., Clean garage, organize storage, help with moving..."
+                  placeholder={t('create.suggested_tasks_ph')}
                   rows={3}
                   className="mt-2"
                 />
               </div>
 
               <div>
-                <Label htmlFor="offerer_terms">Your Terms (non-negotiable)</Label>
+                <Label htmlFor="offerer_terms">{t('create.terms')}</Label>
                 <Textarea
                   id="offerer_terms"
                   value={formData.offerer_terms}
                   onChange={(e) => setFormData({...formData, offerer_terms: e.target.value})}
-                  placeholder="e.g., Must pick up item in person, work must be completed within 2 weeks..."
+                  placeholder={t('create.terms_ph')}
                   rows={3}
                   className="mt-2"
                 />
@@ -533,7 +531,7 @@ export default function EditItem() {
                   onClick={() => { markClean(); navigate(createPageUrl("MyListings")); }}
                   className="flex-1"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
                 <Button
                   type="submit"
@@ -543,10 +541,10 @@ export default function EditItem() {
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Updating...
+                      {t('common.updating')}
                     </>
                   ) : (
-                    "Update Item"
+                    t('edit.update_item')
                   )}
                 </Button>
               </div>
