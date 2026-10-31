@@ -11,11 +11,11 @@ import { useLanguage, LANGUAGES } from "@/i18n/LanguageContext";
 // Accessible language selector: works on desktop and mobile, shows the active
 // language, no flags (names only).
 export default function LanguageSelector({ className = "" }) {
-  const { lang, setLang, t } = useLanguage();
+  const { lang, setLang, t, saveError } = useLanguage();
   const current = LANGUAGES.find((l) => l.code === lang) || LANGUAGES[0];
 
   return (
-    <DropdownMenu>
+    <div className="relative"><DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
           aria-label={t("lang.select")}
@@ -39,6 +39,6 @@ export default function LanguageSelector({ className = "" }) {
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
-    </DropdownMenu>
+    </DropdownMenu>{saveError && <p role="alert" className="absolute right-0 top-full mt-2 w-64 rounded-md border border-border bg-background p-3 text-sm text-destructive shadow">{t('lang.save_error')}</p>}</div>
   );
 }

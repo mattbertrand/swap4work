@@ -4,8 +4,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { LogIn, UserPlus, Briefcase } from "lucide-react";
 import { authSignupUrl, authLoginUrl } from "@/lib/authNavigation";
+import { useLanguage } from '@/i18n/LanguageContext';
 
 export default function AuthModal({ open, onClose, message }) {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const nextPath = window.location.pathname + window.location.search;
 
@@ -28,9 +30,9 @@ export default function AuthModal({ open, onClose, message }) {
               <Briefcase className="w-8 h-8 text-white" />
             </div>
           </div>
-          <DialogTitle className="text-center text-xl">Join Swap4Work</DialogTitle>
+          <DialogTitle className="text-center text-xl">{t('auth.join')}</DialogTitle>
           <DialogDescription className="text-center text-base">
-            {message || "Create an account or log in to continue"}
+            {message || t('listings.auth_continue')}
           </DialogDescription>
         </DialogHeader>
 
@@ -40,7 +42,7 @@ export default function AuthModal({ open, onClose, message }) {
             className="w-full h-11 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-base"
           >
             <UserPlus className="w-5 h-5 mr-2" />
-            Create Account
+            {t('auth.create_account_btn')}
           </Button>
           <Button
             onClick={handleLogin}
@@ -48,13 +50,12 @@ export default function AuthModal({ open, onClose, message }) {
             className="w-full h-11 text-base"
           >
             <LogIn className="w-5 h-5 mr-2" />
-            Log In
+            {t('nav.log_in')}
           </Button>
         </div>
 
         <p className="text-xs text-center text-gray-500 pb-2">
-          By signing up, you agree to our rules for fair exchanges and safe interactions.
-          You must be at least 18 years old to use this platform.
+          {t('auth.signup_terms')}
         </p>
       </DialogContent>
     </Dialog>

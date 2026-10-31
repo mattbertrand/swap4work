@@ -29,11 +29,20 @@
     },
     "title": {
       "type": "string",
-      "description": "Notification title"
+      "description": "Notification title, rendered in the recipient language when generated"
     },
     "message": {
       "type": "string",
-      "description": "Notification message"
+      "description": "Notification message, rendered in the recipient language when generated"
+    },
+    "i18n_key": {
+      "type": "string",
+      "description": "Application event template for viewer-language rendering; absent on legacy notifications"
+    },
+    "i18n_vars": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Original values interpolated into the event template, never translated as user content"
     },
     "related_id": {
       "type": "string",

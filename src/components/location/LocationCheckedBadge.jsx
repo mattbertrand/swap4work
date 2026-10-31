@@ -4,6 +4,7 @@ import { BadgeCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { fetchLocationCheck, checkIsCurrent } from "@/lib/locationCheck";
 import { formatPublicLocation } from "@/lib/location";
+import { useLanguage } from '@/i18n/LanguageContext';
 
 /**
  * Public "Location checked" badge. Shown only when a server-recorded check
@@ -11,6 +12,7 @@ import { formatPublicLocation } from "@/lib/location";
  * "City, ST". Never shown for merely valid/manual locations.
  */
 export default function LocationCheckedBadge({ userId, location, className = "" }) {
+  const { t } = useLanguage();
   const { data: check } = useQuery({
     queryKey: ["locationCheck", userId],
     queryFn: () => fetchLocationCheck(userId),
@@ -22,10 +24,10 @@ export default function LocationCheckedBadge({ userId, location, className = "" 
   return (
     <Badge
       className={`bg-green-100 text-green-700 hover:bg-green-100 ${className}`}
-      title="This member's device was in their stated area when they ran an optional location check. It does not prove where they live."
+      title={t('location.check_tooltip')}
     >
       <BadgeCheck className="w-3 h-3 mr-1" />
-      Location checked
+      {t('location.checked')}
     </Badge>
   );
 }

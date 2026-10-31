@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { getActiveUser } from '../../shared/moderation.ts';
-import { renderNotification } from '../../shared/i18n.ts';
+import { prepareNotification } from '../../shared/notificationLocalization.ts';
 
 // Creates a user-to-user notification. The sender identity is always derived
 // server-side from the authenticated caller, so a member can never spoof
@@ -64,20 +64,6 @@ export default async function(req) {
       return Response.json({ success: true, sent: false });
     }
 
-    // Localized send: when the caller passes an i18n key + vars, the title and
-    // message are rendered from shared templates in the recipient's saved
-    // language (default English), overriding the raw English text.
-    const recipientLang = (recipient as any)?.language === 'es' ? 'es' : 'en';
-    let finalTitle = title;
-    let finalMessage = message;
-    if (body.i18n && typeof body.i18n.key === 'string') {
-      const rendered = renderNotification(recipientLang, body.i18n.key, body.i18n.vars || {});
-      if (rendered) {
-        finalTitle = rendered.title.slice(0, 200);
-        finalMessage = rendered.message.slice(0, 1000);
-      }
-    }
-
     // Rate limits (admins exempt) to stop notification spam/flooding.
     if (!isAdmin) {
       try {
@@ -106,17 +92,16 @@ export default async function(req) {
       return Response.json({ success: true, sent: false, reason: 'blocked' });
     }
 
-    const created = await db.Notification.create({
-      user_id: toUserId,
-      type,
-      title: finalTitle,
-      message: finalMessage,
+    const record = {
+      user_id: toUserId, type, title, message,
       related_id: body.related_id ? String(body.related_id) : null,
-      related_type: relatedType,
-      link_url: linkUrl,
-      from_user_id: user.id,
-      from_user_name: user.full_name
-    });
+      related_type: relatedType, link_url: linkUrl,
+      from_user_id: user.id, from_user_name: user.full_name
+    };
+    const metadata = body.i18n?.key === type && body.i18n.vars && typeof body.i18n.vars === 'object'
+      ? { key: type, vars: Object.fromEntries(Object.entries(body.i18n.vars).slice(0, 12).filter(([, value]) => ['string', 'number'].includes(typeof value)).map(([key, value]) => [key, String(value).slice(0, 2000)])) }
+      : null;
+    const created = await db.Notification.create(await prepareNotification(db, record, metadata));
 
     return Response.json({ success: true, sent: true, id: created.id });
   } catch (err) {

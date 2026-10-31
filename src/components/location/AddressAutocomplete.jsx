@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { MapPin, Loader2, CheckCircle2 } from "lucide-react";
+import { useLanguage } from '@/i18n/LanguageContext';
 
 /**
  * AddressAutocomplete
@@ -17,9 +18,10 @@ export default function AddressAutocomplete({
   value = "",
   onChange,
   disabled = false,
-  placeholder = "Start typing your address...",
+  placeholder,
   showLocateMe = true,
 }) {
+  const { t } = useLanguage();
   const [inputValue, setInputValue] = useState(value);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -130,7 +132,7 @@ export default function AddressAutocomplete({
           <Input
             value={inputValue}
             onChange={handleInputChange}
-            placeholder={placeholder}
+            placeholder={placeholder || t('location.address_ph')}
             disabled={disabled}
             className={`pr-8 ${verified ? "border-green-400 focus:ring-green-400" : ""}`}
             onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
@@ -146,11 +148,12 @@ export default function AddressAutocomplete({
             type="button"
             variant="outline"
             onClick={handleLocateMe}
+            aria-label={t('location.locate')}
             disabled={locating}
             className="flex-shrink-0 gap-1"
           >
             {locating ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
-            <span className="hidden sm:inline">Locate Me</span>
+            <span className="hidden sm:inline">{t(locating ? 'location.locating' : 'location.locate')}</span>
           </Button>
         )}
       </div>

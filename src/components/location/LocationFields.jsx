@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MapPin, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { US_STATES, STATE_NAMES, normalizeState, isValidCityName } from "@/lib/location";
+import { useLanguage } from '@/i18n/LanguageContext';
 
 /**
  * Structured location fields: street, city, state, zip.
@@ -18,11 +19,12 @@ import { US_STATES, STATE_NAMES, normalizeState, isValidCityName } from "@/lib/l
  *   errors: { zip?: string, city?: string }
  */
 export default function LocationFields({ value = {}, onChange, disabled = false, errors = {}, required = { city: true, state: true, zip: true } }) {
+  const { t } = useLanguage();
   const { street = "", city = "", state = "", zip = "" } = value;
   const [locating, setLocating] = useState(false);
 
-  const zipError = errors.zip || (zip && !/^\d{5}(-\d{4})?$/.test(zip) ? "Enter a valid 5-digit ZIP code" : "");
-  const cityError = errors.city || (city && !isValidCityName(city) ? "Enter a valid city name" : "");
+  const zipError = errors.zip || (zip && !/^\d{5}(-\d{4})?$/.test(zip) ? t('profile.zip_invalid') : "");
+  const cityError = errors.city || (city && !isValidCityName(city) ? t('profile.err_city_invalid') : "");
   const stateError = errors.state || "";
   const reqMark = <span className="text-red-500">*</span>;
 
@@ -67,11 +69,10 @@ export default function LocationFields({ value = {}, onChange, disabled = false,
 
           if (detectedCity && detectedState) {
             toast.success(
-              `Location detected: ${detectedCity}, ${detectedState}` +
-                (street ? " — your street address was kept as entered" : "")
+              t(street ? 'location.detected_kept' : 'location.detected', { city: detectedCity, state: detectedState })
             );
           } else {
-            toast.error("We found your coordinates, but couldn't determine your city. Please check the location fields.");
+            toast.error(t('location.no_city'));
           }
         } finally {
           setLocating(false);
@@ -79,7 +80,7 @@ export default function LocationFields({ value = {}, onChange, disabled = false,
       },
       () => {
         setLocating(false);
-        toast.error("Unable to get your current location. Please enter it manually.");
+        toast.error(t('location.manual'));
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
@@ -89,12 +90,12 @@ export default function LocationFields({ value = {}, onChange, disabled = false,
     <div className="space-y-3">
       <div className="flex items-end gap-2">
         <div className="flex-1">
-          <Label htmlFor="loc-street">Street Address</Label>
+          <Label htmlFor="loc-street">{t('location.street')}</Label>
           <Input
             id="loc-street"
             value={street}
             onChange={(e) => handleChange("street", e.target.value)}
-            placeholder="123 Main St"
+            placeholder={t('location.street_ph')}
             disabled={disabled}
             className="mt-1"
           />
@@ -109,13 +110,13 @@ export default function LocationFields({ value = {}, onChange, disabled = false,
             className="h-9 shrink-0 text-orange-600 border-orange-200 hover:bg-orange-50"
           >
             {locating ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
-            <span className="ml-1">{locating ? "Locating..." : "Locate Me"}</span>
+            <span className="ml-1">{t(locating ? 'location.locating' : 'location.locate')}</span>
           </Button>
         )}
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <Label htmlFor="loc-city">City {required.city && reqMark}</Label>
+          <Label htmlFor="loc-city">{t('location.city')} {required.city && reqMark}</Label>
           <Input
             id="loc-city"
             value={city}
@@ -127,7 +128,7 @@ export default function LocationFields({ value = {}, onChange, disabled = false,
           {cityError && <p className="text-xs text-red-500 mt-1">{cityError}</p>}
         </div>
         <div>
-          <Label htmlFor="loc-zip">ZIP Code {required.zip && reqMark}</Label>
+          <Label htmlFor="loc-zip">{t('location.zip')} {required.zip && reqMark}</Label>
           <Input
             id="loc-zip"
             value={zip}
@@ -141,10 +142,10 @@ export default function LocationFields({ value = {}, onChange, disabled = false,
         </div>
       </div>
       <div>
-        <Label htmlFor="loc-state">State {required.state && reqMark}</Label>
+        <Label htmlFor="loc-state">{t('location.state')} {required.state && reqMark}</Label>
         <Select value={state} onValueChange={(val) => handleChange("state", val)} disabled={disabled}>
           <SelectTrigger id="loc-state" className="mt-1">
-            <SelectValue placeholder="Select state..." />
+            <SelectValue placeholder={t('location.choose_state')} />
           </SelectTrigger>
           <SelectContent className="max-h-64">
             {US_STATES.map(abbr => (

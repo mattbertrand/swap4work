@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { US_STATES, STATE_NAMES, normalizeCityName, isValidCityName } from "@/lib/location";
 import { verifyLocationOnline } from "@/lib/locationValidation";
+import { useLanguage } from '@/i18n/LanguageContext';
 
 export const MAX_EXCHANGE_AREAS = 5;
 
@@ -16,6 +17,7 @@ export const MAX_EXCHANGE_AREAS = 5;
  * Each is validated as a real "City, ST" (no ZIP, no street, no coordinates).
  */
 export default function ExchangeAreasField({ areas = [], onChange, disabled = false }) {
+  const { t } = useLanguage();
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [error, setError] = useState("");
@@ -25,24 +27,24 @@ export default function ExchangeAreasField({ areas = [], onChange, disabled = fa
     setError("");
     const cleanCity = normalizeCityName(city);
     if (!isValidCityName(cleanCity) || !state) {
-      setError("Enter a valid city and choose a state.");
+      setError('areas.invalid');
       return;
     }
     if (areas.length >= MAX_EXCHANGE_AREAS) {
-      setError(`You can add up to ${MAX_EXCHANGE_AREAS} areas.`);
+      setError('areas.limit');
       return;
     }
     setAdding(true);
     // ZIP is not collected for exchange areas, so only the city + state existence is checked
-    const geo = await verifyLocationOnline({ city: cleanCity, state, zip: "" }, { zipOptional: true }).catch(() => null);
+    const geo = await verifyLocationOnline({ city: cleanCity, state, zip: "" }, { zipOptional: true, t }).catch(() => null);
     setAdding(false);
     if (geo && geo.status === "invalid" && geo.field === "city") {
-      setError("We couldn't verify this city. Please check the city and state.");
+      setError('location.invalid_city');
       return;
     }
     const label = `${geo?.status === "valid" ? geo.city : cleanCity}, ${state}`;
     if (areas.some((a) => a.toLowerCase() === label.toLowerCase())) {
-      setError("That area is already on your list.");
+      setError('areas.duplicate');
       return;
     }
     onChange([...areas, label]);
@@ -52,19 +54,16 @@ export default function ExchangeAreasField({ areas = [], onChange, disabled = fa
 
   return (
     <div>
-      <Label>Exchange areas (optional)</Label>
-      <p className="text-xs text-gray-500 mt-1">
-        Other cities where you're willing to meet to exchange items or provide services. These are shown as
-        "Also exchanges in…" — they are not verified and aren't your home location.
-      </p>
+      <Label>{t('areas.title')}</Label>
+      <p className="text-xs text-gray-500 mt-1">{t('areas.help')}</p>
 
       <div className="flex flex-wrap gap-2 mt-2">
-        {areas.length === 0 && <span className="text-sm text-gray-400 italic">No extra areas</span>}
+        {areas.length === 0 && <span className="text-sm text-gray-400 italic">{t('areas.none')}</span>}
         {areas.map((area) => (
           <Badge key={area} variant="secondary" className="bg-white border-gray-200 gap-1">
             {area}
             {!disabled && (
-              <button type="button" aria-label={`Remove ${area}`} onClick={() => onChange(areas.filter((a) => a !== area))}>
+              <button type="button" aria-label={t('areas.remove', { area })} onClick={() => onChange(areas.filter((a) => a !== area))}>
                 <X className="w-3 h-3" />
               </button>
             )}
@@ -74,9 +73,9 @@ export default function ExchangeAreasField({ areas = [], onChange, disabled = fa
 
       {!disabled && areas.length < MAX_EXCHANGE_AREAS && (
         <div className="flex flex-col sm:flex-row gap-2 mt-3">
-          <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" className="sm:flex-1" />
+          <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder={t('location.city')} className="sm:flex-1" />
           <Select value={state} onValueChange={setState}>
-            <SelectTrigger className="sm:w-40"><SelectValue placeholder="State" /></SelectTrigger>
+            <SelectTrigger className="sm:w-40"><SelectValue placeholder={t('location.state')} /></SelectTrigger>
             <SelectContent className="max-h-64">
               {US_STATES.map((abbr) => (
                 <SelectItem key={abbr} value={abbr}>{abbr} — {STATE_NAMES[abbr]}</SelectItem>
@@ -85,11 +84,11 @@ export default function ExchangeAreasField({ areas = [], onChange, disabled = fa
           </Select>
           <Button type="button" variant="outline" onClick={handleAdd} disabled={adding}>
             {adding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-            <span className="ml-1">Add</span>
+            <span className="ml-1">{t('common.add')}</span>
           </Button>
         </div>
       )}
-      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+      {error && <p className="text-xs text-red-500 mt-1">{t(error, { count: MAX_EXCHANGE_AREAS })}</p>}
     </div>
   );
 }

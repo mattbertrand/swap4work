@@ -3,6 +3,8 @@
 // and any key missing from `en` (a typo) warns in development builds.
 
 import { moreEn, moreEs } from "./more";
+import { auditEn, auditEs } from "./locationAndListings";
+import { skillEn, skillEs } from "./skillLabels";
 
 export const translations = {
   en: {
@@ -1036,8 +1038,8 @@ export const translations = {
 };
 
 // Page-level dictionaries live in ./more to keep this file navigable.
-Object.assign(translations.en, moreEn);
-Object.assign(translations.es, moreEs);
+Object.assign(translations.en, moreEn, auditEn, skillEn);
+Object.assign(translations.es, moreEs, auditEs, skillEs);
 
 const warnPrefix = "[i18n] Missing translation for key:";
 

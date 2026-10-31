@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { getActiveUser, loadVerifiedAgreement } from '../../shared/moderation.ts';
+import { prepareNotification } from '../../shared/notificationLocalization.ts';
 
 // Confirms the handover for the caller. Trust decisions are kept in
 // server-side HandoverConfirmation records that only backend functions can
@@ -85,7 +86,7 @@ export default async function(req) {
     }
 
     const otherUserId = isOfferer ? agreement.worker_id : agreement.offerer_id;
-    await db.Notification.create({
+    await db.Notification.create(await prepareNotification(db, {
       user_id: otherUserId,
       type: 'agreement_confirmed',
       title: 'Agreement completed!',
@@ -95,7 +96,7 @@ export default async function(req) {
       link_url: `/agreementdetail?id=${agreementId}`,
       from_user_id: user.id,
       from_user_name: user.full_name
-    });
+    }));
 
     return Response.json({ success: true, both_confirmed: true, hours_credited: hoursToAdd });
   } catch (err) {

@@ -1,9 +1,8 @@
 import React from "react";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Package, Briefcase, Layers } from "lucide-react";
-import { ITEM_CATEGORIES, SERVICE_CATEGORIES } from "@/lib/exchangePrefs";
+import TypeBlock from "@/components/listing/ReturnPreferenceTypeBlock";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 // Listing return-preference editor — used by the create form and both edit
 // pages. One controlled value object:
@@ -13,73 +12,20 @@ import { ITEM_CATEGORIES, SERVICE_CATEGORIES } from "@/lib/exchangePrefs";
 // within its section.
 
 const TYPE_OPTIONS = [
-  { value: "item", label: "Items", hint: "I want an item in return", icon: Package },
-  { value: "service", label: "Services", hint: "I want a service in return", icon: Briefcase },
-  { value: "both", label: "Items or services", hint: "I'm open to either", icon: Layers },
+  { value: "item", label: "listing.items", hint: "return.hint_item", icon: Package },
+  { value: "service", label: "listing.services", hint: "return.hint_service", icon: Briefcase },
+  { value: "both", label: "return.both", hint: "return.hint_both", icon: Layers },
 ];
 
-function TypeBlock({ noun, anyFlag, categories, custom, onChange }) {
-  const toggleCategory = (category, checked) => {
-    const next = checked ? [...categories, category] : categories.filter((c) => c !== category);
-    onChange({ categories: next });
-  };
-
-  return (
-    <div className="border border-gray-200 rounded-xl p-4 bg-white">
-      <div className="flex items-center justify-between mb-3">
-        <Label className="text-sm font-semibold">What kind of {noun}s?</Label>
-        <label className="flex items-center gap-2 text-sm cursor-pointer">
-          <Checkbox
-            checked={anyFlag}
-            onCheckedChange={(checked) => onChange({ any: !!checked })}
-          />
-          Open to any {noun}
-        </label>
-      </div>
-
-      {!anyFlag && (
-        <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
-            {(noun === "item" ? ITEM_CATEGORIES : SERVICE_CATEGORIES).map((category) => (
-              <label
-                key={category}
-                className={`flex items-center gap-2 text-sm px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
-                  categories.includes(category)
-                    ? "border-orange-400 bg-orange-50 text-orange-700"
-                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
-                }`}
-              >
-                <Checkbox
-                  checked={categories.includes(category)}
-                  onCheckedChange={(checked) => toggleCategory(category, !!checked)}
-                />
-                {category}
-              </label>
-            ))}
-          </div>
-          <Input
-            value={custom}
-            onChange={(e) => onChange({ custom: e.target.value })}
-            placeholder={`Describe a specific ${noun} you want (optional)`}
-            className="text-sm"
-          />
-          <p className="text-xs text-gray-500 mt-1.5">
-            Preferences guide who offers what — you always decide which proposals to accept.
-          </p>
-        </>
-      )}
-    </div>
-  );
-}
-
 export default function ReturnPreferencesFields({ value, onChange }) {
+  const { t } = useLanguage();
   const update = (patch) => onChange({ ...value, ...patch });
 
   return (
     <div className="space-y-4">
       <div>
         <Label className="text-base font-semibold mb-3 block">
-          What do you want in return? <span className="text-red-500">*</span>
+          {t('return.question')} <span className="text-red-500">*</span>
         </Label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {TYPE_OPTIONS.map((opt) => {
@@ -95,8 +41,8 @@ export default function ReturnPreferencesFields({ value, onChange }) {
                 }`}
               >
                 <Icon className={`w-5 h-5 mb-2 ${selected ? "text-orange-600" : "text-gray-400"}`} />
-                <p className={`text-sm font-semibold ${selected ? "text-orange-700" : "text-gray-700"}`}>{opt.label}</p>
-                <p className="text-xs text-gray-500">{opt.hint}</p>
+                <p className={`text-sm font-semibold ${selected ? "text-orange-700" : "text-gray-700"}`}>{t(opt.label)}</p>
+                <p className="text-xs text-gray-500">{t(opt.hint)}</p>
               </button>
             );
           })}

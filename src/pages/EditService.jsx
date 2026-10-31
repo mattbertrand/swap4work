@@ -17,11 +17,13 @@ import ServiceDetailsFields from "@/components/forms/ServiceDetailsFields";
 import ReturnPreferencesFields from "@/components/listing/ReturnPreferencesFields";
 import { prefsSignature } from "@/lib/exchangePrefs";
 import { getServiceCover } from "@/lib/serviceCovers";
+import { useLanguage } from '@/i18n/LanguageContext';
 
 // Dedicated edit page for service listings — service-only categories and fields,
 // no condition, no estimated value, no minimum-photo requirement. The category
 // cover is auto-updated on save based on the selected category.
 export default function EditService() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
@@ -177,7 +179,7 @@ export default function EditService() {
         photos: [...prev.photos, ...urls].slice(0, 5)
       }));
     } catch {
-      alert("Failed to upload photos. Please try again.");
+      alert(t('create.err_upload'));
     }
     setUploading(false);
   };
@@ -193,20 +195,20 @@ export default function EditService() {
     e.preventDefault();
 
     if (!formData.required_hours) {
-      alert("Please select the time this service takes.");
+      alert(t('service.time_ph'));
       return;
     }
 
     if (!locFields.city || !locFields.state) {
-      alert("Please enter at least a city and state for your location");
+      alert(t('create.err_location'));
       return;
     }
     if (!isValidCityName(locFields.city)) {
-      alert("Please enter a valid city name for your location");
+      alert(t('create.err_city'));
       return;
     }
     if (!coords.latitude || !coords.longitude) {
-      alert("Could not verify your location coordinates. Please check your address and try again.");
+      alert(t('create.err_coords'));
       return;
     }
 
@@ -246,7 +248,7 @@ export default function EditService() {
       queryClient.invalidateQueries(['myItems']);
       navigate(createPageUrl("MyListings"));
     } catch {
-      alert("Failed to update your service. Please try again.");
+      alert(t('edit.error'));
     }
     setLoading(false);
   };
@@ -263,9 +265,9 @@ export default function EditService() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Service not found</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('edit.service_missing')}</h2>
           <Button onClick={() => navigate(createPageUrl("MyListings"))}>
-            Back to My Listings
+            {t('edit.back')}
           </Button>
         </div>
       </div>
@@ -281,13 +283,13 @@ export default function EditService() {
           className="mb-6 hover:bg-orange-100"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to My Listings
+          {t('edit.back')}
         </Button>
 
         <Card className="border-orange-100 shadow-xl">
           <CardHeader className="border-b border-orange-100">
-            <CardTitle className="text-2xl font-bold">Edit Service Listing</CardTitle>
-            <p className="text-gray-500">Update the details about your service</p>
+            <CardTitle className="text-2xl font-bold">{t('edit.service')}</CardTitle>
+            <p className="text-gray-500">{t('edit.service_sub')}</p>
           </CardHeader>
 
           <CardContent className="p-6">
@@ -313,15 +315,15 @@ export default function EditService() {
               {/* Location */}
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <Label className="text-base font-semibold mb-3 block">
-                  Location <span className="text-red-500">*</span>
-                  <span className="text-xs font-normal text-gray-500 ml-2">(Only your town &amp; state will be shown publicly)</span>
+                  {t('create.location')} <span className="text-red-500">*</span>
+                  <span className="text-xs font-normal text-gray-500 ml-2">{t('create.location_note')}</span>
                 </Label>
                 <LocationFields value={locFields} onChange={handleLocationChange} required={{ city: true, state: true, zip: false }} />
                 <div className="mt-2">
                   {coords.latitude && coords.longitude ? (
-                    <p className="text-xs text-green-600 flex items-center gap-1"><MapPin className="w-3 h-3" /> Location verified</p>
+                    <p className="text-xs text-green-600 flex items-center gap-1"><MapPin className="w-3 h-3" /> {t('create.location_verified')}</p>
                   ) : locString ? (
-                    <p className="text-xs text-amber-600">Verifying location…</p>
+                    <p className="text-xs text-amber-600">{t('create.location_verifying')}</p>
                   ) : null}
                 </div>
               </div>
@@ -333,7 +335,7 @@ export default function EditService() {
                   onClick={() => { markClean(); navigate(createPageUrl("MyListings")); }}
                   className="flex-1"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
                 <Button
                   type="submit"
@@ -343,10 +345,10 @@ export default function EditService() {
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Updating...
+                      {t('common.updating')}
                     </>
                   ) : (
-                    "Update Service"
+                    t('edit.update_service')
                   )}
                 </Button>
               </div>

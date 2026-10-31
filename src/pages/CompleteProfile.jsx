@@ -25,6 +25,8 @@ import CustomSkillInput from "@/components/profile/CustomSkillInput";
 import { isValidCityName } from "@/lib/location";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
+import { useLanguage } from '@/i18n/LanguageContext';
+import { skillLabel } from '@/i18n/skillLabels';
 
 const SKILL_CATEGORIES = {
   "Home Repairs / Maintenance": ["Handyman work","Furniture assembly","Mounting (TVs, shelves)","Minor plumbing","Minor electrical","Painting","Drywall patching","Appliance installation","Pressure washing","HVAC filter change"],
@@ -42,6 +44,7 @@ const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sun
 const TIME_SLOTS = ["Morning (6am–12pm)","Afternoon (12pm–5pm)","Evening (5pm–9pm)","Night (9pm+)"];
 
 export default function CompleteProfile() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { refreshUser } = useAuth();
   const urlParams = new URLSearchParams(window.location.search);
@@ -159,10 +162,10 @@ export default function CompleteProfile() {
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       setFormData(prev => ({ ...prev, photo_url: file_url }));
-      toast.success('Photo uploaded!');
+      toast.success(t('complete.photo_ok'));
     } catch (error) {
       console.error("Error uploading photo:", error);
-      toast.error('Failed to upload photo');
+      toast.error(t('complete.photo_error'));
     }
     setUploading(false);
   };
@@ -171,23 +174,23 @@ export default function CompleteProfile() {
     e.preventDefault();
     
     if (!formData.phone) {
-      toast.error("Please fill in your phone number");
+      toast.error(t('complete.phone_required'));
       return;
     }
     if (!isValidPhone(formData.phone)) {
-      toast.error("Please enter a valid phone number.");
+      toast.error(t('profile.err_phone'));
       return;
     }
     // --- Required location validation (City, ZIP, State; street optional) ---
     const locErrors = {};
-    if (!locationFields.city) locErrors.city = "City is required";
-    else if (!isValidCityName(locationFields.city)) locErrors.city = "Enter a valid city name";
-    if (!locationFields.state) locErrors.state = "State is required";
-    if (!locationFields.zip) locErrors.zip = "ZIP code is required";
-    else if (!/^\d{5}(-\d{4})?$/.test(locationFields.zip)) locErrors.zip = "Enter a valid 5-digit ZIP code";
+    if (!locationFields.city) locErrors.city = t('profile.err_city_required');
+    else if (!isValidCityName(locationFields.city)) locErrors.city = t('profile.err_city_invalid');
+    if (!locationFields.state) locErrors.state = t('profile.err_state_required');
+    if (!locationFields.zip) locErrors.zip = t('profile.err_zip_required');
+    else if (!/^\d{5}(-\d{4})?$/.test(locationFields.zip)) locErrors.zip = t('profile.zip_invalid');
     if (Object.keys(locErrors).length > 0) {
       setLocationErrors(locErrors);
-      toast.error("Please complete your location — city, state, and ZIP code are required.");
+      toast.error(t('profile.err_location'));
       return;
     }
     setLocationErrors({});
@@ -195,7 +198,7 @@ export default function CompleteProfile() {
     // --- Geographic verification of the manually entered location (OpenStreetMap) ---
     if (verifyingLocation) return;
     setVerifyingLocation(true);
-    const geo = await verifyLocationOnline(locationFields);
+    const geo = await verifyLocationOnline(locationFields, { t });
     setVerifyingLocation(false);
 
     let finalLocationFields = locationFields;
@@ -209,18 +212,18 @@ export default function CompleteProfile() {
       if (geo.city && geo.city !== locationFields.city) {
         finalLocationFields = { ...locationFields, city: geo.city };
         setLocationFields(finalLocationFields);
-        toast.success(`Location verified — saved as ${geo.city}, ${locationFields.state}`);
+        toast.success(t('profile.toast_verified', { city: geo.city, state: locationFields.state }));
       }
     } else {
       // Validation service unreachable: fall back to the format checks above so
       // a temporary outage never permanently blocks a legitimate save.
-      toast.warning("We couldn't verify your location online right now. It was checked for format only — please double-check the city.");
+      toast.warning(t('profile.toast_geo_offline'));
     }
     const locationString = buildLocationString(finalLocationFields);
     setFormData(prev => ({ ...prev, location: locationString }));
 
     if (!termsAccepted) {
-      toast.error("Please review and accept the Terms & Conditions to continue");
+      toast.error(t('complete.terms_required'));
       return;
     }
 
@@ -249,12 +252,12 @@ export default function CompleteProfile() {
         });
       }
       await refreshUser();
-      toast.success('Profile completed!');
+      toast.success(t('complete.success'));
       markClean();
       navigate(returnUrl);
     } catch (error) {
       console.error("Error updating profile:", error);
-      toast.error('Failed to update profile. Please try again.');
+      toast.error(t('complete.error'));
     }
     setLoading(false);
   };
@@ -274,26 +277,26 @@ export default function CompleteProfile() {
           <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
             <CheckCircle2 className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Complete Your Profile</h1>
-          <p className="text-gray-600">Let's set up your profile to get started on Swap4Work</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('profile.complete_your_profile')}</h1>
+          <p className="text-gray-600">{t('complete.sub')}</p>
         </div>
 
         <Card className="border-orange-100 shadow-xl">
           <CardHeader className="border-b border-orange-100 bg-white">
-            <CardTitle>Profile Information</CardTitle>
-            <p className="text-sm text-gray-500 mt-1">This information helps build trust in our community</p>
+            <CardTitle>{t('complete.info')}</CardTitle>
+            <p className="text-sm text-gray-500 mt-1">{t('complete.trust')}</p>
           </CardHeader>
 
           <CardContent className="p-6 bg-white">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Profile Photo */}
               <div className="flex flex-col items-center">
-                <Label className="text-base font-semibold mb-3">Profile Photo</Label>
+                <Label className="text-base font-semibold mb-3">{t('complete.photo')}</Label>
                 <div className="relative">
                   {formData.photo_url ? (
                     <img
                       src={formData.photo_url}
-                      alt="Profile"
+                      alt={t('complete.photo')}
                       className="w-32 h-32 rounded-full object-cover border-4 border-orange-200"
                     />
                   ) : (
@@ -314,7 +317,7 @@ export default function CompleteProfile() {
                     />
                   </label>
                 </div>
-                {uploading && <p className="text-sm text-gray-500 mt-2">Uploading...</p>}
+                {uploading && <p className="text-sm text-gray-500 mt-2">{t('common.uploading')}</p>}
               </div>
 
               {/* Phone */}
@@ -330,16 +333,16 @@ export default function CompleteProfile() {
               {/* Location */}
               <div>
                 <Label className="text-base font-semibold">
-                  Location <span className="text-red-500">*</span>
+                  {t('create.location')} <span className="text-red-500">*</span>
                 </Label>
-                <p className="text-xs text-gray-500 mb-2">Used to connect you with nearby community members</p>
+                <p className="text-xs text-gray-500 mb-2">{t('complete.location_help')}</p>
                 <LocationFields
                   value={locationFields}
                   errors={{ ...locationErrors, zip: locationErrors.zip || zipError }}
                   onChange={(fields, locationStr, coords) => {
                     setLocationFields(fields);
                     setLocationErrors({});
-                    setZipError(fields.zip && !/^\d{5}(-\d{4})?$/.test(fields.zip) ? "Enter a valid 5-digit ZIP code" : "");
+                    setZipError(fields.zip && !/^\d{5}(-\d{4})?$/.test(fields.zip) ? t('profile.zip_invalid') : '');
                     setFormData(prev => ({
                       ...prev,
                       location: locationStr,
@@ -354,41 +357,41 @@ export default function CompleteProfile() {
 
               {/* User Role */}
               <div>
-                <Label htmlFor="user_role">I'm interested in</Label>
+                <Label htmlFor="user_role">{t('profile.interested_in')}</Label>
                 <Select value={formData.user_role} onValueChange={(value) => setFormData({...formData, user_role: value})}>
                   <SelectTrigger className="mt-2">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="worker">Offering my work/skills</SelectItem>
-                    <SelectItem value="offerer">Trading my items</SelectItem>
-                    <SelectItem value="both">Both working and trading</SelectItem>
+                    <SelectItem value="worker">{t('profile.role_worker')}</SelectItem>
+                    <SelectItem value="offerer">{t('profile.role_offerer')}</SelectItem>
+                    <SelectItem value="both">{t('profile.role_both')}</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-gray-500 mt-2">You can change this anytime after completing your profile, on your Profile page.</p>
+                <p className="text-xs text-gray-500 mt-2">{t('profile.interested_in_note')}</p>
               </div>
 
               {/* Bio */}
               <div>
-                <Label htmlFor="bio">About You</Label>
+                <Label htmlFor="bio">{t('complete.about')}</Label>
                 <Textarea
                   id="bio"
                   value={formData.bio}
                   onChange={(e) => setFormData({...formData, bio: e.target.value})}
-                  placeholder="Tell the community about yourself..."
+                  placeholder={t('complete.bio_ph')}
                   rows={4}
                   className="mt-2"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Optional but helps others get to know you
+                  {t('complete.bio_help')}
                 </p>
               </div>
 
               {/* Skills (workers/both) or item-interest picker (offerer) */}
               {formData.user_role === "offerer" ? (
                 <div>
-                  <Label>Item Interests</Label>
-                  <p className="text-xs text-gray-500 mb-2">Optional — pick the kinds of items you're hoping to trade for. You can change this anytime on your Profile page.</p>
+                  <Label>{t('complete.interests')}</Label>
+                  <p className="text-xs text-gray-500 mb-2">{t('complete.interests_help')}</p>
                   <div className="mt-2 border rounded-lg p-4 bg-gray-50">
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                       {ITEM_CATEGORIES.map((cat) => (
@@ -403,14 +406,14 @@ export default function CompleteProfile() {
                               setFormData({ ...formData, trading_interests: interests });
                             }}
                           />
-                          <label htmlFor={`cp-interest-${cat}`} className="text-sm cursor-pointer">{cat}</label>
+                          <label htmlFor={`cp-interest-${cat}`} className="text-sm cursor-pointer">{t(`category.${cat}`)}</label>
                         </div>
                       ))}
                     </div>
                     {formData.trading_interests.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-3">
                         {formData.trading_interests.map((c, i) => (
-                          <Badge key={i} variant="secondary" className="text-xs">{c}</Badge>
+                          <Badge key={i} variant="secondary" className="text-xs">{t(`category.${c}`)}</Badge>
                         ))}
                       </div>
                     )}
@@ -418,7 +421,7 @@ export default function CompleteProfile() {
                 </div>
               ) : (
               <div>
-                <Label>Skills & Services</Label>
+                <Label>{t('profile.skills_services')}</Label>
                 <div className="mt-2 border rounded-lg p-4 bg-gray-50 max-h-80 overflow-y-auto">
                   <Accordion type="multiple" className="w-full">
                     {Object.entries(SKILL_CATEGORIES).map(([category, skills]) => (
@@ -443,7 +446,7 @@ export default function CompleteProfile() {
                                       setFormData({...formData, skills: newSkills.join(';;')});
                                     }}
                                   />
-                                  <label htmlFor={`cp-skill-${skill}`} className="text-sm cursor-pointer">{skill}</label>
+                                  <label htmlFor={`cp-skill-${skill}`} className="text-sm cursor-pointer">{skillLabel(t, skill)}</label>
                                 </div>
                               );
                             })}
@@ -456,7 +459,7 @@ export default function CompleteProfile() {
                 {formData.skills && (
                   <div className="flex flex-wrap gap-1 mt-2">
                     {parseSkills(formData.skills).map((s, i) => (
-                      <Badge key={i} variant="secondary" className="text-xs">{s}</Badge>
+                      <Badge key={i} variant="secondary" className="text-xs">{skillLabel(t, s)}</Badge>
                     ))}
                   </div>
                 )}
@@ -469,10 +472,10 @@ export default function CompleteProfile() {
 
               {/* Availability */}
               <div>
-                <Label>Availability</Label>
+                <Label>{t('profile.availability')}</Label>
                 <div className="mt-2 border rounded-lg p-4 bg-gray-50 space-y-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">Days available</p>
+                    <p className="text-sm font-medium text-gray-700 mb-2">{t('profile.days_available')}</p>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                       {DAYS.map(day => (
                         <div key={day} className="flex items-center space-x-2">
@@ -483,13 +486,13 @@ export default function CompleteProfile() {
                               setSelectedDays(prev => checked ? [...prev, day] : prev.filter(d => d !== day));
                             }}
                           />
-                          <label htmlFor={`day-${day}`} className="text-sm cursor-pointer">{day}</label>
+                          <label htmlFor={`day-${day}`} className="text-sm cursor-pointer">{t(`day.${day}`)}</label>
                         </div>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">Time slots</p>
+                    <p className="text-sm font-medium text-gray-700 mb-2">{t('profile.time_slots')}</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       {TIME_SLOTS.map(slot => (
                         <div key={slot} className="flex items-center space-x-2">
@@ -500,7 +503,7 @@ export default function CompleteProfile() {
                               setSelectedTimes(prev => checked ? [...prev, slot] : prev.filter(t => t !== slot));
                             }}
                           />
-                          <label htmlFor={`time-${slot}`} className="text-sm cursor-pointer">{slot}</label>
+                          <label htmlFor={`time-${slot}`} className="text-sm cursor-pointer">{t(`slot.${slot}`)}</label>
                         </div>
                       ))}
                     </div>
@@ -518,15 +521,15 @@ export default function CompleteProfile() {
                     className="mt-0.5"
                   />
                   <label htmlFor="terms-accept" className="text-sm text-gray-700 leading-relaxed">
-                    I have read and agree to the{" "}
+                    {t('complete.terms_before')}{' '}
                     <button
                       type="button"
                       onClick={() => setTermsOpen(true)}
                       className="text-orange-600 font-medium underline hover:text-orange-700"
                     >
-                      Terms &amp; Conditions
+                      {t('footer.terms')}
                     </button>{" "}
-                    and the community safety guidelines.{" "}
+                    {t('complete.terms_after')}{' '}
                     <span className="text-red-500">*</span>
                   </label>
                 </div>
@@ -540,12 +543,12 @@ export default function CompleteProfile() {
                 {loading || verifyingLocation ? (
                   <>
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    {loading ? "Saving..." : "Verifying location..."}
+                    {t(loading ? 'common.saving' : 'profile.verifying_location')}
                   </>
                 ) : (
                   <>
                     <CheckCircle2 className="w-5 h-5 mr-2" />
-                    Complete Profile
+                    {t('complete.save')}
                   </>
                 )}
               </Button>

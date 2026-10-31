@@ -112,7 +112,7 @@ export default function StartNegotiationModal({
                 <p className="text-xs uppercase tracking-wide text-orange-500 font-semibold mb-1">
                   {t("neg.wants_return", { name: ownerName })}
                 </p>
-                <p className="text-sm text-orange-900">{summarizeReturnPrefs(target)}</p>
+                <p className="text-sm text-orange-900">{summarizeReturnPrefs(target, t)}</p>
               </div>
             </div>
           )}

@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { prepareNotification } from '../../shared/notificationLocalization.ts';
 
 const IN_PROGRESS_STATUSES = ['proposed', 'locked', 'in_progress', 'ready_for_handover', 'disputed'];
 
@@ -129,7 +130,7 @@ export default async function(req) {
       }
     }
     for (const c of counterparties) {
-      await db.Notification.create({
+      await db.Notification.create(await prepareNotification(db, {
         user_id: c.id,
         type: 'moderation_resolved',
         title: 'Agreement cancelled',
@@ -140,7 +141,7 @@ export default async function(req) {
         related_id: c.agreement_ids[0] || '',
         related_type: 'agreement',
         link_url: '/browse',
-      });
+      }));
     }
 
     // 3. Anonymize kept (completed/cancelled) agreements

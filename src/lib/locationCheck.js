@@ -24,15 +24,15 @@ export async function fetchLocationCheck(userId) {
 export function getDevicePosition() {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
-      reject(new Error("Your browser doesn't support location checks."));
+      reject(new Error('location.unsupported'));
       return;
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
       (err) => {
-        if (err.code === 1) reject(new Error("Location permission was denied. You can still use Swap4Work without the badge."));
-        else if (err.code === 3) reject(new Error("Getting your location timed out. Please try again."));
-        else reject(new Error("Your device location is unavailable right now."));
+        if (err.code === 1) reject(new Error('location.denied'));
+        else if (err.code === 3) reject(new Error('location.timeout'));
+        else reject(new Error('location.unavailable'));
       },
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 }
     );

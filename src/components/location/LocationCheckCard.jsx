@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BadgeCheck, Crosshair, Loader2, Info } from "lucide-react";
-import { format } from "date-fns";
+import { formatDate } from '@/i18n/formatters';
+import { useLanguage } from '@/i18n/LanguageContext';
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { fetchLocationCheck, checkIsCurrent, runLocationCheck } from "@/lib/locationCheck";
@@ -13,6 +14,7 @@ import { formatPublicLocation } from "@/lib/location";
  * server-side check and expires after 90 days or when the city changes.
  */
 export default function LocationCheckCard({ userId, savedLocation, hasUnsavedLocation }) {
+  const { t, locale } = useLanguage();
   const queryClient = useQueryClient();
   const [running, setRunning] = useState(false);
   const [outcome, setOutcome] = useState(null);
@@ -31,19 +33,18 @@ export default function LocationCheckCard({ userId, savedLocation, hasUnsavedLoc
     try {
       const data = await runLocationCheck();
       if (data.result === "checked") {
-        setOutcome({ type: "success", text: `Location checked — your device is in ${data.checked_area}.` });
+        setOutcome({ type: 'success', key: 'location.success', vars: { area: data.checked_area } });
         queryClient.invalidateQueries({ queryKey: ["locationCheck", userId] });
-        toast.success("Location checked");
+        toast.success(t('location.checked'));
       } else if (data.result === "mismatch") {
-        setOutcome({ type: "warn", text: `Your device doesn't appear to be near ${data.claimed_area} right now, so no badge was added. You can keep using Swap4Work, and try again from home if you like.` });
+        setOutcome({ type: 'warn', key: 'location.mismatch', vars: { area: data.claimed_area } });
       } else if (data.result === "no_primary_location") {
-        setOutcome({ type: "warn", text: "Save a city, state and ZIP code on your profile first, then run the check." });
+        setOutcome({ type: 'warn', key: 'location.missing_primary' });
       } else {
-        setOutcome({ type: "warn", text: "We couldn't complete the check right now. Please try again later." });
+        setOutcome({ type: 'warn', key: 'location.check_failed' });
       }
     } catch (err) {
-      const message = err?.response?.data?.error || err.message || "We couldn't complete the check right now.";
-      setOutcome({ type: "warn", text: message });
+      setOutcome({ type: 'warn', key: ['location.unsupported', 'location.denied', 'location.timeout', 'location.unavailable'].includes(err.message) ? err.message : 'location.check_failed' });
     }
     setRunning(false);
   };
@@ -52,30 +53,28 @@ export default function LocationCheckCard({ userId, savedLocation, hasUnsavedLoc
     <div className="rounded-lg border border-orange-100 bg-orange-50/50 p-4 space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-gray-900">Location status</p>
+          <p className="text-sm font-semibold text-gray-900">{t('location.status')}</p>
           <p className="text-sm text-gray-600 mt-0.5">
-            {primaryArea ? <>{primaryArea} <span className="text-gray-400">· self-reported</span></> : "No saved location yet"}
+            {primaryArea ? <>{primaryArea} <span className="text-gray-400">· {t('location.self')}</span></> : t('location.none')}
           </p>
         </div>
         {current && (
           <span className="inline-flex items-center text-xs font-medium bg-green-100 text-green-700 rounded-md px-2 py-1 whitespace-nowrap">
-            <BadgeCheck className="w-3 h-3 mr-1" /> Location checked
+            <BadgeCheck className="w-3 h-3 mr-1" /> {t('location.checked')}
           </span>
         )}
       </div>
 
       {current && (
         <p className="text-xs text-gray-500">
-          Checked {format(new Date(check.checked_date), "MMM d, yyyy")} · expires {format(new Date(check.expires_at), "MMM d, yyyy")}
+          {t('location.checked_dates', { date: formatDate(check.checked_date, locale), expiry: formatDate(check.expires_at, locale) })}
         </p>
       )}
 
       <p className="text-xs text-gray-500 flex gap-1.5">
         <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
         <span>
-          Optional. We compare your device's current location with your saved city, then keep only the area and date —
-          never your coordinates. It shows you were in this area at the time; it isn't proof of where you live.
-          The badge expires after 90 days or if you change your city.
+          {t('location.check_help')}
         </span>
       </p>
 
@@ -88,15 +87,15 @@ export default function LocationCheckCard({ userId, savedLocation, hasUnsavedLoc
         className="text-orange-600 border-orange-200 hover:bg-orange-50"
       >
         {running ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Crosshair className="w-4 h-4 mr-1" />}
-        {running ? "Checking..." : current ? "Renew location check" : "Check my location"}
+        {t(running ? 'location.checking' : current ? 'location.renew' : 'location.check')}
       </Button>
       {hasUnsavedLocation && (
-        <p className="text-xs text-amber-700">Save your profile changes first — the check compares against your saved city.</p>
+        <p className="text-xs text-amber-700">{t('location.save_first')}</p>
       )}
 
       {outcome && (
         <p className={`text-sm rounded-md p-2.5 ${outcome.type === "success" ? "bg-green-50 text-green-800" : "bg-amber-50 text-amber-800"}`}>
-          {outcome.text}
+          {t(outcome.key, outcome.vars)}
         </p>
       )}
     </div>

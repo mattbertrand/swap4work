@@ -302,8 +302,8 @@ export default function CreateItem() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {formData.photos.map((photo, index) => (
                       <div key={index} className="relative aspect-square rounded-xl overflow-hidden border-2 border-orange-200">
-                        <img src={photo} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
-                        <button type="button" onClick={() => removePhoto(index)} className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600">
+                        <img src={photo} alt={t('common.photo', { n: index + 1 })} className="w-full h-full object-cover" />
+                        <button type="button" onClick={() => removePhoto(index)} aria-label={t('common.remove_photo', { n: index + 1 })} className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600">
                           <X className="w-4 h-4" />
                         </button>
                       </div>

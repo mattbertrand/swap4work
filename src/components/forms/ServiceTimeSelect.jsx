@@ -1,6 +1,7 @@
 import React from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDuration } from "@/lib/duration";
+import { useLanguage } from '@/i18n/LanguageContext';
 
 // Quick-pick durations for the time a service session takes, from a few
 // minutes to a few hours. Stored as decimal hours like the rest of the app.
@@ -20,6 +21,7 @@ const SERVICE_TIME_OPTIONS = [
 ];
 
 export default function ServiceTimeSelect({ id, value, onChange, className }) {
+  const { t } = useLanguage();
   const current = parseFloat(value);
   // Keep a previously saved custom duration selectable when editing
   const options = current > 0 && !SERVICE_TIME_OPTIONS.some((o) => o.value === current)
@@ -33,15 +35,15 @@ export default function ServiceTimeSelect({ id, value, onChange, className }) {
         onValueChange={(v) => onChange(parseFloat(v))}
       >
         <SelectTrigger id={id} className={className || "mt-2"}>
-          <SelectValue placeholder="Select the time this service takes" />
+          <SelectValue placeholder={t('service.time_ph')} />
         </SelectTrigger>
         <SelectContent>
           {options.map((o) => (
-            <SelectItem key={o.value} value={String(o.value)}>{o.label}</SelectItem>
+            <SelectItem key={o.value} value={String(o.value)}>{formatDuration(o.value)}</SelectItem>
           ))}
         </SelectContent>
       </Select>
-      <p className="text-xs text-gray-500 mt-1">How long one session of this service takes — anywhere from a few minutes to a few hours.</p>
+      <p className="text-xs text-gray-500 mt-1">{t('service.time_help')}</p>
     </div>
   );
 }

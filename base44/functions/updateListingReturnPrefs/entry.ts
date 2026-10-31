@@ -22,7 +22,10 @@ export default async function(req) {
       return Response.json({ error: 'accepts must be item, service, or both' }, { status: 400 });
     }
 
-    // Only recognized categories are stored; custom text is free-form.
+    if (['desired_item_custom', 'desired_service_custom'].some(key => body[key] != null && (typeof body[key] !== 'string' || body[key].length > 500))) {
+      return Response.json({ error: user.language === 'es' ? 'Las preferencias personalizadas deben tener un máximo de 500 caracteres.' : 'Custom preferences must be at most 500 characters.' }, { status: 400 });
+    }
+    // Only recognized categories are stored; original custom text is never trimmed or translated.
     const sanitizeCategories = (value, allowed) => {
       if (!Array.isArray(value)) return [];
       return value.map(String).filter((c) => allowed.includes(c));
@@ -30,10 +33,10 @@ export default async function(req) {
     const prefUpdate = {
       accepts,
       desired_item_categories: sanitizeCategories(body.desired_item_categories, ITEM_CATEGORIES),
-      desired_item_custom: body.desired_item_custom ? String(body.desired_item_custom).slice(0, 500) : "",
+      desired_item_custom: body.desired_item_custom ? String(body.desired_item_custom) : "",
       desired_items_any: !!body.desired_items_any,
       desired_service_categories: sanitizeCategories(body.desired_service_categories, SERVICE_CATEGORIES),
-      desired_service_custom: body.desired_service_custom ? String(body.desired_service_custom).slice(0, 500) : "",
+      desired_service_custom: body.desired_service_custom ? String(body.desired_service_custom) : "",
       desired_services_any: !!body.desired_services_any
     };
 

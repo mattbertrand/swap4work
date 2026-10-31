@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { getActiveUser, applyModerationFlags } from '../../shared/moderation.ts';
+import { prepareNotification } from '../../shared/notificationLocalization.ts';
 
 // Admin-only report moderation. The Report resolution record, moderation
 // history, warning/notification to the reported user, listing hiding, and
@@ -83,14 +84,14 @@ export default async function(req) {
 
     // 3. Perform the actual moderation action
     if (action === 'warned' && report.reported_user_id) {
-      await db.Notification.create({
+      await db.Notification.create(await prepareNotification(db, {
         user_id: report.reported_user_id,
         type: 'moderation_warning',
         title: 'Warning from Swap4Work',
         message: `You have received a warning regarding: ${resolutionText}. Please review our community guidelines. Repeated violations may result in account suspension.`,
         from_user_id: user.id,
         from_user_name: user.full_name
-      });
+      }));
     }
 
     if (action === 'listing_hidden' && report.target_type === 'item') {
@@ -122,7 +123,7 @@ export default async function(req) {
 
     // 4. Notify the reporter that moderation is complete
     if (report.reporter_id) {
-      await db.Notification.create({
+      await db.Notification.create(await prepareNotification(db, {
         user_id: report.reporter_id,
         type: 'moderation_resolved',
         title: 'Your report has been reviewed',
@@ -131,7 +132,7 @@ export default async function(req) {
         related_type: 'message',
         from_user_id: user.id,
         from_user_name: user.full_name
-      });
+      }));
     }
 
     return Response.json({ success: true });

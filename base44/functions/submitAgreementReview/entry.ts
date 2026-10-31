@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.52';
 import { getActiveUser, loadVerifiedAgreement } from '../../shared/moderation.ts';
+import { prepareNotification } from '../../shared/notificationLocalization.ts';
 
 // Records a review for a completed agreement and recomputes the rated
 // member's reputation server-side so ratings and karma can't be forged.
@@ -97,7 +98,7 @@ export default async function(req) {
       });
     }
 
-    await db.Notification.create({
+    await db.Notification.create(await prepareNotification(db, {
       user_id: otherUserId,
       type: 'rating_received',
       title: 'New rating received!',
@@ -107,7 +108,7 @@ export default async function(req) {
       link_url: '/profile',
       from_user_id: user.id,
       from_user_name: user.full_name
-    });
+    }));
 
     return Response.json({ success: true });
   } catch (err) {

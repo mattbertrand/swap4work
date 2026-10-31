@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, MailCheck, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { isValidPhone, normalizePhoneToE164 } from "@/lib/phone";
+import { useLanguage } from '@/i18n/LanguageContext';
 
 /**
  * Phone number entry with the current email-based confirmation flow.
@@ -16,6 +17,7 @@ import { isValidPhone, normalizePhoneToE164 } from "@/lib/phone";
  * number. The UI must never claim the phone number itself is "verified".
  */
 export default function PhoneVerificationField({ value, onChange, isVerified, onVerified, onUnverified, userEmail, disabled = false }) {
+  const { t } = useLanguage();
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
   const [sending, setSending] = useState(false);
@@ -28,7 +30,7 @@ export default function PhoneVerificationField({ value, onChange, isVerified, on
     onChange(val);
     const valid = isValidPhone(val);
     setPhoneValid(valid);
-    setPhoneError(val && !valid ? "Please enter a valid phone number." : "");
+    setPhoneError(val && !valid ? 'profile.err_phone' : '');
     // Any change to the number invalidates the previous confirmation
     if (isVerified && onUnverified) onUnverified();
     setCodeSent(false);
@@ -47,7 +49,7 @@ export default function PhoneVerificationField({ value, onChange, isVerified, on
     const e164 = normalizePhoneToE164(value);
     if (!e164) {
       setPhoneValid(false);
-      setPhoneError("Please enter a valid phone number.");
+      setPhoneError('profile.err_phone');
       return;
     }
     if (e164 !== value) onChange(e164); // store the normalized form
@@ -56,12 +58,12 @@ export default function PhoneVerificationField({ value, onChange, isVerified, on
       const res = await base44.functions.invoke('sendPhoneVerificationCode', { phone: e164 });
       if (res.data?.sent) {
         setCodeSent(true);
-        toast.success("Confirmation code sent to your account email.");
+        toast.success(t('phone.sent'));
       } else {
         throw new Error(res.data?.error || 'Failed to send code');
       }
     } catch (err) {
-      toast.error(err.response?.data?.error || "Failed to send confirmation code. Please try again.");
+      toast.error(t('phone.send_error'));
     }
     setSending(false);
   };
@@ -74,14 +76,14 @@ export default function PhoneVerificationField({ value, onChange, isVerified, on
       const res = await base44.functions.invoke('verifyPhoneVerificationCode', { phone: e164, code });
       if (res.data?.confirmed) {
         onVerified();
-        toast.success("Phone number confirmed via your account email.");
+        toast.success(t('phone.saved'));
         setCodeSent(false);
         setCode("");
       } else {
-        toast.error("Incorrect or expired code. Please try again.");
+        toast.error(t('phone.code_error'));
       }
     } catch (err) {
-      toast.error(err.response?.data?.error || "Incorrect or expired code. Please try again.");
+      toast.error(t('phone.code_error'));
     }
     setVerifying(false);
   };
@@ -90,12 +92,12 @@ export default function PhoneVerificationField({ value, onChange, isVerified, on
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <Label htmlFor="phone">
-          Phone Number <span className="text-red-500">*</span>
+          {t('phone.label')} <span className="text-red-500">*</span>
         </Label>
         {isVerified && (
           <Badge className="bg-green-100 text-green-700 border-green-200">
             <MailCheck className="w-3 h-3 mr-1" />
-            Confirmed via account email
+            {t('phone.confirmed')}
           </Badge>
         )}
       </div>
@@ -107,7 +109,7 @@ export default function PhoneVerificationField({ value, onChange, isVerified, on
           value={value}
           onChange={handlePhoneChange}
           onBlur={handleBlur}
-          placeholder="+1 555-555-5555 or +44 7911 123456"
+          placeholder={t('phone.placeholder')}
           disabled={disabled}
           className={`flex-1 ${phoneError ? "border-red-400 focus-visible:ring-red-400" : ""}`}
         />
@@ -119,31 +121,29 @@ export default function PhoneVerificationField({ value, onChange, isVerified, on
             disabled={sending || !value || !!phoneError}
             className="whitespace-nowrap"
           >
-            {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : codeSent ? "Resend Code" : "Send Code"}
+            {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : codeSent ? t('auth.resend_btn') : t('phone.send')}
           </Button>
         )}
       </div>
 
       {phoneError ? (
         <p className="text-xs text-red-500 flex items-center gap-1">
-          <Phone className="w-3 h-3" /> {phoneError}
+          <Phone className="w-3 h-3" /> {t(phoneError)}
         </p>
       ) : phoneValid ? (
-        <p className="text-xs text-green-600">Phone number looks valid.</p>
+        <p className="text-xs text-green-600">{t('phone.valid')}</p>
       ) : null}
 
       {!isVerified && (
         <p className="text-xs text-gray-500">
-          International format supported (e.g. +1 555-0123, +44 7911 123456). Confirmation codes are
-          emailed to your account email — not by SMS.
+          {t('phone.help')}
         </p>
       )}
 
       {codeSent && !isVerified && (
         <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
           <p className="text-sm text-blue-800">
-            A 6-digit code was emailed to <strong>{userEmail}</strong>. Enter it below to confirm this
-            phone number. This confirms your account by email; it does not verify phone ownership.
+            {t('phone.code_help', { email: userEmail })}
           </p>
           <div className="flex gap-2">
             <Input
@@ -161,7 +161,7 @@ export default function PhoneVerificationField({ value, onChange, isVerified, on
               disabled={verifying || code.length !== 6}
               className="bg-green-600 hover:bg-green-700 text-white"
             >
-              {verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirm"}
+              {verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : t('common.confirm')}
             </Button>
           </div>
         </div>

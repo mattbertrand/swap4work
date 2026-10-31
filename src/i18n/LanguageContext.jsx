@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { translate, translatePlural } from "./index";
@@ -23,14 +23,17 @@ export function LanguageProvider({ user, children }) {
   // Start from browser storage so the language applies before auth resolves.
   const [lang, setLangState] = useState(readStoredLang);
 
-  // Signed-in preference wins when the account has one; otherwise the visitor's
-  // current selection is preserved (requirement: account preference when
-  // available, else keep current or default English).
+  const loadedUser = useRef(null);
+  const pendingSave = useRef(Promise.resolve());
+  const [saveError, setSaveError] = useState(false);
+  // Hydrate once per account, not after unrelated profile refreshes. Never remount forms.
   useEffect(() => {
-    const pref = user?.language;
-    if ((pref === "en" || pref === "es") && pref !== readStoredLang()) {
-      setLangState(pref);
-    }
+    if (!user) { loadedUser.current = null; return; }
+    if (loadedUser.current === user.id) return;
+    loadedUser.current = user.id;
+    const pref = ['en', 'es'].includes(user.language) ? user.language : readStoredLang();
+    setLangState(pref);
+    try { localStorage.setItem(STORAGE_KEY, pref); } catch { /* storage unavailable */ }
   }, [user?.id, user?.language]);
 
   useEffect(() => {
@@ -45,18 +48,21 @@ export function LanguageProvider({ user, children }) {
     } catch (e) { /* storage unavailable */ }
     // Persist to the account in the background — never blocks or interrupts
     // the current page (no navigation, no reload, forms keep their state).
+    setSaveError(false);
     if (user) {
-      base44.auth.updateMe({ language: code }).catch(() => {});
+      // Serialize rapid selections so an older request cannot win on the server.
+      pendingSave.current = pendingSave.current.then(() => base44.auth.updateMe({ language: code })).catch(() => setSaveError(true));
     }
   }, [user]);
 
   const value = useMemo(() => ({
     lang,
     setLang,
+    saveError,
     locale: lang === "es" ? "es-419" : "en-US",
     t: (key, vars) => translate(lang, key, vars),
     tn: (key, count, vars) => translatePlural(lang, key, count, vars),
-  }), [lang, setLang]);
+  }), [lang, setLang, saveError]);
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }

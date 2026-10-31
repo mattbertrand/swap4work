@@ -4,6 +4,8 @@
 // custom descriptions guide the requester; the listing owner always decides
 // whether to accept a proposal.
 
+import { translate } from '@/i18n';
+
 export const ITEM_CATEGORIES = [
   "Electronics",
   "Home Goods",
@@ -53,27 +55,21 @@ export function prefsSignature(item) {
   ]);
 }
 
-function describeTypePrefs(anyFlag, categories, custom, noun) {
-  const parts = [];
-  if (Array.isArray(categories) && categories.length) parts.push(...categories);
+function describeTypePrefs(anyFlag, categories, custom, noun, t) {
+  if (anyFlag) return t(noun === 'item' ? 'prefs.open_any_item' : 'prefs.open_any_service');
+  const parts = (categories || []).map(category => t(`category.${category}`));
   if (custom) parts.push(custom);
-  if (!parts.length || anyFlag) return `any ${noun}`;
-  return parts.join(", ");
+  return parts.length ? parts.join(', ') : t(noun === 'item' ? 'prefs.open_any_item' : 'prefs.open_any_service');
 }
 
-// Plain-language summary of what the owner wants in return.
-export function summarizeReturnPrefs(item) {
+// Translates only interface labels; custom preferences remain byte-for-byte original.
+export function summarizeReturnPrefs(item, t = (key, vars) => translate('en', key, vars)) {
   const want = getReturnTypes(item);
-  if (want === "item") {
-    return "Items: " + describeTypePrefs(item?.desired_items_any, item?.desired_item_categories, item?.desired_item_custom, "item");
-  }
-  if (want === "service") {
-    return "Services: " + describeTypePrefs(item?.desired_services_any, item?.desired_service_categories, item?.desired_service_custom, "service");
-  }
-  return (
-    "Items: " + describeTypePrefs(item?.desired_items_any, item?.desired_item_categories, item?.desired_item_custom, "item") +
-    " · Services: " + describeTypePrefs(item?.desired_services_any, item?.desired_service_categories, item?.desired_service_custom, "service")
-  );
+  const summarize = noun => t('return.summary', {
+    type: t(noun === 'item' ? 'listing.items' : 'listing.services'),
+    preferences: describeTypePrefs(item?.[noun === 'item' ? 'desired_items_any' : 'desired_services_any'], item?.[`desired_${noun}_categories`], item?.[`desired_${noun}_custom`], noun, t)
+  });
+  return (want === 'both' ? ['item', 'service'] : [want]).map(summarize).join(' · ');
 }
 
 // What the target listing owner is offering, in plain language.

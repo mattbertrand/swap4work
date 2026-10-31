@@ -59,7 +59,9 @@ const SKILL_CATEGORIES = {
     "Custom crafts", "Sewing / alterations", "Event decoration", "Handmade art creation"
   ]
 };
-import { format } from "date-fns";
+import { formatDate } from '@/i18n/formatters';
+import { skillLabel } from '@/i18n/skillLabels';
+import { formatDuration } from '@/lib/duration';
 import KarmaDisplay from "../components/profile/KarmaDisplay";
 import AuthModal from "@/components/auth/AuthModal";
 
@@ -68,7 +70,7 @@ const TIME_SLOTS = ["Morning (6am–12pm)","Afternoon (12pm–5pm)","Evening (5p
 
 export default function Profile() {
   const queryClient = useQueryClient();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [user, setUser] = useState(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -300,7 +302,7 @@ export default function Profile() {
     // --- Geographic verification of the manually entered location (OpenStreetMap) ---
     if (verifyingLocation) return;
     setVerifyingLocation(true);
-    const geo = await verifyLocationOnline(locationFields);
+    const geo = await verifyLocationOnline(locationFields, { t });
     setVerifyingLocation(false);
 
     let finalLocationFields = locationFields;
@@ -469,7 +471,7 @@ export default function Profile() {
                   {termsAcceptance && (
                     <Badge className="bg-amber-100 text-amber-700">
                       <CheckCircle2 className="w-3 h-3 mr-1" />
-                      {t("profile.terms_accepted", { date: format(new Date(termsAcceptance.accepted_at), 'MMM d, yyyy') })}
+                      {t("profile.terms_accepted", { date: formatDate(termsAcceptance.accepted_at, locale) })}
                     </Badge>
                   )}
                 </div>
@@ -500,13 +502,13 @@ export default function Profile() {
                 <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-gray-200">
                   <div>
                     <p className="text-2xl font-bold text-orange-600">
-                      {workerProfile?.hours_completed || 0}
+                      {formatDuration(workerProfile?.hours_completed || 0)}
                     </p>
                     <p className="text-sm text-gray-600">{t("profile.hours_completed")}</p>
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-orange-600">
-                      {workerProfile?.completed_trades || 0}
+                      {new Intl.NumberFormat(locale).format(workerProfile?.completed_trades || 0)}
                     </p>
                     <p className="text-sm text-gray-600">{t("profile.completed_trades")}</p>
                   </div>
@@ -637,7 +639,7 @@ export default function Profile() {
                   </div>
 
                   <div>
-                    <Label htmlFor="bio">Bio</Label>
+                    <Label htmlFor="bio">{t('pub.bio')}</Label>
                     <Textarea
                       id="bio"
                       value={formData.bio}
@@ -658,8 +660,8 @@ export default function Profile() {
                           {Object.entries(SKILL_CATEGORIES).map(([category, skills]) => (
                             <AccordionItem key={category} value={category}>
                               <AccordionTrigger className="text-sm font-semibold hover:no-underline py-2">
-                                {category}
-                              </AccordionTrigger>
+                                {skillLabel(t, category)}
+                                                               </AccordionTrigger>
                               <AccordionContent>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-2">
                                   {skills.map((skill) => {
@@ -687,7 +689,7 @@ export default function Profile() {
                                           htmlFor={`skill-${skill}`}
                                           className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                                         >
-                                          {skill}
+                                          {skillLabel(t, skill)}
                                         </label>
                                       </div>
                                     );
@@ -710,7 +712,7 @@ export default function Profile() {
                         <div className="flex flex-wrap gap-2">
                           {parseSkills(formData.skills).map((skill, i) => (
                             <Badge key={i} variant="secondary" className="bg-white border-gray-200">
-                              {skill}
+                              {skillLabel(t, skill)}
                             </Badge>
                           ))}
                           {!formData.skills && <p className="text-sm text-gray-500 italic">{t("profile.no_skills_selected")}</p>}
@@ -892,7 +894,7 @@ export default function Profile() {
                           <p className="text-gray-700 text-sm">{rating.review}</p>
                         )}
                         <p className="text-xs text-gray-500 mt-2">
-                          {format(new Date(rating.created_date), 'MMMM d, yyyy')}
+                          {formatDate(rating.created_date, locale)}
                         </p>
                       </div>
                     ))}

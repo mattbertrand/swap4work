@@ -2,7 +2,8 @@ import React from "react";
 import { base44 } from "@/api/base44Client";
 import { displayName } from "@/lib/names";
 import { useAuth } from "@/lib/AuthContext";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import useNotificationCount from '@/hooks/useNotificationCount';
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { authLoginUrl } from "@/lib/authNavigation";
@@ -10,51 +11,28 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Bell, MessageSquare, Clock, CheckCircle2, AlertCircle, Package } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { formatDateTime } from '@/i18n/formatters';
 import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function Notifications() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { t } = useLanguage();
+  const { t, tn, lang, locale } = useLanguage();
   // Session is shared and already resolved by AuthProvider before routes
   // render, so an authenticated user never briefly sees the sign-in prompt.
   const { user, isLoadingAuth } = useAuth();
 
-  // Separate queries for unread and read to prevent interference
-  const { data: unreadNotifications = [], isLoading: unreadLoading } = useQuery({
-    queryKey: ['unreadNotifications', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      console.log('📥 Notifications Page: Fetching UNREAD notifications');
-      const unread = await base44.entities.Notification.filter({ 
-        user_id: user.id,
-        is_read: false
-      }, '-created_date');
-      console.log(`✅ Notifications Page: Loaded ${unread.length} UNREAD notifications`);
-      return unread;
-    },
-    enabled: !!user,
-    refetchInterval: 5000,
-    staleTime: 0
-  });
-
-  const { data: readNotifications = [], isLoading: readLoading } = useQuery({
-    queryKey: ['readNotifications', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      console.log('📥 Notifications Page: Fetching READ notifications');
-      const read = await base44.entities.Notification.filter({ 
-        user_id: user.id,
-        is_read: true
-      }, '-created_date', 20); // Limit to 20 most recent
-      console.log(`✅ Notifications Page: Loaded ${read.length} READ notifications (STABLE)`);
-      return read;
-    },
-    enabled: !!user,
-    refetchInterval: 10000, // Less frequent refresh for read
-    staleTime: 5000
-  });
+  const { data: unreadCount = 0 } = useNotificationCount(user?.id);
+  const fetchPage = async (isRead, cursor) => {
+    const res = await base44.functions.invoke('getLocalizedNotifications', { language: lang, is_read: isRead, ...(cursor ? { cursor } : {}) });
+    return res.data;
+  };
+  const unreadQuery = useInfiniteQuery({ queryKey: ['unreadNotifications', user?.id, lang], queryFn: ({ pageParam }) => fetchPage(false, pageParam), initialPageParam: null, getNextPageParam: page => page.has_more ? page.next_cursor : undefined, enabled: !!user });
+  const readQuery = useInfiniteQuery({ queryKey: ['readNotifications', user?.id, lang], queryFn: ({ pageParam }) => fetchPage(true, pageParam), initialPageParam: null, getNextPageParam: page => page.has_more ? page.next_cursor : undefined, enabled: !!user });
+  const unreadNotifications = unreadQuery.data?.pages.flatMap(page => page.items) || [];
+  const readNotifications = readQuery.data?.pages.flatMap(page => page.items) || [];
+  const unreadLoading = unreadQuery.isLoading;
+  const readLoading = readQuery.isLoading;
 
   const markAsReadMutation = useMutation({
     mutationFn: (notificationId) => {
@@ -63,22 +41,25 @@ export default function Notifications() {
     },
     onSuccess: () => {
       console.log('✅ Notification marked as read, invalidating queries');
-      queryClient.invalidateQueries(['unreadNotifications']);
-      queryClient.invalidateQueries(['readNotifications']);
+      queryClient.invalidateQueries({ queryKey: ['unreadNotifications', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['readNotifications', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['notificationCount', user.id] });
     }
   });
 
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
       console.log(`✓ Marking ${unreadNotifications.length} notifications as read`);
-      await Promise.all(unreadNotifications.map(n => 
-        base44.entities.Notification.update(n.id, { is_read: true })
-      ));
+      let result;
+      do {
+        result = await base44.entities.Notification.updateMany({ user_id: user.id, is_read: false }, { $set: { is_read: true } });
+      } while (result.has_more);
     },
     onSuccess: () => {
       console.log('✅ All notifications marked as read');
-      queryClient.invalidateQueries(['unreadNotifications']);
-      queryClient.invalidateQueries(['readNotifications']);
+      queryClient.invalidateQueries({ queryKey: ['unreadNotifications', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['readNotifications', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['notificationCount', user.id] });
     }
   });
 
@@ -148,20 +129,21 @@ export default function Notifications() {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">{t("nav.notifications")}</h1>
             <p className="text-gray-500 mt-1">
-              {t("notif.unread_count", { n: unreadNotifications.length })}
+              {tn('notif.unread', unreadCount)}
             </p>
           </div>
           {unreadNotifications.length > 0 && (
             <Button
               onClick={() => markAllAsReadMutation.mutate()}
               variant="outline"
-              disabled={markAllAsReadMutation.isLoading}
+              disabled={markAllAsReadMutation.isPending}
             >
               {t("notif.mark_all_read")}
             </Button>
           )}
         </div>
 
+        {(unreadQuery.isError || readQuery.isError) && <p role="alert" className="mb-4 text-destructive">{t('notif.load_error')} <Button variant="outline" onClick={() => { unreadQuery.refetch(); readQuery.refetch(); }}>{t('common.retry')}</Button></p>}
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
@@ -199,12 +181,12 @@ export default function Notifications() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between mb-1">
-                              <h3 className="font-semibold text-gray-900">{notification.title}</h3>
+                              <h3 className="font-semibold text-gray-900">{notification.display_title}</h3>
                               <Badge className="bg-orange-500 text-white ml-2">{t("notif.new_badge")}</Badge>
                             </div>
-                            <p className="text-sm text-gray-700 mb-2">{notification.message}</p>
+                            <p className="text-sm text-gray-700 mb-2">{notification.display_message}</p>
                             <div className="flex items-center gap-2 text-xs text-gray-500">
-                              <span>{format(parseISO(notification.created_date.endsWith('Z') ? notification.created_date : notification.created_date + 'Z'), 'MMM d, h:mm a')}</span>
+                              <span>{formatDateTime(notification.created_date, locale)}</span>
                               {notification.from_user_name && (
                                 <>
                                   <span>•</span>
@@ -241,10 +223,10 @@ export default function Notifications() {
                             {getNotificationIcon(notification.type)}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-gray-900 mb-1">{notification.title}</h3>
-                            <p className="text-sm text-gray-600 mb-2">{notification.message}</p>
+                            <h3 className="font-semibold text-gray-900 mb-1">{notification.display_title}</h3>
+                            <p className="text-sm text-gray-600 mb-2">{notification.display_message}</p>
                             <div className="flex items-center gap-2 text-xs text-gray-500">
-                              <span>{format(parseISO(notification.created_date.endsWith('Z') ? notification.created_date : notification.created_date + 'Z'), 'MMM d, h:mm a')}</span>
+                              <span>{formatDateTime(notification.created_date, locale)}</span>
                               {notification.from_user_name && (
                                 <>
                                   <span>•</span>
@@ -262,6 +244,8 @@ export default function Notifications() {
             )}
           </div>
         )}
+        {unreadQuery.hasNextPage && <Button variant="outline" disabled={unreadQuery.isFetchingNextPage} onClick={() => unreadQuery.fetchNextPage()}>{t('common.load_more')} · {t('notif.new_badge')}</Button>}
+        {readQuery.hasNextPage && <Button variant="outline" disabled={readQuery.isFetchingNextPage} onClick={() => readQuery.fetchNextPage()}>{t('common.load_more')}</Button>}
       </div>
     </div>
   );
