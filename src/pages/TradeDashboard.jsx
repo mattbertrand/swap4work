@@ -11,9 +11,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, Calendar, AlertCircle, ArrowRight, Briefcase } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function TradeDashboard() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
 
@@ -79,18 +81,18 @@ export default function TradeDashboard() {
   if (!user) {
     return (
       <div className="p-4 md:p-8 max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Trade Dashboard</h1>
-        <p className="text-gray-600 mb-8">Track your active trades, progress, and upcoming deadlines.</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">{t("dash.title")}</h1>
+        <p className="text-gray-600 mb-8">{t("dash.sub")}</p>
         <Card className="border-orange-100 shadow-md">
           <CardContent className="p-12 text-center">
             <Briefcase className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-700 font-medium mb-2">Sign in to see your trades</p>
-            <p className="text-gray-500 text-sm mb-6">Your active agreements, hours, and milestones live here once you're signed in.</p>
+            <p className="text-gray-700 font-medium mb-2">{t("dash.sign_in")}</p>
+            <p className="text-gray-500 text-sm mb-6">{t("dash.sign_in_sub")}</p>
             <Button
               onClick={() => navigate(authLoginUrl(window.location.pathname + window.location.search))}
               className="bg-gradient-to-r from-orange-500 to-amber-600"
             >
-              Sign In
+              {t("nav.sign_in")}
             </Button>
           </CardContent>
         </Card>
@@ -100,8 +102,8 @@ export default function TradeDashboard() {
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">Trade Dashboard</h1>
-      <p className="text-gray-600 mb-8">Track your active trades, progress, and upcoming deadlines.</p>
+      <h1 className="text-3xl font-bold text-gray-900 mb-2">{t("dash.title")}</h1>
+      <p className="text-gray-600 mb-8">{t("dash.sub")}</p>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -112,7 +114,7 @@ export default function TradeDashboard() {
             </div>
             <div>
               <p className="text-3xl font-bold text-gray-900">{activeTrades.length}</p>
-              <p className="text-sm text-gray-500">Active Trades</p>
+              <p className="text-sm text-gray-500">{t("dash.active_trades")}</p>
             </div>
           </CardContent>
         </Card>
@@ -126,7 +128,7 @@ export default function TradeDashboard() {
                 {totalHoursLogged.toFixed(1)}
                 <span className="text-lg text-gray-400">/{totalAgreedHours}</span>
               </p>
-              <p className="text-sm text-gray-500">Hours Logged</p>
+              <p className="text-sm text-gray-500">{t("dash.hours_logged")}</p>
             </div>
           </CardContent>
         </Card>
@@ -137,21 +139,21 @@ export default function TradeDashboard() {
             </div>
             <div>
               <p className="text-3xl font-bold text-gray-900">{upcomingDeadlines}</p>
-              <p className="text-sm text-gray-500">Deadlines (7 days)</p>
+              <p className="text-sm text-gray-500">{t("dash.deadlines")}</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Active Trades */}
-      <h2 className="text-xl font-bold text-gray-900 mb-4">Active Trades</h2>
+      <h2 className="text-xl font-bold text-gray-900 mb-4">{t("dash.active_trades")}</h2>
       {activeTrades.length === 0 ? (
         <Card className="border-orange-100 shadow-md mb-8">
           <CardContent className="p-12 text-center">
             <Briefcase className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 mb-4">No active trades yet.</p>
+            <p className="text-gray-500 mb-4">{t("dash.no_active")}</p>
             <Button onClick={() => navigate(createPageUrl("Browse"))} className="bg-gradient-to-r from-orange-500 to-amber-600">
-              Browse Items
+              {t("dash.browse_items")}
             </Button>
           </CardContent>
         </Card>
@@ -179,16 +181,16 @@ export default function TradeDashboard() {
                           trade.status === 'ready_for_handover' ? 'bg-green-100 text-green-700' :
                           'bg-orange-100 text-orange-700'
                         }>
-                          {trade.status.replace(/_/g, ' ')}
+                          {t(`status.${trade.status}`)}
                         </Badge>
                       </div>
                       <p className="text-sm text-gray-500 mb-3">
-                        {isWorker ? 'Working for' : 'Worker:'} {partnerName}
+                        {isWorker ? t("dash.working_for") : t("dash.worker")} {partnerName}
                       </p>
                       <div className="flex items-center gap-4">
                         <div className="flex-1 max-w-xs">
                           <div className="flex justify-between text-sm mb-1">
-                            <span className="text-gray-500">Progress</span>
+                            <span className="text-gray-500">{t("dash.progress")}</span>
                             <span className="font-medium text-gray-700">
                               {formatDuration(trade.hours_logged || 0)} / {formatDuration(trade.agreed_hours)}
                             </span>
@@ -203,7 +205,7 @@ export default function TradeDashboard() {
                               daysLeft <= 3 ? 'text-amber-600 font-medium' :
                               'text-gray-600'
                             }>
-                              {daysLeft < 0 ? 'Overdue' : `${daysLeft}d left`}
+                              {daysLeft < 0 ? t("dash.overdue") : t("dash.days_left", { n: daysLeft })}
                             </span>
                           </div>
                         )}
@@ -219,12 +221,12 @@ export default function TradeDashboard() {
       )}
 
       {/* Upcoming Milestones */}
-      <h2 className="text-xl font-bold text-gray-900 mb-4">Upcoming Milestones</h2>
+      <h2 className="text-xl font-bold text-gray-900 mb-4">{t("dash.upcoming")}</h2>
       {upcomingMilestones.length === 0 ? (
         <Card className="border-orange-100 shadow-md">
           <CardContent className="p-8 text-center">
             <Calendar className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">No upcoming milestone deadlines.</p>
+            <p className="text-gray-500">{t("dash.no_milestones")}</p>
           </CardContent>
         </Card>
       ) : (
@@ -244,14 +246,14 @@ export default function TradeDashboard() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-medium text-gray-900 truncate">{milestone.title}</h4>
-                    <p className="text-sm text-gray-500 truncate">{trade?.item_title || 'Unknown trade'}</p>
+                    <p className="text-sm text-gray-500 truncate">{trade?.item_title || t("dash.unknown_trade")}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="text-sm font-medium text-gray-900">{format(new Date(milestone.due_date), 'MMM d')}</p>
                     <Badge variant="outline" className={`text-xs ${
                       daysLeft < 0 ? 'text-red-600' : daysLeft <= 3 ? 'text-amber-600' : 'text-gray-500'
                     }`}>
-                      {daysLeft < 0 ? 'Overdue' : daysLeft === 0 ? 'Today' : `${daysLeft}d`}
+                      {daysLeft < 0 ? t("dash.overdue") : daysLeft === 0 ? t("dash.today") : t("dash.days", { n: daysLeft })}
                     </Badge>
                   </div>
                 </CardContent>

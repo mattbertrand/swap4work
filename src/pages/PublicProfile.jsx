@@ -24,9 +24,11 @@ import ItemCard from "../components/browse/ItemCard";
 import AuthModal from "@/components/auth/AuthModal";
 import { useAuth } from "@/lib/AuthContext";
 import LocationCheckedBadge from "@/components/location/LocationCheckedBadge";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function PublicProfile() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const urlParams = new URLSearchParams(window.location.search);
   const userId = urlParams.get('userid') || urlParams.get('userId');
   const workerId = urlParams.get('workerid') || urlParams.get('workerId');
@@ -248,12 +250,12 @@ export default function PublicProfile() {
       return res.data.negotiation;
     },
     onSuccess: (negotiation) => {
-      toast.success("Request sent!");
+      toast.success(t("pub.toast_sent"));
       setServiceModalOpen(false);
       navigate(createPageUrl(`Negotiation?id=${negotiation.id}`));
     },
     onError: (error) => {
-      toast.error(error.response?.data?.error || "Failed to send request");
+      toast.error(error.response?.data?.error || t("pub.toast_send_fail"));
     }
   });
 
@@ -263,13 +265,13 @@ export default function PublicProfile() {
       return;
     }
     if (!currentUser.profile_completed || !currentUser.location || !currentUser.phone) {
-      toast.error("Please complete your profile before requesting a service.");
+      toast.error(t("pub.toast_complete_profile"));
       const currentUrl = window.location.pathname + window.location.search;
       navigate(createPageUrl(`CompleteProfile?returnUrl=${encodeURIComponent(currentUrl)}`));
       return;
     }
     if (theirServiceListings.length === 0) {
-      toast.error("This member has no active service listings to request yet.");
+      toast.error(t("pub.toast_no_services"));
       return;
     }
     setServiceModalOpen(true);
@@ -291,14 +293,14 @@ export default function PublicProfile() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-xl font-bold text-gray-900 mb-2">
-            {isDeletedUser ? "Member removed" : "User not found"}
+            {isDeletedUser ? t("pub.member_removed") : t("pub.user_not_found")}
           </h2>
           {isDeletedUser && (
             <p className="text-gray-500 mb-4">
-              This member was removed from the community and their data has been deleted.
+              {t("pub.member_removed_sub")}
             </p>
           )}
-          <Button onClick={() => navigate(-1)}>Go Back</Button>
+          <Button onClick={() => navigate(-1)}>{t("pub.go_back")}</Button>
         </div>
       </div>
     );
@@ -315,7 +317,7 @@ export default function PublicProfile() {
           className="mb-6 hover:bg-gray-100"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
+          {t("common.back")}
         </Button>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -342,14 +344,14 @@ export default function PublicProfile() {
                 <h1 className="text-2xl font-bold text-gray-900 mb-1">{displayName(userProfile.full_name)}</h1>
                 <div className="flex justify-center items-center gap-1 text-gray-500 mb-4 text-sm">
                   <MapPin className="w-3 h-3" />
-                  {formatPublicLocation(userProfile.location) || "Location unavailable"}
+                  {formatPublicLocation(userProfile.location) || t("pub.location_unavailable")}
                 </div>
                 <div className="flex justify-center mb-4 -mt-2">
                   <LocationCheckedBadge userId={resolvedUserId} location={userProfile.location} />
                 </div>
                 {Array.isArray(workerEntity?.exchange_areas) && workerEntity.exchange_areas.length > 0 && (
                   <p className="text-xs text-gray-500 mb-4">
-                    Also exchanges in: {workerEntity.exchange_areas.join(" · ")}
+                    {t("pub.also_exchanges", { areas: workerEntity.exchange_areas.join(" · ") })}
                   </p>
                 )}
 
@@ -364,7 +366,7 @@ export default function PublicProfile() {
                       ))}
                     </div>
                     <span className="font-semibold text-gray-800">{avgRating}</span>
-                    <span className="text-sm text-gray-500">({ratings.length} {ratings.length === 1 ? 'review' : 'reviews'})</span>
+                    <span className="text-sm text-gray-500">{ratings.length === 1 ? t("pub.review_one", { n: ratings.length }) : t("pub.reviews_many", { n: ratings.length })}</span>
                   </div>
                 )}
 
@@ -373,17 +375,17 @@ export default function PublicProfile() {
                 <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-gray-100">
                   <div className="text-center">
                     <p className="text-2xl font-bold text-orange-600">{userRecord?.hours_completed ?? workerEntity?.hours_completed ?? 0}</p>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Hours Done</p>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">{t("pub.hours_done")}</p>
                   </div>
                   <div className="text-center">
                     <p className="text-2xl font-bold text-blue-600">{userRecord?.completed_trades ?? workerEntity?.completed_trades ?? 0}</p>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Trades</p>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">{t("pub.trades")}</p>
                   </div>
                 </div>
 
                 {workerEntity?.availability && (
                   <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
-                    <span className="font-semibold block mb-1">Availability:</span>
+                    <span className="font-semibold block mb-1">{t("pub.availability")}</span>
                     {workerEntity.availability}
                   </div>
                 )}
@@ -396,24 +398,24 @@ export default function PublicProfile() {
                       disabled={isBusy}
                     >
                       <MessageSquare className="w-4 h-4 mr-2" />
-                      {isBusy ? "Worker Busy (Max Offers)" : "Request Service"}
+                      {isBusy ? t("pub.worker_busy") : t("pub.request_service")}
                     </Button>
                     <div className="flex justify-center mt-3">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-600">
                             <MoreVertical className="w-4 h-4 mr-1" />
-                            More Options
+                            {t("pub.more_options")}
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="center">
                           <DropdownMenuItem onClick={() => setReportModalOpen(true)} className="text-red-600 cursor-pointer">
                             <Flag className="w-4 h-4 mr-2" />
-                            Report User
+                            {t("pub.report_user")}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setBlockDialogOpen(true)} className="text-orange-600 cursor-pointer">
                             <Ban className="w-4 h-4 mr-2" />
-                            Block User
+                            {t("pub.block_user")}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -424,7 +426,7 @@ export default function PublicProfile() {
                 {isOwnProfile && (
                   <Link to={createPageUrl("Profile")}>
                     <Button variant="outline" className="w-full mt-6">
-                      Edit My Profile
+                      {t("pub.edit_my_profile")}
                     </Button>
                   </Link>
                 )}
@@ -437,17 +439,17 @@ export default function PublicProfile() {
             {/* Bio & Skills */}
             <Card className="border-gray-200">
               <CardHeader>
-                <CardTitle>About</CardTitle>
+                <CardTitle>{t("pub.about")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Bio</h3>
+                  <h3 className="font-semibold text-gray-900 mb-2">{t("pub.bio")}</h3>
                   <p className="text-gray-600 whitespace-pre-line">
-                    {userProfile.bio || "No bio available."}
+                    {userProfile.bio || t("pub.no_bio")}
                   </p>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Skills & Interests</h3>
+                  <h3 className="font-semibold text-gray-900 mb-2">{t("pub.skills_interests")}</h3>
                   <div className="flex flex-wrap gap-2">
                     {(workerEntity?.skills || userProfile.skills) ? (
                       parseSkills(workerEntity?.skills || userProfile.skills)
@@ -457,7 +459,7 @@ export default function PublicProfile() {
                           </Badge>
                         ))
                     ) : (
-                      <span className="text-gray-500 italic">No skills listed</span>
+                      <span className="text-gray-500 italic">{t("pub.no_skills")}</span>
                     )}
                   </div>
                 </div>
@@ -467,7 +469,7 @@ export default function PublicProfile() {
             {/* Active Listings */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900">Active Listings</h2>
+                <h2 className="text-xl font-bold text-gray-900">{t("pub.active_listings")}</h2>
                 <Badge variant="outline">{userItems.length}</Badge>
               </div>
               
@@ -483,8 +485,8 @@ export default function PublicProfile() {
                 <Card className="bg-gray-50 border-dashed border-2 border-gray-200">
                   <CardContent className="flex flex-col items-center justify-center p-8 text-center">
                     <Package className="w-10 h-10 text-gray-300 mb-2" />
-                    <p className="text-gray-500 font-medium">No active listings</p>
-                    <p className="text-sm text-gray-400">This user hasn't listed any items for trade yet.</p>
+                    <p className="text-gray-500 font-medium">{t("pub.no_active_listings")}</p>
+                    <p className="text-sm text-gray-400">{t("pub.no_active_listings_sub")}</p>
                   </CardContent>
                 </Card>
               )}
@@ -494,7 +496,7 @@ export default function PublicProfile() {
             <div>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                 <h2 className="text-xl font-bold text-gray-900">
-                  Reviews {ratings.length > 0 && <span className="text-gray-500 font-normal text-base">({ratings.length})</span>}
+                  {t("pub.reviews")} {ratings.length > 0 && <span className="text-gray-500 font-normal text-base">({ratings.length})</span>}
                 </h2>
                 {ratings.length > 0 && (
                   <div className="flex items-center gap-2">
@@ -504,7 +506,7 @@ export default function PublicProfile() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Stars</SelectItem>
+                        <SelectItem value="all">{t("pub.all_stars")}</SelectItem>
                         <SelectItem value="5">⭐⭐⭐⭐⭐ 5</SelectItem>
                         <SelectItem value="4">⭐⭐⭐⭐ 4</SelectItem>
                         <SelectItem value="3">⭐⭐⭐ 3</SelectItem>
@@ -517,10 +519,10 @@ export default function PublicProfile() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="newest">Newest</SelectItem>
-                        <SelectItem value="oldest">Oldest</SelectItem>
-                        <SelectItem value="highest">Highest ★</SelectItem>
-                        <SelectItem value="lowest">Lowest ★</SelectItem>
+                        <SelectItem value="newest">{t("pub.newest")}</SelectItem>
+                        <SelectItem value="oldest">{t("pub.oldest")}</SelectItem>
+                        <SelectItem value="highest">{t("pub.highest")}</SelectItem>
+                        <SelectItem value="lowest">{t("pub.lowest")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -555,7 +557,7 @@ export default function PublicProfile() {
               ) : (
                 <Card className="bg-gray-50 border-dashed border-2 border-gray-200">
                   <CardContent className="p-8 text-center text-gray-500">
-                    {ratings.length > 0 ? "No reviews match this filter" : "No reviews yet"}
+                    {ratings.length > 0 ? t("pub.no_reviews_match") : t("pub.no_reviews_yet")}
                   </CardContent>
                 </Card>
               )}
@@ -564,7 +566,7 @@ export default function PublicProfile() {
         </div>
       </div>
 
-      <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} message="Create an account or log in to request services." />
+      <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} message={t("pub.auth_message")} />
 
       <ReportModal
         open={reportModalOpen}

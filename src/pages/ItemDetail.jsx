@@ -21,6 +21,7 @@ import { useAuth } from "@/lib/AuthContext";
 import StartNegotiationModal from "@/components/negotiation/StartNegotiationModal";
 import OwnerReputation from "@/components/browse/OwnerReputation";
 import ReturnPrefsSummary from "@/components/listing/ReturnPrefsSummary";
+import { useLanguage } from "@/i18n/LanguageContext";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 // Calculate distance between two coordinates
@@ -50,6 +51,7 @@ const getCityState = (location) => {
 
 export default function ItemDetail() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   // Shared session from AuthProvider — no per-page auth fetch, no sign-in flash
   const { user } = useAuth();
   const [userLocation, setUserLocation] = useState(null);
@@ -186,19 +188,19 @@ export default function ItemDetail() {
         },
         (error) => {
           setGettingLocation(false);
-          let errorMessage = "Unable to get your location. ";
+          let errorMessage = t("item.geo_unknown");
           switch (error.code) {
             case error.PERMISSION_DENIED:
-              errorMessage += "Please enable location permissions in your browser.";
+              errorMessage = t("item.geo_denied");
               break;
             case error.POSITION_UNAVAILABLE:
-              errorMessage += "Location information is unavailable.";
+              errorMessage = t("item.geo_unavailable");
               break;
             case error.TIMEOUT:
-              errorMessage += "Location request timed out.";
+              errorMessage = t("item.geo_timeout");
               break;
             default:
-              errorMessage += "An unknown error occurred.";
+              break;
           }
           setLocationError(errorMessage);
           reject(new Error(errorMessage));
@@ -220,7 +222,7 @@ export default function ItemDetail() {
 
     // Check if already on waitlist
     if (userWaitlist) {
-      toast.info('You are already on the waitlist for this item');
+      toast.info(t("item.toast_already_waitlist"));
       return;
     }
 
@@ -233,13 +235,13 @@ export default function ItemDetail() {
         user_email: user.email
       });
 
-      toast.success('Added to waitlist! We\'ll notify you when a negotiation spot opens up.');
+      toast.success(t("item.toast_waitlist_ok"));
       
       // Invalidate query to reflect the change
       queryClient.invalidateQueries(['waitlist', itemId, user.id]);
     } catch (error) {
       console.error('Error joining waitlist:', error);
-      toast.error('Failed to join waitlist');
+      toast.error(t("item.toast_waitlist_fail"));
     }
   };
 
@@ -264,7 +266,7 @@ export default function ItemDetail() {
 
     // Check negotiation limit (max 3 active per item)
     if (activeNegotiations.length >= 3) {
-      toast.info('This item has reached its negotiation limit');
+      toast.info(t("item.toast_limit"));
       return;
     }
 
@@ -280,7 +282,7 @@ export default function ItemDetail() {
 
     // Check if item has coordinates
     if (!item.latitude || !item.longitude) {
-      setLocationError("This item doesn't have location coordinates. Cannot verify distance.");
+      setLocationError(t("item.err_no_coords"));
       return;
     }
 
@@ -293,7 +295,7 @@ export default function ItemDetail() {
     );
 
     if (calculatedDistance > 50) {
-      setLocationError(`This item is ${calculatedDistance.toFixed(1)} miles away. You must be within 50 miles to start a negotiation.`);
+      setLocationError(t("item.err_too_far_negotiate", { distance: calculatedDistance.toFixed(1) }));
       return;
     }
 
@@ -316,7 +318,7 @@ export default function ItemDetail() {
       setStartNegModalOpen(false);
       navigate(createPageUrl(`Negotiation?id=${res.data.negotiation.id}`));
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Failed to start negotiation');
+      toast.error(error.response?.data?.error || t("item.toast_neg_fail"));
     } finally {
       setStartNegLoading(false);
     }
@@ -346,7 +348,7 @@ export default function ItemDetail() {
     }
 
     if (!item.latitude || !item.longitude) {
-      setLocationError("This item doesn't have location coordinates. Cannot verify distance.");
+      setLocationError(t("item.err_no_coords"));
       return;
     }
 
@@ -358,7 +360,7 @@ export default function ItemDetail() {
     );
 
     if (calculatedDistance > 50) {
-      setLocationError(`This item is ${calculatedDistance.toFixed(1)} miles away. You must be within 50 miles to request an inspection.`);
+      setLocationError(t("item.err_too_far_inspection", { distance: calculatedDistance.toFixed(1) }));
       return;
     }
 
@@ -387,7 +389,7 @@ export default function ItemDetail() {
       from_user_id: user.id,
       from_user_name: user.full_name,
       to_user_id: item.offerer_id,
-      text: "I would like to request an in-person inspection of this item before proceeding with the negotiation.",
+      text: t("item.inspection_message"),
       message_type: "text"
     });
 
@@ -407,9 +409,9 @@ export default function ItemDetail() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Item not found</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t("item.not_found")}</h2>
           <Button onClick={() => navigate(createPageUrl("Browse"))}>
-            Browse Items
+            {t("dash.browse_items")}
           </Button>
         </div>
       </div>
@@ -432,7 +434,7 @@ export default function ItemDetail() {
           className="mb-6 hover:bg-orange-100"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
+          {t("common.back")}
         </Button>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -466,7 +468,7 @@ export default function ItemDetail() {
             {/* Description */}
             <Card className="border-orange-100 shadow-lg">
               <CardContent className="p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Description</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">{t("create.description")}</h2>
                 <p className="text-gray-700 whitespace-pre-line">{item.description}</p>
               </CardContent>
             </Card>
@@ -475,7 +477,7 @@ export default function ItemDetail() {
             {item.suggested_tasks && (
               <Card className="border-orange-100 shadow-lg">
                 <CardContent className="p-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Suggested Tasks</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">{t("create.suggested_tasks")}</h2>
                   <p className="text-gray-700 whitespace-pre-line">{item.suggested_tasks}</p>
                 </CardContent>
               </Card>
@@ -485,7 +487,7 @@ export default function ItemDetail() {
             {item.offerer_terms && (
               <Card className="border-orange-100 shadow-lg">
                 <CardContent className="p-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Terms & Conditions</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">{t("item.terms_title")}</h2>
                   <p className="text-gray-700 whitespace-pre-line">{item.offerer_terms}</p>
                 </CardContent>
               </Card>
@@ -500,30 +502,30 @@ export default function ItemDetail() {
                   <h1 className="text-3xl font-bold text-gray-900 mb-3">{item.title}</h1>
                   <div className="flex gap-2 mb-4">
                     <Badge className="bg-orange-100 text-orange-700">
-                      {item.category}
+                      {t(`category.${item.category}`)}
                     </Badge>
                     {item.condition && item.listing_type === "item" && (
                       <Badge className="bg-green-100 text-green-700">
-                        {item.condition}
+                        {t(`condition.${item.condition}`)}
                       </Badge>
                     )}
                     {item.listing_type === "service" && item.photos?.length > 0 && (
                       <Badge className="bg-emerald-100 text-emerald-700">
                         <CheckCircle2 className="w-3 h-3 mr-1" />
-                        Real photos
+                        {t("item.real_photos")}
                       </Badge>
                     )}
                   </div>
                   {/* Time posted */}
                   <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
                     <Calendar className="w-4 h-4" />
-                    <span>Posted {formatDistanceToNow(new Date(item.created_date?.endsWith('Z') ? item.created_date : item.created_date + 'Z'), { addSuffix: true })}</span>
+                    <span>{t("item.posted", { when: formatDistanceToNow(new Date(item.created_date?.endsWith('Z') ? item.created_date : item.created_date + 'Z'), { addSuffix: true }) })}</span>
                   </div>
                 </div>
 
                 <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-6 border-2 border-orange-200">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-gray-600 font-medium">{item.listing_type === "service" ? "Service Hours" : "Required Work"}</span>
+                    <span className="text-gray-600 font-medium">{item.listing_type === "service" ? t("item.service_hours") : t("item.required_work")}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Clock className="w-8 h-8 text-orange-600" />
@@ -531,7 +533,7 @@ export default function ItemDetail() {
                   </div>
                   {item.estimated_value > 0 && (
                     <div className="mt-3 text-sm text-gray-600">
-                      Est. value: ${item.estimated_value}
+                      {t("item.est_value", { value: item.estimated_value })}
                     </div>
                   )}
                 </div>
@@ -550,7 +552,7 @@ export default function ItemDetail() {
                     <div className="flex items-center gap-3 text-gray-700">
                       <Crosshair className="w-5 h-5 text-gray-400" />
                       <span className={isWithinRange ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
-                        {distance.toFixed(1)} miles away {isWithinRange ? "✓" : "(Too far)"}
+                        {t("item.miles_away", { distance: distance.toFixed(1) })} {isWithinRange ? "✓" : t("item.too_far")}
                       </span>
                     </div>
                   )}
@@ -561,7 +563,7 @@ export default function ItemDetail() {
                   <Alert className="bg-blue-50 border-blue-200">
                     <Crosshair className="w-4 h-4 text-blue-600" />
                     <AlertDescription className="text-blue-900 text-sm">
-                      📍 To start negotiating, we need to know you're within 50 miles of this item. Save a location on your profile, or share your device location when asked.
+                      {t("item.location_hint")}
                     </AlertDescription>
                   </Alert>
                 )}
@@ -580,7 +582,7 @@ export default function ItemDetail() {
                 {!isOwner && activeNegotiations.length > 0 && !userActiveNegotiation && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
                     <p className="text-sm text-blue-900">
-                      <strong>{activeNegotiations.length}</strong> active negotiation{activeNegotiations.length > 1 ? 's' : ''}
+                      {t("listings.n_active_negotiations", { n: activeNegotiations.length })}
                     </p>
                   </div>
                 )}
@@ -591,12 +593,12 @@ export default function ItemDetail() {
                     <AlertCircle className="w-4 h-4 text-purple-600" />
                     <AlertDescription>
                       <p className="text-purple-900 font-semibold mb-2">
-                        This item has reached its negotiation limit (3/3)
+                        {t("item.waitlist_limit")}
                       </p>
                       {userWaitlist ? (
                         <div className="flex items-center gap-2 text-purple-700">
                           <CheckCircle2 className="w-4 h-4" />
-                          <span className="text-sm">You're on the waitlist! We'll notify you when a spot opens.</span>
+                          <span className="text-sm">{t("item.on_waitlist")}</span>
                         </div>
                       ) : (
                         <Button
@@ -604,7 +606,7 @@ export default function ItemDetail() {
                           size="sm"
                           className="mt-2 bg-purple-600 hover:bg-purple-700"
                         >
-                          Join Waitlist
+                          {t("item.join_waitlist")}
                         </Button>
                       )}
                     </AlertDescription>
@@ -639,7 +641,7 @@ export default function ItemDetail() {
                           <div className="mt-0.5">
                             <OwnerReputation rating={item.offerer_rating} totalRatings={item.offerer_total_ratings} />
                           </div>
-                          <p className="text-xs text-gray-500">View other items from this user</p>
+                          <p className="text-xs text-gray-500">{t("item.view_other_items")}</p>
                         </div>
                       </div>
                     </CardContent>
@@ -655,7 +657,7 @@ export default function ItemDetail() {
                         className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700"
                       >
                         <MessageSquare className="w-5 h-5 mr-2" />
-                        Continue Negotiation
+                        {t("item.continue_negotiation")}
                       </Button>
                     ) : (
                       <>
@@ -667,12 +669,12 @@ export default function ItemDetail() {
                           {gettingLocation ? (
                             <>
                               <Crosshair className="w-5 h-5 mr-2 animate-spin" />
-                              Verifying Location...
+                              {t("item.verifying_location")}
                             </>
                           ) : (
                             <>
                               <MessageSquare className="w-5 h-5 mr-2" />
-                              {activeNegotiations.length >= 3 ? 'Negotiation Limit Reached' : 'Start Negotiation'}
+                              {activeNegotiations.length >= 3 ? t("item.limit_reached") : t("item.start_negotiation")}
                             </>
                           )}
                         </Button>
@@ -683,7 +685,7 @@ export default function ItemDetail() {
                           className="w-full h-12"
                         >
                           <Eye className="w-5 h-5 mr-2" />
-                          Request Inspection
+                          {t("item.request_inspection")}
                         </Button>
                       </>
                     )}
@@ -693,7 +695,7 @@ export default function ItemDetail() {
                 {isOwner && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
                     <p className="text-sm font-medium text-blue-900">
-                      This is your listing
+                      {t("item.your_listing")}
                     </p>
                   </div>
                 )}
@@ -706,7 +708,7 @@ export default function ItemDetail() {
                     className="w-full text-gray-400 hover:text-red-600"
                   >
                     <Flag className="w-4 h-4 mr-2" />
-                    Report this listing
+                    {t("item.report_listing")}
                   </Button>
                 )}
               </CardContent>
@@ -714,7 +716,7 @@ export default function ItemDetail() {
           </div>
         </div>
       </div>
-      <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} message="Create an account or log in to interact with this listing." />
+      <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} message={t("item.auth_message")} />
       <StartNegotiationModal
         open={startNegModalOpen}
         onClose={() => setStartNegModalOpen(false)}

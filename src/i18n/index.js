@@ -2,6 +2,8 @@
 // English is the source of truth: any key missing from `es` falls back to `en`,
 // and any key missing from `en` (a typo) warns in development builds.
 
+import { moreEn, moreEs } from "./more";
+
 export const translations = {
   en: {
     // Navigation
@@ -1032,6 +1034,10 @@ export const translations = {
     "page.my_agreements": "Mis acuerdos",
   },
 };
+
+// Page-level dictionaries live in ./more to keep this file navigable.
+Object.assign(translations.en, moreEn);
+Object.assign(translations.es, moreEs);
 
 const warnPrefix = "[i18n] Missing translation for key:";
 

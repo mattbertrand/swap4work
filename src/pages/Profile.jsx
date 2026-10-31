@@ -25,6 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import CustomSkillInput from "@/components/profile/CustomSkillInput";
 import LocationCheckCard from "@/components/location/LocationCheckCard";
 import ExchangeAreasField from "@/components/location/ExchangeAreasField";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const SKILL_CATEGORIES = {
   "Home Repairs / Maintenance": [
@@ -67,6 +68,7 @@ const TIME_SLOTS = ["Morning (6am–12pm)","Afternoon (12pm–5pm)","Evening (5p
 
 export default function Profile() {
   const queryClient = useQueryClient();
+  const { t } = useLanguage();
   const [user, setUser] = useState(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -206,10 +208,10 @@ export default function Profile() {
         blocked_id: blockedId
       });
       await Promise.all(entries.map(e => base44.entities.BlockedUser.delete(e.id)));
-      toast.success(`Unblocked ${blockedName}`);
+      toast.success(t("profile.toast_unblocked", { name: blockedName }));
       invalidateBlocked();
     } catch (error) {
-      toast.error("Failed to unblock user");
+      toast.error(t("profile.toast_unblock_fail"));
     }
   };
 
@@ -275,22 +277,22 @@ export default function Profile() {
   const handleSave = async () => {
     // Guardrail: an "Offer Services" profile needs at least one skill
     if (workerData.is_visible && parseSkills(workerData.skills || formData.skills).length === 0) {
-      setVisibilityError("You need at least one skill to offer services — add a skill below or turn off \"Offer Services\".");
-      toast.error("Add at least one skill or turn off \"Offer Services\" to save.");
+      setVisibilityError(t("profile.need_skill"));
+      toast.error(t("profile.err_skill"));
       return;
     }
     setVisibilityError("");
 
     // --- Required location validation (City, ZIP, State; street optional) ---
     const locErrors = {};
-    if (!locationFields.city) locErrors.city = "City is required";
-    else if (!isValidCityName(locationFields.city)) locErrors.city = "Enter a valid city name";
-    if (!locationFields.state) locErrors.state = "State is required";
-    if (!locationFields.zip) locErrors.zip = "ZIP code is required";
-    else if (!/^\d{5}(-\d{4})?$/.test(locationFields.zip)) locErrors.zip = "Enter a valid 5-digit ZIP code";
+    if (!locationFields.city) locErrors.city = t("profile.err_city_required");
+    else if (!isValidCityName(locationFields.city)) locErrors.city = t("profile.err_city_invalid");
+    if (!locationFields.state) locErrors.state = t("profile.err_state_required");
+    if (!locationFields.zip) locErrors.zip = t("profile.err_zip_required");
+    else if (!/^\d{5}(-\d{4})?$/.test(locationFields.zip)) locErrors.zip = t("profile.zip_invalid");
     if (Object.keys(locErrors).length > 0) {
       setLocationErrors(locErrors);
-      toast.error("Please complete your location — city, state, and ZIP code are required.");
+      toast.error(t("profile.err_location"));
       return;
     }
     setLocationErrors({});
@@ -312,19 +314,19 @@ export default function Profile() {
       if (geo.city && geo.city !== locationFields.city) {
         finalLocationFields = { ...locationFields, city: geo.city };
         setLocationFields(finalLocationFields);
-        toast.success(`Location verified — saved as ${geo.city}, ${locationFields.state}`);
+        toast.success(t("profile.toast_verified", { city: geo.city, state: locationFields.state }));
       }
     } else {
       // Validation service unreachable: fall back to the format checks above so
       // a temporary outage never permanently blocks a legitimate save.
-      toast.warning("We couldn't verify your location online right now. It was checked for format only — please double-check the city.");
+      toast.warning(t("profile.toast_geo_offline"));
     }
     const locationString = buildLocationString(finalLocationFields);
     setFormData(prev => ({ ...prev, location: locationString }));
 
     // --- Phone validation & normalization (E.164) ---
     if (formData.phone && !isValidPhone(formData.phone)) {
-      toast.error("Please enter a valid phone number.");
+      toast.error(t("profile.err_phone"));
       return;
     }
     const normalizedPhone = formData.phone ? (normalizePhoneToE164(formData.phone) || formData.phone) : "";
@@ -408,14 +410,14 @@ export default function Profile() {
             <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <Camera className="w-10 h-10 text-orange-500" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Your Profile</h2>
-            <p className="text-gray-600 mb-6">Create an account or log in to view and manage your profile.</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t("profile.auth_title")}</h2>
+            <p className="text-gray-600 mb-6">{t("profile.auth_sub")}</p>
             <Button onClick={() => setAuthModalOpen(true)} className="bg-gradient-to-r from-orange-500 to-amber-600 px-8">
-              Log In to Continue
+              {t("agree.login_continue")}
             </Button>
           </div>
         </div>
-        <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} message="Create an account or log in to view and manage your profile." />
+        <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} message={t("profile.auth_sub")} />
       </>
     );
   }
@@ -461,13 +463,13 @@ export default function Profile() {
                   {phoneVerified && (
                     <Badge className="bg-green-100 text-green-700">
                       <CheckCircle2 className="w-3 h-3 mr-1" />
-                      Phone number saved
+                      {t("profile.phone_saved")}
                     </Badge>
                   )}
                   {termsAcceptance && (
                     <Badge className="bg-amber-100 text-amber-700">
                       <CheckCircle2 className="w-3 h-3 mr-1" />
-                      Terms Accepted {format(new Date(termsAcceptance.accepted_at), 'MMM d, yyyy')}
+                      {t("profile.terms_accepted", { date: format(new Date(termsAcceptance.accepted_at), 'MMM d, yyyy') })}
                     </Badge>
                   )}
                 </div>
@@ -485,7 +487,9 @@ export default function Profile() {
                       ))}
                     </div>
                     <span className="text-sm text-gray-600">
-                      ({user.total_ratings || 0} {(user.total_ratings || 0) === 1 ? 'review' : 'reviews'})
+                      {(user.total_ratings || 0) === 1
+                        ? t("pub.review_one", { n: user.total_ratings || 0 })
+                        : t("pub.reviews_many", { n: user.total_ratings || 0 })}
                     </span>
                   </div>
                 )}
@@ -498,13 +502,13 @@ export default function Profile() {
                     <p className="text-2xl font-bold text-orange-600">
                       {workerProfile?.hours_completed || 0}
                     </p>
-                    <p className="text-sm text-gray-600">Hours Completed</p>
+                    <p className="text-sm text-gray-600">{t("profile.hours_completed")}</p>
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-orange-600">
                       {workerProfile?.completed_trades || 0}
                     </p>
-                    <p className="text-sm text-gray-600">Completed Trades</p>
+                    <p className="text-sm text-gray-600">{t("profile.completed_trades")}</p>
                   </div>
                 </div>
 
@@ -514,7 +518,7 @@ export default function Profile() {
                   className="w-full mt-6"
                 >
                   <LogOut className="w-4 h-4 mr-2" />
-                  Sign Out
+                  {t("profile.sign_out")}
                 </Button>
               </CardContent>
             </Card>
@@ -526,7 +530,7 @@ export default function Profile() {
             <Card className="border-orange-100 shadow-lg">
               <CardHeader className="border-b border-orange-100">
                 <div className="flex justify-between items-center">
-                  <CardTitle>Profile Details</CardTitle>
+                  <CardTitle>{t("profile.details")}</CardTitle>
                   {!isEditing ? (
                     <Button
                       onClick={() => {
@@ -538,15 +542,15 @@ export default function Profile() {
                       }}
                       variant="outline"
                     >
-                      Edit Profile
+                      {t("profile.edit_profile")}
                     </Button>
                   ) : (
                     <div className="flex gap-2">
                       <Button onClick={handleSave} disabled={verifyingLocation} className="bg-orange-600 hover:bg-orange-700">
-                        {verifyingLocation ? "Verifying location..." : "Save Changes"}
+                        {verifyingLocation ? t("profile.verifying_location") : t("profile.save_changes")}
                       </Button>
                       <Button onClick={handleCancelEdit} variant="outline">
-                        Cancel
+                        {t("common.cancel")}
                       </Button>
                     </div>
                   )}
@@ -555,7 +559,7 @@ export default function Profile() {
               <CardContent className="p-6">
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="full_name">Full Name</Label>
+                    <Label htmlFor="full_name">{t("profile.full_name")}</Label>
                     <Input
                       id="full_name"
                       value={formData.full_name}
@@ -578,7 +582,7 @@ export default function Profile() {
                   </div>
 
                   <div>
-                    <Label className="text-sm font-medium">Primary location <span className="text-gray-400 font-normal">(self-reported)</span></Label>
+                    <Label className="text-sm font-medium">{t("profile.primary_location")} <span className="text-gray-400 font-normal">{t("profile.self_reported")}</span></Label>
                     <div className="mt-2">
                       <LocationFields
                         value={locationFields}
@@ -588,7 +592,7 @@ export default function Profile() {
                           setLocationFields(fields);
                           setLocationErrors({});
                           const hasZip = fields.zip && !/^\d{5}(-\d{4})?$/.test(fields.zip);
-                          setZipError(hasZip ? "Enter a valid 5-digit ZIP code" : "");
+                          setZipError(hasZip ? t("profile.zip_invalid") : "");
                           setFormData(prev => ({
                             ...prev,
                             location: locationStr,
@@ -614,8 +618,8 @@ export default function Profile() {
                   />
 
                   <div>
-                    <Label>I'm interested in</Label>
-                    <p className="text-xs text-gray-500 mt-1">You can change this anytime on your Profile page.</p>
+                    <Label>{t("profile.interested_in")}</Label>
+                    <p className="text-xs text-gray-500 mt-1">{t("profile.interested_in_note")}</p>
                     <Select
                       value={formData.user_role}
                       onValueChange={(value) => setFormData({ ...formData, user_role: value })}
@@ -625,9 +629,9 @@ export default function Profile() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="worker">Offering my work/skills</SelectItem>
-                        <SelectItem value="offerer">Trading my items</SelectItem>
-                        <SelectItem value="both">Both working and trading</SelectItem>
+                        <SelectItem value="worker">{t("profile.role_worker")}</SelectItem>
+                        <SelectItem value="offerer">{t("profile.role_offerer")}</SelectItem>
+                        <SelectItem value="both">{t("profile.role_both")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -638,7 +642,7 @@ export default function Profile() {
                       id="bio"
                       value={formData.bio}
                       onChange={(e) => setFormData({...formData, bio: e.target.value})}
-                      placeholder="Tell others about yourself..."
+                      placeholder={t("profile.bio_ph")}
                       rows={4}
                       disabled={!isEditing}
                       className="mt-2"
@@ -646,7 +650,7 @@ export default function Profile() {
                   </div>
 
                   <div>
-                    <Label>Skills & Services</Label>
+                    <Label>{t("profile.skills_services")}</Label>
                     <div className="mt-2 space-y-2 border rounded-lg p-4 bg-gray-50 max-h-96 overflow-y-auto">
                       {isEditing ? (
                         <>
@@ -709,7 +713,7 @@ export default function Profile() {
                               {skill}
                             </Badge>
                           ))}
-                          {!formData.skills && <p className="text-sm text-gray-500 italic">No skills selected</p>}
+                          {!formData.skills && <p className="text-sm text-gray-500 italic">{t("profile.no_skills_selected")}</p>}
                         </div>
                       )}
                     </div>
@@ -721,14 +725,14 @@ export default function Profile() {
             {/* Worker Settings */}
             <Card className="border-orange-100 shadow-lg">
               <CardHeader className="border-b border-orange-100">
-                <CardTitle>Worker Profile Settings</CardTitle>
+                <CardTitle>{t("profile.worker_settings")}</CardTitle>
               </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                     <div>
-                      <p className="font-medium text-gray-900">Offer Services</p>
-                      <p className="text-sm text-gray-500">List your profile in "Find People"</p>
+                      <p className="font-medium text-gray-900">{t("profile.offer_services")}</p>
+                      <p className="text-sm text-gray-500">{t("profile.offer_services_sub")}</p>
                     </div>
                     <div className="flex items-center">
                       <input
@@ -736,7 +740,7 @@ export default function Profile() {
                         checked={workerData.is_visible}
                         onChange={(e) => {
                           if (e.target.checked && formData.user_role === "offerer" && parseSkills(workerData.skills || formData.skills).length === 0) {
-                            setVisibilityError("Select at least one skill below first — that's what makes you visible in Find Skilled People.");
+                            setVisibilityError(t("profile.err_visibility"));
                             return;
                           }
                           setVisibilityError("");
@@ -754,10 +758,10 @@ export default function Profile() {
                   {workerData.is_visible && (
                   <div className="space-y-4 animate-in slide-in-from-top-2">
                     <div>
-                      <Label>Availability</Label>
+                      <Label>{t("profile.availability")}</Label>
                       <div className="mt-2 border rounded-lg p-4 bg-gray-50 space-y-4">
                         <div>
-                          <p className="text-sm font-medium text-gray-700 mb-2">Days available</p>
+                          <p className="text-sm font-medium text-gray-700 mb-2">{t("profile.days_available")}</p>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                             {DAYS.map(day => (
                               <div key={day} className="flex items-center space-x-2">
@@ -769,13 +773,13 @@ export default function Profile() {
                                     setSelectedDays(prev => checked ? [...prev, day] : prev.filter(d => d !== day));
                                   }}
                                 />
-                                <label htmlFor={`profile-day-${day}`} className={`text-sm ${isEditing ? 'cursor-pointer' : 'cursor-default'}`}>{day}</label>
+                                <label htmlFor={`profile-day-${day}`} className={`text-sm ${isEditing ? 'cursor-pointer' : 'cursor-default'}`}>{t(`day.${day}`)}</label>
                               </div>
                             ))}
                           </div>
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-700 mb-2">Time slots</p>
+                          <p className="text-sm font-medium text-gray-700 mb-2">{t("profile.time_slots")}</p>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                             {TIME_SLOTS.map(slot => (
                               <div key={slot} className="flex items-center space-x-2">
@@ -787,7 +791,7 @@ export default function Profile() {
                                     setSelectedTimes(prev => checked ? [...prev, slot] : prev.filter(t => t !== slot));
                                   }}
                                 />
-                                <label htmlFor={`profile-time-${slot}`} className={`text-sm ${isEditing ? 'cursor-pointer' : 'cursor-default'}`}>{slot}</label>
+                                <label htmlFor={`profile-time-${slot}`} className={`text-sm ${isEditing ? 'cursor-pointer' : 'cursor-default'}`}>{t(`slot.${slot}`)}</label>
                               </div>
                             ))}
                           </div>
@@ -796,7 +800,7 @@ export default function Profile() {
                     </div>
                       
                       <div>
-                        <Label htmlFor="max_offers">Max Concurrent Offers</Label>
+                        <Label htmlFor="max_offers">{t("profile.max_offers")}</Label>
                         <Input
                           id="max_offers"
                           type="number"
@@ -807,11 +811,11 @@ export default function Profile() {
                           disabled={!isEditing}
                           className="mt-2"
                         />
-                        <p className="text-xs text-gray-500 mt-1">Maximum number of active negotiations you can handle at once.</p>
+                        <p className="text-xs text-gray-500 mt-1">{t("profile.max_offers_note")}</p>
                       </div>
 
                       <div className="bg-blue-50 p-4 rounded-lg text-sm text-blue-800">
-                        <p>Your worker profile uses the name, location, and skills from your main profile above.</p>
+                        <p>{t("profile.worker_note")}</p>
                       </div>
                     </div>
                   )}
@@ -824,14 +828,14 @@ export default function Profile() {
               <CardHeader className="border-b border-orange-100">
                 <CardTitle className="flex items-center gap-2">
                   <Ban className="w-5 h-5 text-gray-500" />
-                  Blocked Users
+                  {t("profile.blocked_users")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
                 {blocked.length === 0 ? (
                   <div className="text-center py-6 text-gray-500">
                     <UserX className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                    <p>You haven't blocked anyone.</p>
+                    <p>{t("profile.no_blocked")}</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -850,7 +854,7 @@ export default function Profile() {
                           variant="outline"
                           onClick={() => handleUnblock(blockedUser.blocked_id, blockedUser.blocked_name)}
                         >
-                          Unblock
+                          {t("profile.unblock")}
                         </Button>
                       </div>
                     ))}
@@ -862,7 +866,7 @@ export default function Profile() {
             {/* Reviews */}
             <Card className="border-orange-100 shadow-lg">
               <CardHeader className="border-b border-orange-100">
-                <CardTitle>Reviews & Feedback</CardTitle>
+                <CardTitle>{t("profile.reviews_feedback")}</CardTitle>
               </CardHeader>
               <CardContent className="p-6">
                 {ratings.length > 0 ? (
@@ -895,7 +899,7 @@ export default function Profile() {
                   </div>
                 ) : (
                   <div className="text-center py-8 text-gray-500">
-                    No reviews yet
+                    {t("profile.no_reviews")}
                   </div>
                 )}
               </CardContent>

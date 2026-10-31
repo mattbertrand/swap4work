@@ -19,9 +19,14 @@ import HoursMinutesInput from "@/components/forms/HoursMinutesInput";
 import ReturnPreferencesFields from "@/components/listing/ReturnPreferencesFields";
 import { getServiceCover } from "@/lib/serviceCovers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useLanguage } from "@/i18n/LanguageContext";
+
+const ITEM_CATEGORIES = ["Electronics", "Home Goods", "Furniture", "Appliances", "Tools", "Sports Equipment", "Other"];
+const CONDITIONS = ["New", "Like New", "Good", "Fair", "Poor"];
 
 export default function CreateItem() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -137,7 +142,7 @@ export default function CreateItem() {
       const urls = results.map(r => r.file_url);
       setFormData(prev => ({ ...prev, photos: [...prev.photos, ...urls] }));
     } catch {
-      alert("Failed to upload photos. Please try again.");
+      alert(t("create.err_upload"));
     }
     setUploading(false);
   };
@@ -150,26 +155,26 @@ export default function CreateItem() {
     e.preventDefault();
 
     if (listingType === "item" && formData.photos.length < 3) {
-      alert("Please upload at least 3 photos for items");
+      alert(t("create.err_photos"));
       return;
     }
 
     if (!formData.required_hours) {
-      alert("Please enter a valid work time (at least 5 minutes, e.g. 00:05).");
+      alert(t("create.err_hours"));
       return;
     }
 
     if (!locFields.city || !locFields.state) {
-      alert("Please enter at least a city and state for your location");
+      alert(t("create.err_location"));
       return;
     }
     if (!isValidCityName(locFields.city)) {
-      alert("Please enter a valid city name for your location");
+      alert(t("create.err_city"));
       return;
     }
 
     if (!coords.latitude || !coords.longitude) {
-      alert("Could not verify your location coordinates. Please check your address and try again.");
+      alert(t("create.err_coords"));
       return;
     }
 
@@ -196,7 +201,7 @@ export default function CreateItem() {
       markClean();
       navigate(createPageUrl("MyListings"));
     } catch {
-      alert("Failed to create listing. Please try again.");
+      alert(t("create.err_create"));
     }
     setLoading(false);
   };
@@ -217,14 +222,14 @@ export default function CreateItem() {
             <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <Package className="w-10 h-10 text-orange-500" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Create a Listing</h2>
-            <p className="text-gray-600 mb-6">Create an account or log in to list your items or services for trade.</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t("create.auth_title")}</h2>
+            <p className="text-gray-600 mb-6">{t("create.auth_sub")}</p>
             <Button onClick={() => setAuthModalOpen(true)} className="bg-gradient-to-r from-orange-500 to-amber-600 px-8">
-              Get Started
+              {t("common.create_free_account")}
             </Button>
           </div>
         </div>
-        <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} message="Create an account or log in to create a listing." />
+        <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} message={t("listings.auth_create")} />
       </>
     );
   }
@@ -238,20 +243,20 @@ export default function CreateItem() {
           className="mb-6 hover:bg-orange-100"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
+          {t("common.back")}
         </Button>
 
         <Card className="border-orange-100 shadow-xl">
           <CardHeader className="border-b border-orange-100">
-            <CardTitle className="text-2xl font-bold">Create a New Listing</CardTitle>
-            <p className="text-gray-500">List an item or service for trade</p>
+            <CardTitle className="text-2xl font-bold">{t("create.title")}</CardTitle>
+            <p className="text-gray-500">{t("create.sub")}</p>
           </CardHeader>
 
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Listing Type */}
               <div className="bg-gray-50 p-4 rounded-lg border-2 border-gray-200">
-                <Label className="text-base font-semibold mb-3 block">What are you listing?</Label>
+                <Label className="text-base font-semibold mb-3 block">{t("create.what_listing")}</Label>
                 <div className="grid grid-cols-2 gap-4">
                   <button
                     type="button"
@@ -259,7 +264,7 @@ export default function CreateItem() {
                     className={`p-4 rounded-lg border-2 transition-all ${listingType === "item" ? "border-orange-500 bg-orange-50" : "border-gray-300 bg-white hover:border-gray-400"}`}
                   >
                     <Package className={`w-8 h-8 mx-auto mb-2 ${listingType === "item" ? "text-orange-600" : "text-gray-400"}`} />
-                    <p className={`font-semibold ${listingType === "item" ? "text-orange-600" : "text-gray-600"}`}>Physical Item</p>
+                    <p className={`font-semibold ${listingType === "item" ? "text-orange-600" : "text-gray-600"}`}>{t("create.physical_item")}</p>
                   </button>
                   <button
                     type="button"
@@ -267,7 +272,7 @@ export default function CreateItem() {
                     className={`p-4 rounded-lg border-2 transition-all ${listingType === "service" ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-white hover:border-gray-400"}`}
                   >
                     <Briefcase className={`w-8 h-8 mx-auto mb-2 ${listingType === "service" ? "text-blue-600" : "text-gray-400"}`} />
-                    <p className={`font-semibold ${listingType === "service" ? "text-blue-600" : "text-gray-600"}`}>Service Offering</p>
+                    <p className={`font-semibold ${listingType === "service" ? "text-blue-600" : "text-gray-600"}`}>{t("create.service_offering")}</p>
                   </button>
                 </div>
               </div>
@@ -292,7 +297,7 @@ export default function CreateItem() {
               {listingType === "item" && (
                 <div>
                   <Label className="text-base font-semibold mb-3 block">
-                    Item Photos <span className="text-red-500">*</span> (minimum 3)
+                    {t("create.item_photos")} <span className="text-red-500">*</span> {t("create.min_photos")}
                   </Label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {formData.photos.map((photo, index) => (
@@ -306,7 +311,7 @@ export default function CreateItem() {
                     {formData.photos.length < 5 && (
                       <label className="aspect-square border-2 border-dashed border-orange-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-orange-500 hover:bg-orange-50 transition-colors">
                         <input type="file" accept="image/*" multiple onChange={handleFileUpload} className="hidden" disabled={uploading} />
-                        {uploading ? <Loader2 className="w-8 h-8 text-orange-400 animate-spin" /> : <><Upload className="w-8 h-8 text-orange-400 mb-2" /><span className="text-sm text-gray-600">Upload</span></>}
+                        {uploading ? <Loader2 className="w-8 h-8 text-orange-400 animate-spin" /> : <><Upload className="w-8 h-8 text-orange-400 mb-2" /><span className="text-sm text-gray-600">{t("create.upload")}</span></>}
                       </label>
                     )}
                   </div>
@@ -318,44 +323,38 @@ export default function CreateItem() {
               <>
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="title">Item Title <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="title">{t("create.item_title")} <span className="text-red-500">*</span></Label>
                   <Input
                     id="title"
                     value={formData.title}
                     onChange={(e) => setFormData(p => ({ ...p, title: e.target.value }))}
-                    placeholder="e.g., MacBook Pro 2020"
+                    placeholder={t("create.title_ph")}
                     required
                     className="mt-2"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="category">Category <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="category">{t("create.category")} <span className="text-red-500">*</span></Label>
                   <Select value={formData.category} onValueChange={(value) => setFormData(p => ({ ...p, category: value }))}>
                     <SelectTrigger className="mt-2"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Electronics">Electronics</SelectItem>
-                      <SelectItem value="Home Goods">Home Goods</SelectItem>
-                      <SelectItem value="Furniture">Furniture</SelectItem>
-                      <SelectItem value="Appliances">Appliances</SelectItem>
-                      <SelectItem value="Tools">Tools</SelectItem>
-                      <SelectItem value="Sports Equipment">Sports Equipment</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
+                      {ITEM_CATEGORIES.map((value) => (
+                        <SelectItem key={value} value={value}>{t(`category.${value}`)}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 {listingType === "item" && (
                   <div>
-                    <Label htmlFor="condition">Condition <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="condition">{t("create.condition")} <span className="text-red-500">*</span></Label>
                     <Select value={formData.condition} onValueChange={(value) => setFormData(p => ({ ...p, condition: value }))}>
                       <SelectTrigger className="mt-2"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="New">New</SelectItem>
-                        <SelectItem value="Like New">Like New</SelectItem>
-                        <SelectItem value="Good">Good</SelectItem>
-                        <SelectItem value="Fair">Fair</SelectItem>
-                        <SelectItem value="Poor">Poor</SelectItem>
+                        {CONDITIONS.map((value) => (
+                          <SelectItem key={value} value={value}>{t(`condition.${value}`)}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -363,7 +362,7 @@ export default function CreateItem() {
 
                 <div>
                   <Label htmlFor="required_hours">
-                    Work Hours Required <span className="text-red-500">*</span>
+                    {t("create.work_hours_required")} <span className="text-red-500">*</span>
                   </Label>
                   <HoursMinutesInput
                     id="required_hours"
@@ -374,14 +373,14 @@ export default function CreateItem() {
 
                 {listingType === "item" && (
                   <div>
-                    <Label htmlFor="estimated_value">Estimated Value ($)</Label>
+                    <Label htmlFor="estimated_value">{t("create.estimated_value")}</Label>
                     <Input
                       id="estimated_value"
                       type="number"
                       min="0"
                       value={formData.estimated_value}
                       onChange={(e) => setFormData(p => ({ ...p, estimated_value: e.target.value }))}
-                      placeholder="e.g., 1200"
+                      placeholder={t("create.value_ph")}
                       className="mt-2"
                     />
                   </div>
@@ -393,15 +392,15 @@ export default function CreateItem() {
               {/* Location */}
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <Label className="text-base font-semibold mb-3 block">
-                  Location <span className="text-red-500">*</span>
-                  <span className="text-xs font-normal text-gray-500 ml-2">(Only your town & state will be shown publicly)</span>
+                  {t("create.location")} <span className="text-red-500">*</span>
+                  <span className="text-xs font-normal text-gray-500 ml-2">{t("create.location_note")}</span>
                 </Label>
                 <LocationFields value={locFields} onChange={handleLocationChange} required={{ city: true, state: true, zip: false }} />
                 <div className="mt-2">
                   {coords.latitude && coords.longitude ? (
-                    <p className="text-xs text-green-600 flex items-center gap-1"><MapPin className="w-3 h-3" /> Location verified</p>
+                    <p className="text-xs text-green-600 flex items-center gap-1"><MapPin className="w-3 h-3" /> {t("create.location_verified")}</p>
                   ) : locString ? (
-                    <p className="text-xs text-amber-600">Verifying location…</p>
+                    <p className="text-xs text-amber-600">{t("create.location_verifying")}</p>
                   ) : null}
                 </div>
               </div>
@@ -409,12 +408,12 @@ export default function CreateItem() {
               {listingType === "item" ? (
               <>
               <div>
-                <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
+                <Label htmlFor="description">{t("create.description")} <span className="text-red-500">*</span></Label>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData(p => ({ ...p, description: e.target.value }))}
-                  placeholder="Detailed description of the item..."
+                  placeholder={t("create.description_ph")}
                   rows={4}
                   required
                   className="mt-2"
@@ -422,24 +421,24 @@ export default function CreateItem() {
               </div>
 
               <div>
-                <Label htmlFor="suggested_tasks">Suggested Tasks</Label>
+                <Label htmlFor="suggested_tasks">{t("create.suggested_tasks")}</Label>
                 <Textarea
                   id="suggested_tasks"
                   value={formData.suggested_tasks}
                   onChange={(e) => setFormData(p => ({ ...p, suggested_tasks: e.target.value }))}
-                  placeholder="e.g., Clean garage, organize storage, help with moving..."
+                  placeholder={t("create.suggested_tasks_ph")}
                   rows={3}
                   className="mt-2"
                 />
               </div>
 
               <div>
-                <Label htmlFor="offerer_terms">Your Terms (non-negotiable)</Label>
+                <Label htmlFor="offerer_terms">{t("create.terms")}</Label>
                 <Textarea
                   id="offerer_terms"
                   value={formData.offerer_terms}
                   onChange={(e) => setFormData(p => ({ ...p, offerer_terms: e.target.value }))}
-                  placeholder="e.g., Must pick up item in person, work must be completed within 2 weeks..."
+                  placeholder={t("create.terms_ph")}
                   rows={3}
                   className="mt-2"
                 />
@@ -451,14 +450,14 @@ export default function CreateItem() {
 
               <div className="flex gap-4 pt-4">
                 <Button type="button" variant="outline" onClick={() => { markClean(); navigate(-1); }} className="flex-1">
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
                 <Button
                   type="submit"
                   disabled={loading || (listingType === "item" && formData.photos.length < 3) || !coords.latitude || !coords.longitude}
                   className="flex-1 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700"
                 >
-                  {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating...</> : `List ${listingType === "item" ? "Item" : "Service"}`}
+                  {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t("create.creating")}</> : listingType === "item" ? t("create.list_item") : t("create.list_service")}
                 </Button>
               </div>
             </form>
