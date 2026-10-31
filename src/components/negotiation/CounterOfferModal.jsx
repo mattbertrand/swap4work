@@ -8,19 +8,21 @@ import { Clock, TrendingDown, TrendingUp } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import HoursMinutesInput from "@/components/forms/HoursMinutesInput";
 import { formatDuration } from "@/lib/duration";
+import { useLanguage } from "@/i18n/LanguageContext";
 
-export default function CounterOfferModal({ 
-  open, 
-  onClose, 
-  currentOffer, 
-  suggestedHours, 
+export default function CounterOfferModal({
+  open,
+  onClose,
+  currentOffer,
+  suggestedHours,
   onSubmit,
   defaultHours = null,
   defaultWorkType = "",
-  title = "Make a Counter Offer",
-  submitLabel = "Send Counter Offer",
+  title = null,
+  submitLabel = null,
   onAccept = null
 }) {
+  const { t } = useLanguage();
   const [hours, setHours] = useState(null);
   const [workType, setWorkType] = useState("");
   const [message, setMessage] = useState("");
@@ -36,7 +38,7 @@ export default function CounterOfferModal({
 
   const handleSubmit = () => {
     if (!hours) {
-      alert("Please enter a valid work time (at least 5 minutes, e.g. 00:05).");
+      alert(t("cof.invalid_time"));
       return;
     }
 
@@ -69,10 +71,10 @@ export default function CounterOfferModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Clock className="w-5 h-5 text-orange-600" />
-            {title}
+            {title || t("cof.title")}
           </DialogTitle>
           <DialogDescription>
-            Current offer is {formatDuration(currentOffer)}. What would you like to propose?
+            {t("cof.desc", { duration: formatDuration(currentOffer) })}
           </DialogDescription>
         </DialogHeader>
 
@@ -80,13 +82,16 @@ export default function CounterOfferModal({
           {suggestedHours && (
             <Alert className="bg-blue-50 border-blue-200">
               <AlertDescription className="text-sm text-blue-900">
-                💡 <strong>AI Suggestion:</strong> Similar items trade for {formatDuration(suggestedHours[0])}–{formatDuration(suggestedHours[1])}
+                💡 {t("cof.ai_suggestion", {
+                  min: formatDuration(suggestedHours[0]),
+                  max: formatDuration(suggestedHours[1])
+                })}
               </AlertDescription>
             </Alert>
           )}
 
           <div>
-            <Label htmlFor="hours">Time Offered *</Label>
+            <Label htmlFor="hours">{t("cof.time_offered")} *</Label>
             <HoursMinutesInput
               id="hours"
               value={hours}
@@ -103,23 +108,23 @@ export default function CounterOfferModal({
           </div>
 
           <div>
-            <Label htmlFor="workType">Type of Work (optional)</Label>
+            <Label htmlFor="workType">{t("cof.work_type")}</Label>
             <Input
               id="workType"
               value={workType}
               onChange={(e) => setWorkType(e.target.value)}
-              placeholder="e.g., Moving, Cleaning, Gardening"
+              placeholder={t("cof.work_type_ph")}
               className="mt-2"
             />
           </div>
 
           <div>
-            <Label htmlFor="message">Message (optional)</Label>
+            <Label htmlFor="message">{t("cof.message")}</Label>
             <Textarea
               id="message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Add a note to explain your offer..."
+              placeholder={t("cof.message_ph")}
               rows={3}
               className="mt-2"
             />
@@ -128,22 +133,22 @@ export default function CounterOfferModal({
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           {onAccept && (
             <Button
               onClick={() => { handleClose(); onAccept(); }}
               className="bg-green-600 hover:bg-green-700"
             >
-              Accept As-Is
+              {t("cof.accept_asis")}
             </Button>
           )}
-          <Button 
+          <Button
             onClick={handleSubmit}
             disabled={!hours}
             className="bg-orange-600 hover:bg-orange-700"
           >
-            {submitLabel}
+            {submitLabel || t("cof.submit")}
           </Button>
         </DialogFooter>
       </DialogContent>

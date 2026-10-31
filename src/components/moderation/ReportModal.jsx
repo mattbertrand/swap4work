@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { displayName } from "@/lib/names";
 import { authLoginUrl } from "@/lib/authNavigation";
+import { useLanguage } from "@/i18n/LanguageContext";
 import {
   Dialog,
   DialogContent,
@@ -26,13 +27,13 @@ import { Flag, CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 const REASON_OPTIONS = [
-  { value: "scam_fraud", label: "Scam / Fraud" },
-  { value: "fake_listing", label: "Fake Listing" },
-  { value: "harassment", label: "Harassment" },
-  { value: "inappropriate_content", label: "Inappropriate Content" },
-  { value: "spam", label: "Spam" },
-  { value: "safety_concern", label: "Safety Concern" },
-  { value: "other", label: "Other" },
+  { value: "scam_fraud", labelKey: "report.reason_scam" },
+  { value: "fake_listing", labelKey: "report.reason_fake" },
+  { value: "harassment", labelKey: "report.reason_harassment" },
+  { value: "inappropriate_content", labelKey: "report.reason_content" },
+  { value: "spam", labelKey: "report.reason_spam" },
+  { value: "safety_concern", labelKey: "report.reason_safety" },
+  { value: "other", labelKey: "report.reason_other" },
 ];
 
 export default function ReportModal({
@@ -45,6 +46,7 @@ export default function ReportModal({
   reportedUserId,
   reportedUserName,
 }) {
+  const { t } = useLanguage();
   const [reason, setReason] = useState("");
   const [description, setDescription] = useState("");
   const [alsoBlock, setAlsoBlock] = useState(false);
@@ -95,7 +97,7 @@ export default function ReportModal({
         onClose();
       }, 2000);
     } catch (error) {
-      toast.error("Failed to submit report. Please try again.");
+      toast.error(t("report.failed"));
     } finally {
       setSubmitting(false);
     }
@@ -104,7 +106,7 @@ export default function ReportModal({
   const targetLabel =
   targetType === "user"
     ? displayName(reportedUserName || targetName)
-    : targetName || "this content";
+    : targetName || t("report.this_content");
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -113,11 +115,10 @@ export default function ReportModal({
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <CheckCircle2 className="w-16 h-16 text-green-500 mb-4" />
             <h3 className="text-xl font-bold text-gray-900 mb-2">
-              Report Submitted
+              {t("report.submitted_title")}
             </h3>
             <p className="text-gray-600 text-sm">
-              Thank you. Our moderation team will review this report and take
-              appropriate action.
+              {t("report.submitted_desc")}
             </p>
           </div>
         ) : !currentUser ? (
@@ -125,22 +126,21 @@ export default function ReportModal({
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Flag className="w-5 h-5 text-red-500" />
-                Report {targetLabel}
+                {t("report.title", { target: targetLabel })}
               </DialogTitle>
               <DialogDescription>
-                You need to be signed in to report {targetLabel}. Sign in to
-                help keep Swap4Work safe.
+                {t("report.signin_desc", { target: targetLabel })}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="mt-4">
               <Button variant="outline" onClick={onClose}>
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button
                 onClick={() => navigate(authLoginUrl(window.location.pathname + window.location.search))}
                 className="bg-orange-500 hover:bg-orange-600"
               >
-                Sign in to report
+                {t("report.signin_btn")}
               </Button>
             </DialogFooter>
           </>
@@ -149,25 +149,24 @@ export default function ReportModal({
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Flag className="w-5 h-5 text-red-500" />
-                Report {targetLabel}
+                {t("report.title", { target: targetLabel })}
               </DialogTitle>
               <DialogDescription>
-                Help us keep Swap4Work safe. Tell us what's wrong and our team
-                will review it.
+                {t("report.help_desc")}
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-2">
               <div>
-                <Label>Reason</Label>
+                <Label>{t("report.reason")}</Label>
                 <Select value={reason} onValueChange={setReason}>
                   <SelectTrigger className="mt-2">
-                    <SelectValue placeholder="Select a reason..." />
+                    <SelectValue placeholder={t("report.select_reason")} />
                   </SelectTrigger>
                   <SelectContent>
                     {REASON_OPTIONS.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
+                        {t(opt.labelKey)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -175,9 +174,9 @@ export default function ReportModal({
               </div>
 
               <div>
-                <Label>Description (optional)</Label>
+                <Label>{t("report.description")}</Label>
                 <Textarea
-                  placeholder="Provide additional details..."
+                  placeholder={t("report.description_ph")}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   className="mt-2"
@@ -197,9 +196,7 @@ export default function ReportModal({
                     htmlFor="also-block"
                     className="text-sm text-gray-700 cursor-pointer leading-tight"
                   >
-                    Also block {reportedUserName}. They won't be able to message
-                    or negotiate with you, and their listings will be hidden
-                    from your search results.
+                    {t("report.also_block", { name: displayName(reportedUserName) })}
                   </label>
                 </div>
               )}
@@ -207,7 +204,7 @@ export default function ReportModal({
 
             <DialogFooter>
               <Button variant="outline" onClick={onClose} disabled={submitting}>
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button
                 onClick={handleSubmit}
@@ -217,12 +214,12 @@ export default function ReportModal({
                 {submitting ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Submitting...
+                    {t("report.submitting")}
                   </>
                 ) : (
                   <>
                     <Flag className="w-4 h-4 mr-2" />
-                    Submit Report
+                    {t("report.submit")}
                   </>
                 )}
               </Button>

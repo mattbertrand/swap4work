@@ -4,14 +4,24 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Star } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageContext";
 
-export default function ReviewModal({ 
-  open, 
-  onClose, 
+const STAR_LABEL_KEYS = {
+  5: "review.stars_5",
+  4: "review.stars_4",
+  3: "review.stars_3",
+  2: "review.stars_2",
+  1: "review.stars_1",
+};
+
+export default function ReviewModal({
+  open,
+  onClose,
   otherUserName,
   onSubmit,
-  isSubmitting 
+  isSubmitting
 }) {
+  const { t } = useLanguage();
   const [stars, setStars] = useState(0);
   const [hoveredStar, setHoveredStar] = useState(0);
   const [review, setReview] = useState("");
@@ -20,7 +30,7 @@ export default function ReviewModal({
 
   const handleSubmit = () => {
     if (stars === 0) {
-      alert("Please select a rating");
+      alert(t("review.select_rating"));
       return;
     }
     if (submitted) return;
@@ -39,16 +49,16 @@ export default function ReviewModal({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-xl">Rate Your Experience</DialogTitle>
+          <DialogTitle className="text-xl">{t("review.title")}</DialogTitle>
           <DialogDescription>
-            How was your experience working with {otherUserName}?
+            {t("review.desc", { name: otherUserName })}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
           {/* Star Rating */}
           <div className="flex flex-col items-center gap-3">
-            <Label className="text-base font-semibold">Your Rating</Label>
+            <Label className="text-base font-semibold">{t("review.rating")}</Label>
             <div className="flex gap-2">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
@@ -71,23 +81,19 @@ export default function ReviewModal({
             </div>
             {stars > 0 && (
               <p className="text-sm text-gray-600">
-                {stars === 5 && "Excellent! 🎉"}
-                {stars === 4 && "Very Good! 👍"}
-                {stars === 3 && "Good 👌"}
-                {stars === 2 && "Fair 😐"}
-                {stars === 1 && "Poor 😞"}
+                {t(STAR_LABEL_KEYS[stars])}
               </p>
             )}
           </div>
 
           {/* Written Review */}
           <div>
-            <Label htmlFor="review">Written Review (optional)</Label>
+            <Label htmlFor="review">{t("review.written")}</Label>
             <Textarea
               id="review"
               value={review}
               onChange={(e) => setReview(e.target.value)}
-              placeholder="Share your experience working together..."
+              placeholder={t("review.written_ph")}
               rows={4}
               className="mt-2"
             />
@@ -96,14 +102,14 @@ export default function ReviewModal({
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose} disabled={isSubmitting}>
-            Skip for Now
+            {t("review.skip")}
           </Button>
-          <Button 
+          <Button
             onClick={handleSubmit}
             disabled={stars === 0 || isSubmitting || submitted}
             className="bg-orange-600 hover:bg-orange-700"
           >
-            {isSubmitting || submitted ? 'Submitting...' : 'Submit Review'}
+            {isSubmitting || submitted ? t("review.submitting") : t("review.submit")}
           </Button>
         </DialogFooter>
       </DialogContent>

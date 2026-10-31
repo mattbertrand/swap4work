@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDuration } from "@/lib/duration";
 import { Clock, CheckCircle2, XCircle, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
+import { useLanguage } from "@/i18n/LanguageContext";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function OfferCard({ offer, isOwnOffer, onAccept, onCounter, onDecline, canRespond }) {
+  const { t } = useLanguage();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   return (
@@ -35,7 +37,7 @@ export default function OfferCard({ offer, isOwnOffer, onAccept, onCounter, onDe
             </div>
           </div>
           {isOwnOffer && (
-            <Badge className="bg-blue-100 text-blue-700">Your Offer</Badge>
+            <Badge className="bg-blue-100 text-blue-700">{t("offer.your_offer")}</Badge>
           )}
         </div>
 
@@ -45,7 +47,7 @@ export default function OfferCard({ offer, isOwnOffer, onAccept, onCounter, onDe
           </div>
           {offer.work_type && (
             <p className="text-sm text-gray-700">
-              <strong>Work Type:</strong> {offer.work_type}
+              <strong>{t("offer.work_type")}:</strong> {offer.work_type}
             </p>
           )}
           {offer.message && (
@@ -63,7 +65,7 @@ export default function OfferCard({ offer, isOwnOffer, onAccept, onCounter, onDe
               size="sm"
             >
               <CheckCircle2 className="w-4 h-4 mr-2" />
-              Accept
+              {t("offer.accept")}
             </Button>
             <Button
               onClick={onCounter}
@@ -72,7 +74,7 @@ export default function OfferCard({ offer, isOwnOffer, onAccept, onCounter, onDe
               size="sm"
             >
               <MessageSquare className="w-4 h-4 mr-2" />
-              Counter
+              {t("offer.counter")}
             </Button>
             <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
               <AlertDialogTrigger asChild>
@@ -82,18 +84,18 @@ export default function OfferCard({ offer, isOwnOffer, onAccept, onCounter, onDe
                   size="sm"
                 >
                   <XCircle className="w-4 h-4 mr-2" />
-                  Decline
+                  {t("offer.decline")}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Decline this negotiation?</AlertDialogTitle>
+                  <AlertDialogTitle>{t("offer.decline_title")}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Are you sure you want to decline this offer? This will end the negotiation and the other party will be notified.
+                    {t("offer.decline_desc")}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={() => {
                       setConfirmOpen(false);
@@ -101,7 +103,7 @@ export default function OfferCard({ offer, isOwnOffer, onAccept, onCounter, onDe
                     }}
                     className="bg-red-600 hover:bg-red-700"
                   >
-                    Yes, Decline
+                    {t("offer.yes_decline")}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -111,7 +113,7 @@ export default function OfferCard({ offer, isOwnOffer, onAccept, onCounter, onDe
 
         {isOwnOffer && canRespond && (
           <p className="text-xs text-center text-gray-500">
-            Waiting for response...
+            {t("offer.waiting")}
           </p>
         )}
       </CardContent>

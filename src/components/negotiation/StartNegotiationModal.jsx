@@ -13,6 +13,7 @@ import HoursMinutesInput from "@/components/forms/HoursMinutesInput";
 import { formatDuration } from "@/lib/duration";
 import { displayName } from "@/lib/names";
 import { getAllowedOfferTypes, summarizeReturnPrefs } from "@/lib/exchangePrefs";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 // Start-negotiation dialog. Clearly separates:
 //   1. what the listing owner is offering (the target listing),
@@ -20,12 +21,6 @@ import { getAllowedOfferTypes, summarizeReturnPrefs } from "@/lib/exchangePrefs"
 //   3. what the requester is offering (one of their own eligible listings).
 // Only listings of a type the owner accepts are selectable. Preferences are
 // guidance — the owner still accepts or rejects the proposal.
-
-function OwnerOfferLine({ item }) {
-  return item.listing_type === "service"
-    ? `Up to ${formatDuration(item.required_hours)} of service`
-    : `The item (asking ${formatDuration(item.required_hours)} of work in return)`;
-}
 
 export default function StartNegotiationModal({
   open,
@@ -37,6 +32,7 @@ export default function StartNegotiationModal({
   onConfirm,
   loading
 }) {
+  const { t } = useLanguage();
   const [targetId, setTargetId] = useState("");
   const [offeredId, setOfferedId] = useState("");
   const [hours, setHours] = useState(null);
@@ -69,10 +65,9 @@ export default function StartNegotiationModal({
     [eligibleItems, eligibleServices, offeredId]
   );
 
-  const wantsLabel = target
-    ? target.accepts === "item" ? "an item" :
-      target.accepts === "service" ? "a service" : "an item or a service"
-    : "";
+  const wantsLabel = (item) =>
+    item?.accepts === "item" ? t("neg.wants_item") :
+      item?.accepts === "service" ? t("neg.wants_service") : t("neg.wants_either");
 
   const handleConfirm = () => {
     if (!target || !offered || !hours) return;
@@ -93,10 +88,10 @@ export default function StartNegotiationModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="w-5 h-5 text-orange-600" />
-            Start Negotiation
+            {t("neg.start_title")}
           </DialogTitle>
           <DialogDescription>
-            Review what {ownerName} is offering and what they want in return, then pick what you'll offer.
+            {t("neg.start_desc", { name: ownerName })}
           </DialogDescription>
         </DialogHeader>
 
@@ -105,13 +100,17 @@ export default function StartNegotiationModal({
           {target && (
             <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
               <p className="text-xs uppercase tracking-wide text-orange-500 font-semibold mb-1">
-                {ownerName} is offering
+                {t("neg.offering_by", { name: ownerName })}
               </p>
               <p className="text-sm text-orange-900 font-medium">{target.title}</p>
-              <p className="text-xs text-orange-700 mt-1"><OwnerOfferLine item={target} /></p>
+              <p className="text-xs text-orange-700 mt-1">
+                {target.listing_type === "service"
+                  ? t("neg.up_to_service", { duration: formatDuration(target.required_hours) })
+                  : t("neg.item_asking", { duration: formatDuration(target.required_hours) })}
+              </p>
               <div className="mt-2 pt-2 border-t border-orange-200">
                 <p className="text-xs uppercase tracking-wide text-orange-500 font-semibold mb-1">
-                  {ownerName} wants in return
+                  {t("neg.wants_return", { name: ownerName })}
                 </p>
                 <p className="text-sm text-orange-900">{summarizeReturnPrefs(target)}</p>
               </div>
@@ -121,7 +120,7 @@ export default function StartNegotiationModal({
           {/* Target listing picker (when the owner has several listings) */}
           {targetOptions && targetOptions.length > 0 && (
             <div>
-              <Label>Which of their listings are you requesting?</Label>
+              <Label>{t("neg.which_listing")}</Label>
               <Select
                 value={targetId}
                 onValueChange={(value) => {
@@ -132,7 +131,7 @@ export default function StartNegotiationModal({
                 }}
               >
                 <SelectTrigger className="w-full mt-2 [&>span]:min-w-0">
-                  <SelectValue placeholder="Select a listing..." />
+                  <SelectValue placeholder={t("neg.select_listing")} />
                 </SelectTrigger>
                 <SelectContent className="w-[var(--radix-select-trigger-width)]">
                   {targetOptions.map((t) => (
@@ -147,19 +146,19 @@ export default function StartNegotiationModal({
 
           {/* Requester's offer — only eligible listings are selectable */}
           <div>
-            <Label>What you're offering <span className="text-red-500">*</span></Label>
+            <Label>{t("neg.what_offering")} <span className="text-red-500">*</span></Label>
             {hasEligible ? (
               <Select
                 value={offeredId}
                 onValueChange={setOfferedId}
               >
                 <SelectTrigger className="w-full mt-2 [&>span]:min-w-0">
-                  <SelectValue placeholder="Select one of your listings..." />
+                  <SelectValue placeholder={t("neg.select_one_of_yours")} />
                 </SelectTrigger>
                 <SelectContent className="w-[var(--radix-select-trigger-width)]">
                   {eligibleItems.length > 0 && (
                     <SelectGroup>
-                      <SelectLabel>My items</SelectLabel>
+                      <SelectLabel>{t("neg.my_items")}</SelectLabel>
                       {eligibleItems.map((l) => (
                         <SelectItem key={l.id} value={l.id}>{l.title}</SelectItem>
                       ))}
@@ -167,7 +166,7 @@ export default function StartNegotiationModal({
                   )}
                   {eligibleServices.length > 0 && (
                     <SelectGroup>
-                      <SelectLabel>My services</SelectLabel>
+                      <SelectLabel>{t("neg.my_services")}</SelectLabel>
                       {eligibleServices.map((l) => (
                         <SelectItem key={l.id} value={l.id}>{l.title}</SelectItem>
                       ))}
@@ -178,12 +177,13 @@ export default function StartNegotiationModal({
             ) : (
               <AlertCircleBox
                 target={target}
+                wantsLabel={wantsLabel(target)}
                 hasAnyListings={myItems.length + myServices.length > 0}
               />
             )}
             {!hasEligible && target && myItems.length + myServices.length > 0 && (
               <p className="text-xs text-amber-600 mt-2">
-                Your active listings don't match what {ownerName} wants in return ({wantsLabel}).
+                {t("neg.no_match_note", { name: ownerName, wants: wantsLabel(target) })}
               </p>
             )}
           </div>
@@ -191,35 +191,35 @@ export default function StartNegotiationModal({
           {offered && (
             <>
               <div>
-                <Label>Work time you're offering <span className="text-red-500">*</span></Label>
+                <Label>{t("neg.work_time_offering")} <span className="text-red-500">*</span></Label>
                 <div className="mt-2">
                   <HoursMinutesInput value={hours} onChange={setHours} />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
                   {offered.listing_type === "service"
-                    ? "Hours of this service you're offering"
-                    : "Hours of work you'll do in exchange"}
+                    ? t("neg.hours_of_service")
+                    : t("neg.hours_of_work")}
                 </p>
               </div>
 
               <div>
-                <Label htmlFor="start-work-type">Type of work (optional)</Label>
+                <Label htmlFor="start-work-type">{t("neg.work_type_optional")}</Label>
                 <Input
                   id="start-work-type"
                   value={workType}
                   onChange={(e) => setWorkType(e.target.value)}
-                  placeholder="e.g., Lawn mowing, Painting, Cleaning"
+                  placeholder={t("neg.work_type_ph")}
                   className="mt-2"
                 />
               </div>
 
               <div>
-                <Label htmlFor="start-message">Message (optional)</Label>
+                <Label htmlFor="start-message">{t("neg.message_optional")}</Label>
                 <Textarea
                   id="start-message"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Introduce yourself and explain your offer..."
+                  placeholder={t("neg.message_ph")}
                   rows={3}
                   className="mt-2"
                 />
@@ -227,19 +227,26 @@ export default function StartNegotiationModal({
 
               {/* Plain-language exchange summary */}
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-                <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold mb-1">Proposed exchange</p>
+                <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold mb-1">{t("neg.proposed_exchange")}</p>
                 <p className="text-sm text-gray-900 flex items-center gap-2 flex-wrap">
                   <Badge variant="outline" className="max-w-full">
-                    <span className="truncate">{offered.listing_type === "service" ? "Your service" : "Your item"}: {offered.title}</span>
+                    <span className="truncate">
+                      {offered.listing_type === "service" ? t("neg.your_service") : t("neg.your_item")}: {offered.title}
+                    </span>
                   </Badge>
                   <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
                   <Badge variant="outline" className="max-w-full">
-                    <span className="truncate">For: {target.title}</span>
+                    <span className="truncate">{t("neg.for")}: {target.title}</span>
                   </Badge>
                 </p>
                 <p className="text-xs text-gray-500 mt-2">
-                  You're offering your {offered.listing_type === "service" ? "service" : "item"} "{offered.title}" ({formatDuration(hours)}
-                  {offered.listing_type === "service" ? " of service" : " of work"}) in exchange for {ownerName}'s {target.listing_type === "service" ? "service" : "item"} "{target.title}".
+                  {t("neg.summary", {
+                    offered: offered.title,
+                    duration: formatDuration(hours),
+                    unit: offered.listing_type === "service" ? t("neg.unit_service") : t("neg.unit_work"),
+                    target: target.title,
+                    owner: ownerName
+                  })}
                 </p>
               </div>
             </>
@@ -248,7 +255,7 @@ export default function StartNegotiationModal({
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={loading}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             onClick={handleConfirm}
@@ -258,12 +265,12 @@ export default function StartNegotiationModal({
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Sending...
+                {t("neg.sending")}
               </>
             ) : (
               <>
                 <Clock className="w-4 h-4 mr-2" />
-                Send Offer
+                {t("neg.send_offer")}
               </>
             )}
           </Button>
@@ -273,23 +280,21 @@ export default function StartNegotiationModal({
   );
 }
 
-function AlertCircleBox({ target, hasAnyListings }) {
-  const wants = target
-    ? target.accepts === "item" ? "an item" : target.accepts === "service" ? "a service" : "an item or a service"
-    : "";
+function AlertCircleBox({ target, wantsLabel, hasAnyListings }) {
+  const { t } = useLanguage();
   return (
     <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-2">
       <div className="flex gap-2">
         <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
         <div>
-          <p className="text-sm text-amber-900 font-medium">No eligible listing to offer yet</p>
+          <p className="text-sm text-amber-900 font-medium">{t("neg.no_eligible_title")}</p>
           <p className="text-xs text-amber-800 mt-1">
             {hasAnyListings
-              ? `None of your active listings match what ${target ? displayName(target.offerer_name) : "the owner"} wants (${wants}).`
-              : `You need an active ${wants} listing of your own to offer in exchange.`}
+              ? t("neg.no_eligible_match", { name: target ? displayName(target.offerer_name) : t("neg.the_owner"), wants: wantsLabel })
+              : t("neg.no_eligible_need", { wants: wantsLabel })}
           </p>
           <Link to={createPageUrl("CreateItem")} className="text-xs underline text-amber-900 mt-1 inline-block">
-            Create a listing →
+            {t("neg.create_listing")}
           </Link>
         </div>
       </div>

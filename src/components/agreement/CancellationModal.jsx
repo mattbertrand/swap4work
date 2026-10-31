@@ -6,8 +6,20 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertTriangle, FileWarning } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useLanguage } from "@/i18n/LanguageContext";
+
+const DISPUTE_REASONS = [
+  { value: "owner_withdrew_item", labelKey: "cancel.d_owner" },
+  { value: "worker_stopped_working", labelKey: "cancel.d_worker" },
+  { value: "item_condition_changed", labelKey: "cancel.d_condition" },
+  { value: "work_quality", labelKey: "cancel.d_quality" },
+  { value: "hours_dispute", labelKey: "cancel.d_hours" },
+  { value: "no_show", labelKey: "cancel.d_noshow" },
+  { value: "other", labelKey: "cancel.d_other" },
+];
 
 export default function CancellationModal({ open, onClose, agreement, onRequestCancellation, onOpenDispute, isOfferer, isWorker }) {
+  const { t } = useLanguage();
   const [mode, setMode] = useState("request"); // "request" or "dispute"
   const [reason, setReason] = useState("");
   const [disputeReason, setDisputeReason] = useState("");
@@ -38,14 +50,14 @@ export default function CancellationModal({ open, onClose, agreement, onRequestC
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-orange-600" />
-            {mode === "request" ? "Request Cancellation" : "Open Dispute"}
+            {mode === "request" ? t("cancel.request_title") : t("cancel.dispute_title")}
           </DialogTitle>
           <DialogDescription>
-            {mode === "request" 
-              ? workHasStarted 
-                ? "Work has started on this agreement. Cancelling without mutual consent may affect your trust rating."
-                : "Request to cancel this agreement before work has started."
-              : "Open a formal dispute to resolve disagreements about this agreement."
+            {mode === "request"
+              ? workHasStarted
+                ? t("cancel.desc_started")
+                : t("cancel.desc_request")
+              : t("cancel.desc_dispute")
             }
           </DialogDescription>
         </DialogHeader>
@@ -54,7 +66,7 @@ export default function CancellationModal({ open, onClose, agreement, onRequestC
           <Alert className="bg-orange-50 border-orange-200">
             <AlertTriangle className="w-4 h-4 text-orange-600" />
             <AlertDescription className="text-sm text-orange-800">
-              <strong>{agreement.hours_logged} hours</strong> have been logged. Cancelling now requires mutual agreement or may result in karma penalties.
+              {t("cancel.hours_alert", { hours: agreement.hours_logged })}
             </AlertDescription>
           </Alert>
         )}
@@ -63,12 +75,12 @@ export default function CancellationModal({ open, onClose, agreement, onRequestC
           {mode === "request" ? (
             <>
               <div>
-                <Label htmlFor="reason">Reason for Cancellation</Label>
+                <Label htmlFor="reason">{t("cancel.reason_label")}</Label>
                 <Textarea
                   id="reason"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  placeholder="Please explain why you need to cancel..."
+                  placeholder={t("cancel.reason_ph")}
                   rows={4}
                   className="mt-2"
                 />
@@ -77,30 +89,28 @@ export default function CancellationModal({ open, onClose, agreement, onRequestC
           ) : (
             <>
               <div>
-                <Label htmlFor="disputeReason">Dispute Reason</Label>
+                <Label htmlFor="disputeReason">{t("cancel.dispute_reason")}</Label>
                 <Select value={disputeReason} onValueChange={setDisputeReason}>
                   <SelectTrigger className="mt-2">
-                    <SelectValue placeholder="Select reason" />
+                    <SelectValue placeholder={t("cancel.select_reason")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="owner_withdrew_item">Owner withdrew item</SelectItem>
-                    <SelectItem value="worker_stopped_working">Worker stopped working</SelectItem>
-                    <SelectItem value="item_condition_changed">Item condition changed</SelectItem>
-                    <SelectItem value="work_quality">Work quality issues</SelectItem>
-                    <SelectItem value="hours_dispute">Hours dispute</SelectItem>
-                    <SelectItem value="no_show">No show</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    {DISPUTE_REASONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {t(opt.labelKey)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label htmlFor="description">Details</Label>
+                <Label htmlFor="description">{t("cancel.details")}</Label>
                 <Textarea
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Provide detailed information about the dispute..."
+                  placeholder={t("cancel.details_ph")}
                   rows={4}
                   className="mt-2"
                 />
@@ -113,35 +123,35 @@ export default function CancellationModal({ open, onClose, agreement, onRequestC
           {mode === "request" ? (
             <>
               <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
-                Cancel
+                {t("common.cancel")}
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => setMode("dispute")}
                 className="w-full sm:w-auto"
               >
                 <FileWarning className="w-4 h-4 mr-2" />
-                Open Dispute Instead
+                {t("cancel.open_instead")}
               </Button>
-              <Button 
+              <Button
                 onClick={handleRequestCancellation}
                 disabled={!reason.trim()}
                 className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700"
               >
-                Request Mutual Cancellation
+                {t("cancel.request_mutual")}
               </Button>
             </>
           ) : (
             <>
               <Button variant="outline" onClick={() => setMode("request")} className="w-full sm:w-auto">
-                Back
+                {t("cancel.back")}
               </Button>
-              <Button 
+              <Button
                 onClick={handleOpenDispute}
                 disabled={!disputeReason || !description.trim()}
                 className="w-full sm:w-auto bg-red-600 hover:bg-red-700"
               >
-                Submit Dispute
+                {t("cancel.submit_dispute")}
               </Button>
             </>
           )}

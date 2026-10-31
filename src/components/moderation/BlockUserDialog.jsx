@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Ban, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function BlockUserDialog({
   open,
@@ -22,6 +23,7 @@ export default function BlockUserDialog({
   blockedUserName,
   onBlocked,
 }) {
+  const { t } = useLanguage();
   const [submitting, setSubmitting] = useState(false);
 
   const handleBlock = async () => {
@@ -34,11 +36,11 @@ export default function BlockUserDialog({
         blocked_name: blockedUserName || "",
         blocked_photo_url: "",
       });
-      toast.success(`${displayName(blockedUserName)} has been blocked`);
+      toast.success(t("block.success", { name: displayName(blockedUserName) }));
       onBlocked?.();
       onClose();
     } catch (error) {
-      toast.error("Failed to block user. Please try again.");
+      toast.error(t("block.error"));
     } finally {
       setSubmitting(false);
     }
@@ -50,17 +52,14 @@ export default function BlockUserDialog({
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
             <Ban className="w-5 h-5 text-orange-600" />
-            Block {displayName(blockedUserName)}?
+            {t("block.title", { name: displayName(blockedUserName) })}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            Once blocked, neither of you can message or negotiate with each
-            other. Their listings will disappear from your search results, and
-            any existing negotiations will become read-only. You can unblock
-            them anytime from your Profile settings.
+            {t("block.desc")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={submitting}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={submitting}>{t("common.cancel")}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleBlock}
             disabled={submitting}
@@ -69,10 +68,10 @@ export default function BlockUserDialog({
             {submitting ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Blocking...
+                {t("block.blocking")}
               </>
             ) : (
-              "Block User"
+              t("block.action")
             )}
           </AlertDialogAction>
         </AlertDialogFooter>
