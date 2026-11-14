@@ -1,23 +1,22 @@
 import { base44 } from "@/api/base44Client";
 
-// A "Location checked" result is valid only while it has not expired AND the
-// user's current primary city still matches the area that was checked.
-// It never proves permanent residence — only that the device was in the
-// claimed area when the check was run.
+// The browser never queries LocationCheck records. It asks the server for a
+// yes/no indicator (public) or for its own details (owner only).
+// A check is valid only while it has not expired AND the member's current
+// primary city still matches the area that was checked. It never proves
+// permanent residence — only that the device was in the claimed area then.
 
-/** Public "City, ST" for a primary location — null if it can't be determined. */
-export function checkIsCurrent(check, primaryArea) {
-  if (!check || !check.expires_at) return false;
-  if (new Date(check.expires_at) <= new Date()) return false;
-  if (!primaryArea) return false;
-  return check.checked_area === primaryArea;
+/** Server-computed public indicator for a member's profile: true or false only. */
+export async function fetchLocationStatus(userId) {
+  if (!userId) return false;
+  const res = await base44.functions.invoke("getLocationCheckStatus", { user_id: userId });
+  return res.data?.checked === true;
 }
 
-/** Latest LocationCheck record for a user (readable by everyone; written only by the server). */
-export async function fetchLocationCheck(userId) {
-  if (!userId) return null;
-  const records = await base44.entities.LocationCheck.filter({ user_id: userId }, "-created_date", 1);
-  return records[0] || null;
+/** Owner-only details for the signed-in member's own profile card. */
+export async function fetchMyLocationCheckDetails() {
+  const res = await base44.functions.invoke("getMyLocationCheckDetails", {});
+  return res.data || {};
 }
 
 /** Ask the browser for the device position once. Rejects with a friendly message. */

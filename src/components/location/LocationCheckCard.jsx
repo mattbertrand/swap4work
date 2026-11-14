@@ -5,7 +5,7 @@ import { formatDate } from '@/i18n/formatters';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { fetchLocationCheck, checkIsCurrent, runLocationCheck } from "@/lib/locationCheck";
+import { fetchMyLocationCheckDetails, runLocationCheck } from "@/lib/locationCheck";
 import { formatPublicLocation } from "@/lib/location";
 
 /**
@@ -20,12 +20,14 @@ export default function LocationCheckCard({ userId, savedLocation, hasUnsavedLoc
   const [outcome, setOutcome] = useState(null);
   const primaryArea = formatPublicLocation(savedLocation);
 
-  const { data: check } = useQuery({
-    queryKey: ["locationCheck", userId],
-    queryFn: () => fetchLocationCheck(userId),
+  // Details come from the owner-only endpoint — the LocationCheck entity is
+  // never queried from the browser.
+  const { data: details } = useQuery({
+    queryKey: ["myLocationCheckDetails", userId],
+    queryFn: fetchMyLocationCheckDetails,
     enabled: !!userId
   });
-  const current = checkIsCurrent(check, primaryArea);
+  const current = details?.current === true;
 
   const handleCheck = async () => {
     setRunning(true);
@@ -34,7 +36,8 @@ export default function LocationCheckCard({ userId, savedLocation, hasUnsavedLoc
       const data = await runLocationCheck();
       if (data.result === "checked") {
         setOutcome({ type: 'success', key: 'location.success', vars: { area: data.checked_area } });
-        queryClient.invalidateQueries({ queryKey: ["locationCheck", userId] });
+        queryClient.invalidateQueries({ queryKey: ["myLocationCheckDetails", userId] });
+        queryClient.invalidateQueries({ queryKey: ["locationChecked", userId] });
         toast.success(t('location.checked'));
       } else if (data.result === "mismatch") {
         setOutcome({ type: 'warn', key: 'location.mismatch', vars: { area: data.claimed_area } });
@@ -67,7 +70,7 @@ export default function LocationCheckCard({ userId, savedLocation, hasUnsavedLoc
 
       {current && (
         <p className="text-xs text-gray-500">
-          {t('location.checked_dates', { date: formatDate(check.checked_date, locale), expiry: formatDate(check.expires_at, locale) })}
+          {t('location.checked_dates', { date: formatDate(details.checked_date, locale), expiry: formatDate(details.expires_at, locale) })}
         </p>
       )}
 

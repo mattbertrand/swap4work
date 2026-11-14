@@ -144,7 +144,7 @@ export default function NearbyWorkers() {
                           <h3 className="font-bold text-lg text-gray-900 truncate">{displayName(worker.full_name)}</h3>
                         </div>
                         <div className="mb-1">
-                          <LocationCheckedBadge userId={worker.user_id} location={worker.location} className="text-[10px] px-1.5 py-0" />
+                          <LocationCheckedBadge userId={worker.user_id} className="text-[10px] px-1.5 py-0" />
                         </div>
                         {Array.isArray(worker.exchange_areas) && worker.exchange_areas.length > 0 && (
                           <p className="text-xs text-gray-500 mb-1 truncate">Also exchanges in: {worker.exchange_areas.join(" · ")}</p>

@@ -2,24 +2,23 @@ import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BadgeCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { fetchLocationCheck, checkIsCurrent } from "@/lib/locationCheck";
-import { formatPublicLocation } from "@/lib/location";
+import { fetchLocationStatus } from "@/lib/locationCheck";
 import { useLanguage } from '@/i18n/LanguageContext';
 
 /**
- * Public "Location checked" badge. Shown only when a server-recorded check
- * exists, has not expired, and still matches the member's current primary
- * "City, ST". Never shown for merely valid/manual locations.
+ * Public "Location checked" badge. The server decides whether a valid,
+ * unexpired check still matches the member's current "City, ST"; the browser
+ * only ever receives true or false, so no check record is exposed.
  */
-export default function LocationCheckedBadge({ userId, location, className = "" }) {
+export default function LocationCheckedBadge({ userId, className = "" }) {
   const { t } = useLanguage();
-  const { data: check } = useQuery({
-    queryKey: ["locationCheck", userId],
-    queryFn: () => fetchLocationCheck(userId),
+  const { data: checked } = useQuery({
+    queryKey: ["locationChecked", userId],
+    queryFn: () => fetchLocationStatus(userId),
     enabled: !!userId
   });
 
-  if (!checkIsCurrent(check, formatPublicLocation(location))) return null;
+  if (checked !== true) return null;
 
   return (
     <Badge

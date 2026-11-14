@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.54';
 import { getActiveUser } from '../../shared/moderation.ts';
+import { STATE_ABBR, parsePrimaryArea } from '../../shared/locationAreas.ts';
 
 // Optional "Location checked" badge. The browser sends the device's current
 // coordinates ONCE; this function reverse-geocodes them, compares the result
@@ -16,20 +17,6 @@ const REVERSE_URL = 'https://nominatim.openstreetmap.org/reverse';
 const HEADERS = {
   'User-Agent': 'Swap4Work/1.0 (swap4work.base44.app location check)',
   'Accept-Language': 'en'
-};
-
-const STATE_ABBR = {
-  alabama: 'AL', alaska: 'AK', arizona: 'AZ', arkansas: 'AR', california: 'CA',
-  colorado: 'CO', connecticut: 'CT', delaware: 'DE', florida: 'FL', georgia: 'GA',
-  hawaii: 'HI', idaho: 'ID', illinois: 'IL', indiana: 'IN', iowa: 'IA',
-  kansas: 'KS', kentucky: 'KY', louisiana: 'LA', maine: 'ME', maryland: 'MD',
-  massachusetts: 'MA', michigan: 'MI', minnesota: 'MN', mississippi: 'MS', missouri: 'MO',
-  montana: 'MT', nebraska: 'NE', nevada: 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ',
-  'new mexico': 'NM', 'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND', ohio: 'OH',
-  oklahoma: 'OK', oregon: 'OR', pennsylvania: 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
-  'south dakota': 'SD', tennessee: 'TN', texas: 'TX', utah: 'UT', vermont: 'VT',
-  virginia: 'VA', washington: 'WA', 'west virginia': 'WV', wisconsin: 'WI', wyoming: 'WY',
-  'district of columbia': 'DC'
 };
 
 const rateBuckets = new Map();
@@ -58,18 +45,6 @@ function distanceMiles(lat1, lon1, lat2, lon2) {
 }
 
 const strip = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-
-// Pull "City, ST" out of the stored self-reported location string
-function parsePrimaryArea(location) {
-  const parts = String(location || '').split(',').map((p) => p.replace(/\b\d{5}(-\d{4})?\b/g, '').trim()).filter(Boolean);
-  const abbrs = new Set(Object.values(STATE_ABBR));
-  for (let i = parts.length - 1; i >= 1; i--) {
-    const up = parts[i].toUpperCase();
-    const abbr = abbrs.has(up) ? up : STATE_ABBR[parts[i].toLowerCase()];
-    if (abbr) return { city: parts[i - 1], state: abbr };
-  }
-  return null;
-}
 
 export default async function(req) {
   try {

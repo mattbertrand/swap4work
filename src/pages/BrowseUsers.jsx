@@ -292,7 +292,7 @@ export default function BrowseUsers() {
                           )}
                         </div>
                         <div className="mb-1">
-                          <LocationCheckedBadge userId={worker.user_id} location={worker.location} className="text-[10px] px-1.5 py-0" />
+                          <LocationCheckedBadge userId={worker.user_id} className="text-[10px] px-1.5 py-0" />
                         </div>
                         {Array.isArray(worker.exchange_areas) && worker.exchange_areas.length > 0 && (
                           <p className="text-xs text-gray-500 mb-1 truncate">{t("people.also_exchanges_in", { areas: worker.exchange_areas.join(" · ") })}</p>

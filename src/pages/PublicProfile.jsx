@@ -26,6 +26,7 @@ import ItemCard from "../components/browse/ItemCard";
 import AuthModal from "@/components/auth/AuthModal";
 import { useAuth } from "@/lib/AuthContext";
 import LocationCheckedBadge from "@/components/location/LocationCheckedBadge";
+import { fetchMemberKarma } from "@/lib/memberKarma";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function PublicProfile() {
@@ -110,16 +111,6 @@ export default function PublicProfile() {
     enabled: !!(userId || workerId)
   });
 
-  // Tombstone check: was this member removed from the community?
-  const { data: isDeletedUser } = useQuery({
-    queryKey: ['deletedUserTombstone', userId],
-    queryFn: async () => {
-      const tombstones = await base44.entities.DeletedUser.filter({ user_id: userId });
-      return tombstones.length > 0;
-    },
-    enabled: !!userId && !userProfile,
-  });
-
   // Resolved userId: prefer URL param, fallback to worker's user_id from profile
   const resolvedUserId = userId || userProfile?.id;
 
@@ -168,15 +159,12 @@ export default function PublicProfile() {
     enabled: !!resolvedUserId
   });
 
-  const { data: karmaTransactions = [] } = useQuery({
-    queryKey: ['karmaTransactions', resolvedUserId],
-    queryFn: () => base44.entities.KarmaTransaction.filter({ user_id: resolvedUserId }),
+  // Public karma score only — the transaction ledger stays admin-only.
+  const { data: karmaPoints = 0 } = useQuery({
+    queryKey: ['memberKarma', resolvedUserId],
+    queryFn: () => fetchMemberKarma(resolvedUserId),
     enabled: !!resolvedUserId
   });
-
-  const karmaPoints = React.useMemo(() => {
-    return karmaTransactions.reduce((sum, t) => sum + (t.type === 'gain' ? t.points : -Math.abs(t.points)), 0);
-  }, [karmaTransactions]);
 
   const { data: activeNegotiations = [] } = useQuery({
     queryKey: ['workerActiveNegotiations', resolvedUserId],
@@ -295,13 +283,8 @@ export default function PublicProfile() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-xl font-bold text-gray-900 mb-2">
-            {isDeletedUser ? t("pub.member_removed") : t("pub.user_not_found")}
+            {t("pub.profile_unavailable")}
           </h2>
-          {isDeletedUser && (
-            <p className="text-gray-500 mb-4">
-              {t("pub.member_removed_sub")}
-            </p>
-          )}
           <Button onClick={() => navigate(-1)}>{t("pub.go_back")}</Button>
         </div>
       </div>
@@ -349,7 +332,7 @@ export default function PublicProfile() {
                   {formatPublicLocation(userProfile.location) || t("pub.location_unavailable")}
                 </div>
                 <div className="flex justify-center mb-4 -mt-2">
-                  <LocationCheckedBadge userId={resolvedUserId} location={userProfile.location} />
+                  <LocationCheckedBadge userId={resolvedUserId} />
                 </div>
                 {Array.isArray(workerEntity?.exchange_areas) && workerEntity.exchange_areas.length > 0 && (
                   <p className="text-xs text-gray-500 mb-4">
