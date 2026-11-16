@@ -34,12 +34,17 @@ export default function Faq() {
               <AccordionItem
                 key={i}
                 value={`faq-${i}`}
-                className="border border-orange-100 rounded-xl px-5 bg-gradient-to-r from-orange-50/50 to-white"
+                className="group border border-orange-100 rounded-xl px-5 bg-gradient-to-r from-orange-50/50 to-white"
               >
                 <AccordionTrigger className="text-left font-semibold text-gray-900 hover:no-underline py-4">
                   {f.q}
                 </AccordionTrigger>
-                <AccordionContent className="text-gray-600 text-sm leading-relaxed pb-4">
+                {/* forceMount keeps every answer in the initial DOM for crawlers;
+                    the closed state stays visually collapsed via the group class. */}
+                <AccordionContent
+                  forceMount
+                  className="group-data-[state=closed]:hidden text-gray-600 text-sm leading-relaxed pb-4"
+                >
                   {f.a}
                 </AccordionContent>
               </AccordionItem>

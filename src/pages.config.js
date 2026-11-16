@@ -27,7 +27,7 @@ export const PAGES = {
     "AdminDisputes": AdminDisputes,
     "AdminReports": AdminReports,
     "AgreementDetail": AgreementDetail,
-    "Browse": Browse,
+    "browse": Browse,
     "BrowseUsers": BrowseUsers,
     "Chat": Chat,
     "CompleteProfile": CompleteProfile,
